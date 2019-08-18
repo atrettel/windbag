@@ -10,7 +10,7 @@ subroutine stop_windbag( message )
    call mpi_comm_rank( mpi_comm_world, process_rank, error_status )
 
    if ( process_rank .eq. root_process_rank ) then
-      print *, "windbag: ", message
+      write (*, "(A, A)") "windbag: ", message
    endif
 
    call mpi_finalize( error_status )
