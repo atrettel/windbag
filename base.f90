@@ -2,10 +2,9 @@
 
 module base
    use iso_fortran_env
-   implicit none
+   use mpi
 
    ! FP = float precision
-   !integer, parameter :: FP = kind(1.0d0)
    integer, parameter :: FP = real64
 
    ! IP = integer precision
@@ -14,7 +13,6 @@ module base
    integer, parameter :: ROOT_PROCESS_RANK = 0
 contains
    subroutine stop_windbag( message )
-      use mpi
    
       implicit none
       integer(IP) :: process_rank, error_status
