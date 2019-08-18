@@ -5,7 +5,7 @@ flags=-std=f2003 -pedantic -pedantic-errors -nocpp -ffree-form \
 -Wextra -Wconversion-extra
 
 windbag: windbag.f90
-	gfortran $(flags) $^ -o $@
+	mpifort $(flags) $^ -o $@
 
 .PHONY: clean
 clean:
