@@ -15,12 +15,12 @@ contains
    subroutine stop_windbag( message )
    
       implicit none
-      integer(IP) :: process_rank, error_status
+      integer(IP) :: current_process_rank, error_status
       character(len=*), intent(in) :: message
    
-      call mpi_comm_rank( mpi_comm_world, process_rank, error_status )
+      call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
    
-      if ( process_rank .eq. ROOT_PROCESS_RANK ) then
+      if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
          write (*, "(A, A)") "windbag: ", message
       endif
    

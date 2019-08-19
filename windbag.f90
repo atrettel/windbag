@@ -4,16 +4,16 @@ program windbag
    use base
 
    implicit none
-   integer(IP) :: number_of_arguments, process_rank, error_status
+   integer(IP) :: number_of_arguments, current_process_rank, error_status
    character(len=64) :: input_file_name
    logical :: input_file_exists
 
    call mpi_init( error_status )
 
-   call mpi_comm_rank( mpi_comm_world, process_rank, error_status )
+   call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
 
    ! Check if there are any command line arguments.
-   if ( process_rank .eq. ROOT_PROCESS_RANK ) then
+   if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
       number_of_arguments = command_argument_count()
    end if
 
@@ -25,7 +25,7 @@ program windbag
    end if
 
    ! Check if the first command line argument exists.
-   if ( process_rank .eq. ROOT_PROCESS_RANK ) then
+   if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
       call get_command_argument( 1, input_file_name )
       inquire( file=input_file_name, exist=input_file_exists )
    end if
