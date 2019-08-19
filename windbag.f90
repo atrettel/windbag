@@ -1,7 +1,6 @@
 ! Copyright (C) 2019 Andrew Trettel.  All rights reserved.
 
 program windbag
-   use mpi
    use base
 
    implicit none

@@ -5,12 +5,12 @@ module base
    use mpi
 
    ! FP = float precision
-   integer, parameter :: FP = real64
+   integer(4), parameter :: FP = real64
 
    ! IP = integer precision
-   integer, parameter :: IP = int32
+   integer(4), parameter :: IP = int32
 
-   integer, parameter :: ROOT_PROCESS_RANK = 0
+   integer(IP), parameter :: ROOT_PROCESS_RANK = 0
 contains
    subroutine stop_windbag( message )
    
