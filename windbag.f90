@@ -17,7 +17,7 @@ program windbag
       number_of_arguments = command_argument_count()
    end if
 
-   call mpi_bcast( number_of_arguments, 1, mpi_integer, ROOT_PROCESS_RANK, &
+   call mpi_bcast( number_of_arguments, 1, MPI_IP, ROOT_PROCESS_RANK, &
                    mpi_comm_world, error_status )
 
    if ( number_of_arguments .eq. 0 ) then
