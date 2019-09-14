@@ -18,7 +18,21 @@ module wbbase
    type WB_Field_Data
       integer(IP), public :: n_proc, nx, ny, nz
    end type WB_Field_Data
+
+   interface WB_Field_Data
+      module procedure init_WB_Field_Data
+   end interface WB_Field_Data
 contains
+   function init_WB_Field_Data( n_proc, nx, ny, nz ) result( field_data )
+      integer(IP), intent(in) :: n_proc, nx, ny, nz
+      type(WB_Field_Data) :: field_data
+
+      field_data%n_proc = n_proc
+      field_data%nx     = nx
+      field_data%ny     = ny
+      field_data%nz     = nz
+   end function init_WB_Field_Data
+
    subroutine stop_windbag( message )
       integer(IP) :: current_process_rank, error_status
       character(len=*), intent(in) :: message
@@ -31,5 +45,5 @@ contains
    
       call mpi_finalize( error_status )
       stop
-   end subroutine
+   end subroutine stop_windbag
 end module wbbase

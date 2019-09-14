@@ -40,10 +40,7 @@ program windbag
       call stop_windbag( "input file does not exist" )
    end if
 
-   field_data%n_proc = n_proc
-   field_data%nx     = 128
-   field_data%ny     = 128
-   field_data%nz     = 128
+   field_data = WB_Field_Data( n_proc, 128, 128, 128 )
 
    print *, field_data%n_proc
    print *, field_data%nx
