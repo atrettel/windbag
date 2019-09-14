@@ -1,7 +1,6 @@
 ! Copyright (C) 2019 Andrew Trettel.  All rights reserved.
-
 program windbag
-   use base
+   use wbbase
 
    implicit none
    integer(IP) :: number_of_arguments, current_process_rank, error_status

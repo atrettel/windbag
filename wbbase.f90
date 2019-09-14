@@ -1,8 +1,9 @@
 ! Copyright (C) 2019 Andrew Trettel.  All rights reserved.
-
-module base
+module wbbase
    use iso_fortran_env
    use mpi
+
+   implicit none
 
    ! FP = float precision
    integer(4), parameter ::     FP =     real64
@@ -15,8 +16,6 @@ module base
    integer(IP), parameter :: ROOT_PROCESS_RANK = 0
 contains
    subroutine stop_windbag( message )
-   
-      implicit none
       integer(IP) :: current_process_rank, error_status
       character(len=*), intent(in) :: message
    
@@ -29,4 +28,4 @@ contains
       call mpi_finalize( error_status )
       stop
    end subroutine
-end module base
+end module wbbase
