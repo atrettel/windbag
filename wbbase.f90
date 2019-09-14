@@ -17,6 +17,8 @@ module wbbase
 
    type WB_Field_Data
       integer(IP), public :: n_proc, nx, ny, nz
+   contains
+      procedure, private :: decompose_domain => WB_Field_Data_decompose_domain
    end type WB_Field_Data
 
    interface WB_Field_Data
@@ -27,10 +29,7 @@ contains
       integer(IP), intent(in) :: n_proc, nx, ny, nz
       type(WB_Field_Data) :: field_data
 
-      field_data%n_proc = n_proc
-      field_data%nx     = nx
-      field_data%ny     = ny
-      field_data%nz     = nz
+      call field_data%decompose_domain( n_proc, nx, ny, nz )
    end function init_WB_Field_Data
 
    subroutine stop_windbag( message )
@@ -46,4 +45,14 @@ contains
       call mpi_finalize( error_status )
       stop
    end subroutine stop_windbag
+
+   subroutine WB_Field_Data_decompose_domain( self, n_proc, nx, ny, nz )
+      class(WB_Field_Data), intent(inout) :: self
+      integer(IP), intent(in) :: n_proc, nx, ny, nz
+
+      self%n_proc = n_proc
+      self%nx     = nx
+      self%ny     = ny
+      self%nz     = nz
+   end subroutine WB_Field_Data_decompose_domain
 end module wbbase
