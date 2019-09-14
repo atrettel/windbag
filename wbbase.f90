@@ -14,6 +14,10 @@ module wbbase
    integer(4), parameter :: MPI_IP = mpi_integer4
 
    integer(IP), parameter :: ROOT_PROCESS_RANK = 0
+
+   type WB_Field_Data
+      integer(IP), public :: n_proc, nx, ny, nz
+   end type WB_Field_Data
 contains
    subroutine stop_windbag( message )
       integer(IP) :: current_process_rank, error_status

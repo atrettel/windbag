@@ -3,12 +3,14 @@ program windbag
    use wbbase
 
    implicit none
-   integer(IP) :: number_of_arguments, current_process_rank, error_status
+   integer(IP) :: number_of_arguments, n_proc, current_process_rank, error_status
    character(len=64) :: input_file_name
    logical :: input_file_exists
+   type(WB_Field_Data) :: field_data
 
    call mpi_init( error_status )
 
+   call mpi_comm_size( mpi_comm_world, n_proc,               error_status )
    call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
 
    ! Check if there are any command line arguments.
@@ -37,6 +39,16 @@ program windbag
    if ( input_file_exists .eqv. .false. ) then
       call stop_windbag( "input file does not exist" )
    end if
+
+   field_data%n_proc = n_proc
+   field_data%nx     = 128
+   field_data%ny     = 128
+   field_data%nz     = 128
+
+   print *, field_data%n_proc
+   print *, field_data%nx
+   print *, field_data%ny
+   print *, field_data%nz
 
    call stop_windbag( "input file exists" )
 end program windbag
