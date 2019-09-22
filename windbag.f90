@@ -6,7 +6,7 @@ program windbag
    character(len=STRING_LENGTH) :: input_file_name
    type(WB_Field_Data) :: field_data
 
-   call boot_windbag( input_file_name )
+   call boot_program( input_file_name )
 
    field_data = WB_Field_Data( 128, 128, 128 )
 
@@ -19,5 +19,5 @@ program windbag
       print *, field_data%nz_global
    end if
 
-   call stop_windbag( "input file exists" )
+   call stop_program( "end of program", EXIT_SUCCESS )
 end program windbag

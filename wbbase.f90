@@ -13,10 +13,14 @@ module wbbase
    integer(4), parameter ::     IP =     int32
    integer(4), parameter :: MPI_IP = mpi_integer4
 
-   integer(IP), parameter :: STRING_LENGTH = 64
+   integer(IP), parameter ::       EXIT_SUCCESS = 0_IP
+   integer(IP), parameter ::       EXIT_FAILURE = 1_IP
+   integer(IP), parameter :: MPI_STATUS_SUCCESS = 0_IP
 
-   integer(IP), parameter :: ROOT_PROCESS_RANK   = 0
-   integer(IP), parameter :: ROOT_PROCESS_NUMBER = 1
+   integer(IP), parameter :: STRING_LENGTH = 64_IP
+
+   integer(IP), parameter :: ROOT_PROCESS_RANK   = 0_IP
+   integer(IP), parameter :: ROOT_PROCESS_NUMBER = 1_IP
 
    type WB_Field_Data
       integer(IP), public :: nx_global, ny_global, nz_global
@@ -29,19 +33,21 @@ module wbbase
       module procedure init_WB_Field_Data
    end interface WB_Field_Data
 contains
-   subroutine boot_windbag( input_file_name )
+   subroutine boot_program( input_file_name )
       integer(IP) :: number_of_arguments, current_process_rank, error_status
       character(len=STRING_LENGTH), intent(out) :: input_file_name
       logical :: input_file_exists
 
       call mpi_init( error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error starting MPI during boot process" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( "error starting MPI during boot process", &
+            EXIT_FAILURE )
       end if
 
       call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error getting process rank during boot process" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( "error getting process rank during boot process", &
+            EXIT_FAILURE )
       end if
 
       ! Check if there are any command line arguments.
@@ -51,12 +57,14 @@ contains
 
       call mpi_bcast( number_of_arguments, 1, MPI_IP, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error broadcasting number of command line arguments" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error broadcasting number of command line arguments", &
+            EXIT_FAILURE )
       end if
 
-      if ( number_of_arguments .eq. 0 ) then
-         call stop_windbag( "no argument given" )
+      if ( number_of_arguments .eq. MPI_STATUS_SUCCESS ) then
+         call stop_program( "no argument given", EXIT_FAILURE )
       end if
 
       ! Check if the first command line argument exists.
@@ -67,20 +75,23 @@ contains
 
       call mpi_bcast( input_file_name, 64, mpi_char, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error broadcasting input file name" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( "error broadcasting input file name", & 
+            EXIT_FAILURE )
       end if
 
       call mpi_bcast( input_file_exists, 1, mpi_logical, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error broadcasting whether the input file exists" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error broadcasting whether the input file exists", &
+            EXIT_FAILURE )
       end if
 
       if ( input_file_exists .eqv. .false. ) then
-         call stop_windbag( "input file does not exist" )
+         call stop_program( "input file does not exist", EXIT_FAILURE )
       end if
-   end subroutine boot_windbag
+   end subroutine boot_program
 
    function init_WB_Field_Data( nx_global, ny_global, nz_global ) &
    result( field_data )
@@ -89,13 +100,14 @@ contains
       type(WB_Field_Data) :: field_data
 
       call mpi_comm_size( mpi_comm_world, n_proc, error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error getting number of processes while creating field data object" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error getting number of processes", EXIT_FAILURE )
       end if
 
       call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
-      if ( error_status .ne. 0 ) then
-         call stop_windbag( "error getting process rank while creating field data object" )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( "error getting process rank", EXIT_FAILURE )
       end if
 
       field_data%n_proc    = n_proc
@@ -105,17 +117,27 @@ contains
       field_data%nz_global = nz_global
    end function init_WB_Field_Data
 
-   subroutine stop_windbag( message )
+   subroutine stop_program( message, exit_status )
       integer(IP) :: current_process_rank, error_status
       character(len=*), intent(in) :: message
+      integer(IP), intent(in) :: exit_status
    
       call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
    
       if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
-         write (*, "(A, A)") "windbag: ", message
-      endif
+         if ( exit_status .eq. EXIT_SUCCESS ) then
+            write (output_unit, "(A, A)") "windbag: ", message
+         else
+            write (error_unit, "(A, A)") "windbag: ", message
+         end if
+      end if
    
       call mpi_finalize( error_status )
-      stop
-   end subroutine stop_windbag
+
+      if ( exit_status .eq. EXIT_SUCCESS ) then
+         stop
+      else
+         error stop
+      end if
+   end subroutine stop_program
 end module wbbase
