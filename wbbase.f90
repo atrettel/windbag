@@ -35,7 +35,14 @@ contains
       logical :: input_file_exists
 
       call mpi_init( error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error starting MPI during boot process" )
+      end if
+
       call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error getting process rank during boot process" )
+      end if
 
       ! Check if there are any command line arguments.
       if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
@@ -44,6 +51,9 @@ contains
 
       call mpi_bcast( number_of_arguments, 1, MPI_IP, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error broadcasting number of command line arguments" )
+      end if
 
       if ( number_of_arguments .eq. 0 ) then
          call stop_windbag( "no argument given" )
@@ -57,8 +67,15 @@ contains
 
       call mpi_bcast( input_file_name, 64, mpi_char, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error broadcasting input file name" )
+      end if
+
       call mpi_bcast( input_file_exists, 1, mpi_logical, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error broadcasting whether the input file exists" )
+      end if
 
       if ( input_file_exists .eqv. .false. ) then
          call stop_windbag( "input file does not exist" )
@@ -72,7 +89,14 @@ contains
       type(WB_Field_Data) :: field_data
 
       call mpi_comm_size( mpi_comm_world, n_proc, error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error getting number of processes while creating field data object" )
+      end if
+
       call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
+      if ( error_status .ne. 0 ) then
+         call stop_windbag( "error getting process rank while creating field data object" )
+      end if
 
       field_data%n_proc    = n_proc
       field_data%i_proc    = current_process_rank + 1
