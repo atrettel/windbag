@@ -13,6 +13,8 @@ module wbbase
    integer(4), parameter ::     IP =     int32
    integer(4), parameter :: MPI_IP = mpi_integer4
 
+   integer(IP), parameter :: STRING_LENGTH = 64
+
    integer(IP), parameter :: ROOT_PROCESS_RANK   = 0
    integer(IP), parameter :: ROOT_PROCESS_NUMBER = 1
 
@@ -27,6 +29,42 @@ module wbbase
       module procedure init_WB_Field_Data
    end interface WB_Field_Data
 contains
+   subroutine boot_windbag( input_file_name )
+      integer(IP) :: number_of_arguments, current_process_rank, error_status
+      character(len=STRING_LENGTH), intent(out) :: input_file_name
+      logical :: input_file_exists
+
+      call mpi_init( error_status )
+      call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
+
+      ! Check if there are any command line arguments.
+      if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
+         number_of_arguments = command_argument_count()
+      end if
+
+      call mpi_bcast( number_of_arguments, 1, MPI_IP, ROOT_PROCESS_RANK, &
+                      mpi_comm_world, error_status )
+
+      if ( number_of_arguments .eq. 0 ) then
+         call stop_windbag( "no argument given" )
+      end if
+
+      ! Check if the first command line argument exists.
+      if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
+         call get_command_argument( 1, input_file_name )
+         inquire( file=input_file_name, exist=input_file_exists )
+      end if
+
+      call mpi_bcast( input_file_name, 64, mpi_char, ROOT_PROCESS_RANK, &
+                      mpi_comm_world, error_status )
+      call mpi_bcast( input_file_exists, 1, mpi_logical, ROOT_PROCESS_RANK, &
+                      mpi_comm_world, error_status )
+
+      if ( input_file_exists .eqv. .false. ) then
+         call stop_windbag( "input file does not exist" )
+      end if
+   end subroutine boot_windbag
+
    function init_WB_Field_Data( nx_global, ny_global, nz_global ) &
    result( field_data )
       integer(IP), intent(in) :: nx_global, ny_global, nz_global
