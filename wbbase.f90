@@ -13,8 +13,9 @@ module wbbase
    integer(4), parameter ::     IP =     int32
    integer(4), parameter :: MPI_IP = mpi_integer4
 
-   integer(IP), parameter ::       EXIT_SUCCESS = 0_IP
    integer(IP), parameter ::       EXIT_FAILURE = 1_IP
+   integer(IP), parameter ::       EXIT_SUCCESS = 0_IP
+   integer(IP), parameter ::     STATUS_SUCCESS = 0_IP
    integer(IP), parameter :: MPI_STATUS_SUCCESS = 0_IP
 
    integer(IP), parameter :: STRING_LENGTH = 64_IP
@@ -34,7 +35,8 @@ module wbbase
    end interface WB_Field_Data
 contains
    subroutine boot_program( input_file_name )
-      integer(IP) :: number_of_arguments, current_process_rank, error_status
+      integer(IP) :: number_of_arguments, input_file_name_length
+      integer(IP) :: current_process_rank, error_status
       character(len=STRING_LENGTH), intent(out) :: input_file_name
       logical :: input_file_exists
 
@@ -64,13 +66,24 @@ contains
       end if
 
       if ( number_of_arguments .eq. MPI_STATUS_SUCCESS ) then
-         call stop_program( "no argument given", EXIT_FAILURE )
+         call stop_program( "no command line argument given", EXIT_SUCCESS )
       end if
 
       ! Check if the first command line argument exists.
       if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
-         call get_command_argument( 1, input_file_name )
-         inquire( file=input_file_name, exist=input_file_exists )
+         call get_command_argument( 1, input_file_name, &
+            input_file_name_length, error_status )
+         if ( error_status .ne. STATUS_SUCCESS ) then
+            call stop_program( "error reading first command line argument", & 
+               EXIT_FAILURE )
+         end if
+
+         inquire( file=input_file_name, exist=input_file_exists, &
+            iostat=error_status )
+         if ( error_status .ne. STATUS_SUCCESS ) then
+            call stop_program( "error inquiring if input file exists", & 
+               EXIT_FAILURE )
+         end if
       end if
 
       call mpi_bcast( input_file_name, 64, mpi_char, ROOT_PROCESS_RANK, &
