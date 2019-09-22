@@ -13,23 +13,34 @@ module wbbase
    integer(4), parameter ::     IP =     int32
    integer(4), parameter :: MPI_IP = mpi_integer4
 
-   integer(IP), parameter :: ROOT_PROCESS_RANK = 0
+   integer(IP), parameter :: ROOT_PROCESS_RANK   = 0
+   integer(IP), parameter :: ROOT_PROCESS_NUMBER = 1
 
    type WB_Field_Data
-      integer(IP), public :: n_proc, nx, ny, nz
-   contains
-      procedure, private :: decompose_domain => WB_Field_Data_decompose_domain
+      integer(IP), public :: nx_global, ny_global, nz_global
+      integer(IP), public :: nx_local,  ny_local,  nz_local
+      integer(IP), public :: n_proc, n_proc_x, n_proc_y, n_proc_z
+      integer(IP), public :: i_proc, i_proc_x, i_proc_y, i_proc_z
    end type WB_Field_Data
 
    interface WB_Field_Data
       module procedure init_WB_Field_Data
    end interface WB_Field_Data
 contains
-   function init_WB_Field_Data( n_proc, nx, ny, nz ) result( field_data )
-      integer(IP), intent(in) :: n_proc, nx, ny, nz
+   function init_WB_Field_Data( nx_global, ny_global, nz_global ) &
+   result( field_data )
+      integer(IP), intent(in) :: nx_global, ny_global, nz_global
+      integer(IP) :: n_proc, current_process_rank, error_status
       type(WB_Field_Data) :: field_data
 
-      call field_data%decompose_domain( n_proc, nx, ny, nz )
+      call mpi_comm_size( mpi_comm_world, n_proc, error_status )
+      call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
+
+      field_data%n_proc    = n_proc
+      field_data%i_proc    = current_process_rank + 1
+      field_data%nx_global = nx_global
+      field_data%ny_global = ny_global
+      field_data%nz_global = nz_global
    end function init_WB_Field_Data
 
    subroutine stop_windbag( message )
@@ -45,14 +56,4 @@ contains
       call mpi_finalize( error_status )
       stop
    end subroutine stop_windbag
-
-   subroutine WB_Field_Data_decompose_domain( self, n_proc, nx, ny, nz )
-      class(WB_Field_Data), intent(inout) :: self
-      integer(IP), intent(in) :: n_proc, nx, ny, nz
-
-      self%n_proc = n_proc
-      self%nx     = nx
-      self%ny     = ny
-      self%nz     = nz
-   end subroutine WB_Field_Data_decompose_domain
 end module wbbase
