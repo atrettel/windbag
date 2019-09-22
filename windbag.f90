@@ -8,7 +8,7 @@ program windbag
 
    call boot_program( input_file_name )
 
-   field_data = WB_Field_Data( 128, 128, 128 )
+   field_data = WB_Field_Data( 128_IP, 128_IP, 128_IP )
 
    if ( field_data%i_proc .eq. ROOT_PROCESS_NUMBER ) then
       print *, input_file_name

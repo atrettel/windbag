@@ -57,7 +57,7 @@ contains
          number_of_arguments = command_argument_count()
       end if
 
-      call mpi_bcast( number_of_arguments, 1, MPI_IP, ROOT_PROCESS_RANK, &
+      call mpi_bcast( number_of_arguments, 1_IP, MPI_IP, ROOT_PROCESS_RANK, &
                       mpi_comm_world, error_status )
       if ( error_status .ne. MPI_STATUS_SUCCESS ) then
          call stop_program( &
@@ -71,7 +71,7 @@ contains
 
       ! Check if the first command line argument exists.
       if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
-         call get_command_argument( 1, input_file_name, &
+         call get_command_argument( 1_IP, input_file_name, &
             input_file_name_length, error_status )
          if ( error_status .ne. STATUS_SUCCESS ) then
             call stop_program( "error reading first command line argument", & 
@@ -86,8 +86,8 @@ contains
          end if
       end if
 
-      call mpi_bcast( input_file_name, 64, mpi_char, ROOT_PROCESS_RANK, &
-                      mpi_comm_world, error_status )
+      call mpi_bcast( input_file_name, STRING_LENGTH, mpi_char, &
+         ROOT_PROCESS_RANK, mpi_comm_world, error_status )
       if ( error_status .ne. MPI_STATUS_SUCCESS ) then
          call stop_program( "error broadcasting input file name", & 
             EXIT_FAILURE )
