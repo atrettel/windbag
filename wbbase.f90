@@ -23,6 +23,8 @@ module wbbase
    integer(IP), parameter :: ROOT_PROCESS_RANK   = 0_IP
    integer(IP), parameter :: ROOT_PROCESS_NUMBER = 1_IP
 
+   integer(IP), parameter :: INPUT_FILE_UNIT = 100_IP
+
    type WB_Field_Data
       integer(IP), public :: nx_global, ny_global, nz_global
       integer(IP), public :: nx_local,  ny_local,  nz_local
@@ -129,6 +131,49 @@ contains
       field_data%ny_global = ny_global
       field_data%nz_global = nz_global
    end function init_WB_Field_Data
+
+   subroutine read_mesh_namelist( input_file_name, &
+      nx_global, ny_global, nz_global )
+      character(len=STRING_LENGTH), intent(in) :: input_file_name
+      integer(IP), intent(out) :: nx_global, ny_global, nz_global
+      integer(IP) :: error_status
+      namelist /mesh/ nx_global, ny_global, nz_global
+
+      nx_global = 0_IP
+      ny_global = 0_IP
+      nz_global = 0_IP
+
+      open(                    &
+         unit=INPUT_FILE_UNIT, &
+         file=input_file_name, &
+         form="formatted",     &
+         delim="quote",        &
+         action="read",        &
+         iostat=error_status   &
+      )
+      if ( error_status .ne. STATUS_SUCCESS ) then
+         call stop_program( "error opening input file to read mesh namelist", &
+            EXIT_FAILURE )
+      end if
+
+      read( unit=INPUT_FILE_UNIT, nml=mesh, iostat=error_status )
+      if ( error_status .ne. STATUS_SUCCESS ) then
+         call stop_program( "error reading mesh namelist", &
+            EXIT_FAILURE )
+      end if
+
+      close( unit=INPUT_FILE_UNIT, iostat=error_status )
+      if ( error_status .ne. STATUS_SUCCESS ) then
+         call stop_program(                                         &
+            "error closing input file after reading mesh namelist", &
+            EXIT_FAILURE )
+      end if
+
+      if ( nx_global * ny_global * nz_global .eq. 0_IP ) then
+         call stop_program( "mesh has no points in at least one direction", &
+            EXIT_FAILURE )
+      end if
+   end subroutine read_mesh_namelist
 
    subroutine stop_program( message, exit_status )
       integer(IP) :: current_process_rank, error_status
