@@ -6,6 +6,7 @@ program windbag
    character(len=STRING_LENGTH) :: input_file_name
    type(WB_Field_Data) :: field_data
    integer(IP) :: nx_global, ny_global, nz_global
+   integer(IP), dimension(:), allocatable :: factors
 
    call boot_program( input_file_name )
 
@@ -20,6 +21,14 @@ program windbag
       print *, field_data%nx_global
       print *, field_data%ny_global
       print *, field_data%nz_global
+
+      call integer_factorization( 6_IP, factors )
+      print *, factors
+      deallocate( factors )
+
+      call integer_factorization( 30_IP, factors )
+      print *, factors
+      deallocate( factors )
    end if
 
    call stop_program( "end of program", EXIT_SUCCESS )

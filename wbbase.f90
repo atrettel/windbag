@@ -108,6 +108,36 @@ contains
       end if
    end subroutine boot_program
 
+   function count_integer_factors( n ) result( n_factors )
+      integer(IP), intent(in) :: n
+      integer(IP) :: i, n_factors
+
+      n_factors = 0_IP
+      do i = 1_IP, n
+         if ( mod( n, i ) .eq. 0_IP ) then
+            n_factors = n_factors + 1
+         end if
+      end do
+   end function count_integer_factors
+
+   subroutine integer_factorization( n, factors )
+      integer(IP), intent(in) :: n
+      integer(IP), dimension(:), allocatable, intent(out) :: factors
+      integer(IP) :: i, i_factor, n_factors
+
+      n_factors = count_integer_factors( n )
+
+      allocate( factors(n_factors) )
+
+      i_factor = 1
+      do i = 1_IP, n
+         if ( mod( n, i ) .eq. 0_IP ) then
+            factors(i_factor) = i
+            i_factor = i_factor + 1
+         end if
+      end do
+   end subroutine integer_factorization
+
    function init_WB_Field_Data( nx_global, ny_global, nz_global ) &
    result( field_data )
       integer(IP), intent(in) :: nx_global, ny_global, nz_global
