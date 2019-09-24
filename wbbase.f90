@@ -147,12 +147,15 @@ contains
       call mpi_comm_size( mpi_comm_world, n_proc, error_status )
       if ( error_status .ne. MPI_STATUS_SUCCESS ) then
          call stop_program( &
-            "error getting number of processes", EXIT_FAILURE )
+            "error getting number of processes", &
+            EXIT_FAILURE )
       end if
 
       call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
       if ( error_status .ne. MPI_STATUS_SUCCESS ) then
-         call stop_program( "error getting process rank", EXIT_FAILURE )
+         call stop_program( &
+            "error getting process rank before creating field data object", &
+            EXIT_FAILURE )
       end if
 
       field_data%n_proc    = n_proc
@@ -166,36 +169,69 @@ contains
       nx_global, ny_global, nz_global )
       character(len=STRING_LENGTH), intent(in) :: input_file_name
       integer(IP), intent(out) :: nx_global, ny_global, nz_global
-      integer(IP) :: error_status
+      integer(IP) :: current_process_rank, error_status
       namelist /mesh/ nx_global, ny_global, nz_global
 
       nx_global = 0_IP
       ny_global = 0_IP
       nz_global = 0_IP
 
-      open(                    &
-         unit=INPUT_FILE_UNIT, &
-         file=input_file_name, &
-         form="formatted",     &
-         delim="quote",        &
-         action="read",        &
-         iostat=error_status   &
-      )
-      if ( error_status .ne. STATUS_SUCCESS ) then
-         call stop_program( "error opening input file to read mesh namelist", &
+      call mpi_comm_rank( mpi_comm_world, current_process_rank, error_status )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error getting process rank before reading mesh namelist", &
             EXIT_FAILURE )
       end if
 
-      read( unit=INPUT_FILE_UNIT, nml=mesh, iostat=error_status )
-      if ( error_status .ne. STATUS_SUCCESS ) then
-         call stop_program( "error reading mesh namelist", &
+      if ( current_process_rank .eq. ROOT_PROCESS_RANK ) then
+         open(                    &
+            unit=INPUT_FILE_UNIT, &
+            file=input_file_name, &
+            form="formatted",     &
+            delim="quote",        &
+            action="read",        &
+            iostat=error_status   &
+         )
+         if ( error_status .ne. STATUS_SUCCESS ) then
+            call stop_program( "error opening input file to read mesh namelist", &
+               EXIT_FAILURE )
+         end if
+
+         read( unit=INPUT_FILE_UNIT, nml=mesh, iostat=error_status )
+         if ( error_status .ne. STATUS_SUCCESS ) then
+            call stop_program( "error reading mesh namelist", &
+               EXIT_FAILURE )
+         end if
+
+         close( unit=INPUT_FILE_UNIT, iostat=error_status )
+         if ( error_status .ne. STATUS_SUCCESS ) then
+            call stop_program(                                         &
+               "error closing input file after reading mesh namelist", &
+               EXIT_FAILURE )
+         end if
+      end if
+
+      call mpi_bcast( nx_global, 1_IP, MPI_IP, ROOT_PROCESS_RANK, &
+                      mpi_comm_world, error_status )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error broadcasting nx_global", &
             EXIT_FAILURE )
       end if
 
-      close( unit=INPUT_FILE_UNIT, iostat=error_status )
-      if ( error_status .ne. STATUS_SUCCESS ) then
-         call stop_program(                                         &
-            "error closing input file after reading mesh namelist", &
+      call mpi_bcast( ny_global, 1_IP, MPI_IP, ROOT_PROCESS_RANK, &
+                      mpi_comm_world, error_status )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error broadcasting ny_global", &
+            EXIT_FAILURE )
+      end if
+
+      call mpi_bcast( nz_global, 1_IP, MPI_IP, ROOT_PROCESS_RANK, &
+                      mpi_comm_world, error_status )
+      if ( error_status .ne. MPI_STATUS_SUCCESS ) then
+         call stop_program( &
+            "error broadcasting nz_global", &
             EXIT_FAILURE )
       end if
 
