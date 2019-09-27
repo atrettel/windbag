@@ -21,13 +21,14 @@ program windbag
    if ( field_data%i_proc .eq. ROOT_PROCESS_NUMBER ) then
       write (output_unit, "(A, A, A)") "'", trim(input_file_name), "'"
       write (output_unit, "(A, A, A)") "'", trim(casename),        "'"
-      write (output_unit, "(A, I3)") "n_proc                 = ", field_data%n_proc
-      write (output_unit, "(A, I3)") "i_proc                 = ", field_data%i_proc
-      write (output_unit, "(A, I3)") "number_of_components   = ", field_data%number_of_components
-      write (output_unit, "(A, I3)") "number_of_ghost_points = ", field_data%number_of_ghost_points
-      write (output_unit, "(A, I3)") "nx_global              = ", field_data%nx_global
-      write (output_unit, "(A, I3)") "ny_global              = ", field_data%ny_global
-      write (output_unit, "(A, I3)") "nz_global              = ", field_data%nz_global
+      write (output_unit, "(A, I3)")    "n_proc                 = ", field_data%n_proc
+      write (output_unit, "(A, I3)")    "i_proc                 = ", field_data%i_proc
+      write (output_unit, "(A, I3)")    "number_of_components   = ", field_data%number_of_components
+      write (output_unit, "(A, I3)")    "number_of_ghost_points = ", field_data%number_of_ghost_points
+      write (output_unit, "(A, I3)")    "nx_global              = ", field_data%nx_global
+      write (output_unit, "(A, I3)")    "ny_global              = ", field_data%ny_global
+      write (output_unit, "(A, I3)")    "nz_global              = ", field_data%nz_global
+      write (output_unit, "(A, E10.3)") "time                   = ", field_data%time
 
       call integer_factorization( 6_IP, factors )
       print *, factors

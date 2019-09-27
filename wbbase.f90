@@ -31,6 +31,8 @@ module wbbase
       integer(IP), public :: nx_local,  ny_local,  nz_local
       integer(IP), public :: n_proc, n_proc_x, n_proc_y, n_proc_z
       integer(IP), public :: i_proc, i_proc_x, i_proc_y, i_proc_z
+
+      real(FP), public :: time
    end type WB_Field_Data
 
    interface WB_Field_Data
@@ -167,6 +169,8 @@ contains
       field_data%nx_global              = nx_global
       field_data%ny_global              = ny_global
       field_data%nz_global              = nz_global
+
+      field_data%time = 0.0_FP
    end function init_WB_Field_Data
 
    subroutine read_general_namelist( input_file_name, casename, &
