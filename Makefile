@@ -1,14 +1,18 @@
 # Copyright (C) 2019 Andrew Trettel.  All rights reserved.
 
+FC=mpifort
+
 flags=-std=f2008 -pedantic -pedantic-errors -nocpp -ffree-form \
 -fimplicit-none -Wtabs -fmax-errors=1 -Werror -Wfatal-errors -Wall \
 -Wextra -Wconversion-extra
 
 windbag: windbag.f90 wbbase.o
-	mpifort $(flags) $^ -o $@
+	@$(FC) $(flags) $^ -o $@
+	@echo "FC $<"
 
 wbbase.o: wbbase.f90
-	mpifort $(flags) -c $^
+	@$(FC) $(flags) -c $^
+	@echo "FC $<"
 
 .PHONY: clean
 clean:
