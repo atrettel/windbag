@@ -5,8 +5,8 @@ A computational fluid dynamics code for the direct numerical simulation of
 transitional and turbulent fluid flows.
 
 
-Planned features
-----------------
+Planned features and goals
+--------------------------
 
 - simple, clear, economical code written in modern Fortran
 
@@ -18,11 +18,13 @@ Planned features
 
 - simple Makefile for compilation
 
-- no preprocessor commands
+- no preprocessor commands or `common` blocks
 
 - minimal number of hard-coded variables and external libraries
 
 - single command line argument (the namelist-based input file)
+
+- input file serves as detailed documentation of the case
 
 - architecture based on series of operations acting on a single set of fields
 
