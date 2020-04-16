@@ -11,3 +11,7 @@ $(project): $(project).f90 $(obj_files)
 
 wb%.o: wb%.f90
 	$(FC) -c $^ -o $@
+
+.PHONY: clean
+clean:
+	-rm -v $(project)
