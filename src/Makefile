@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Andrew Trettel.
+# Copyright (C) 2020 Andrew Trettel
 
 FC=mpifort
 
@@ -14,4 +14,6 @@ wb%.o: wb%.f90
 
 .PHONY: clean
 clean:
-	-rm -v $(project)
+	-rm -fv $(project)
+	-rm -fv *.mod
+	-rm -fv *.o
