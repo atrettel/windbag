@@ -5,12 +5,14 @@ program windbag
 
    implicit none
    character(len=64) :: filename
-   integer :: argc, filename_length, ierr, rank
+   integer :: argc, filename_length, ierr, mpi_rank, mpi_master
    logical :: file_exists
 
+   mpi_master = 0
+
    call mpi_init( ierr )
-   call mpi_comm_rank( mpi_comm_world, rank, ierr )
-   if ( rank .eq. 0 ) then
+   call mpi_comm_rank( mpi_comm_world, mpi_rank, ierr )
+   if ( mpi_rank .eq. mpi_master ) then
       argc = command_argument_count()
       if ( argc .eq. 0 ) then
          write (*,"(A)") "Usage: windbag [INPUT_FILE]"
@@ -26,6 +28,6 @@ program windbag
    end if
 
    call mpi_barrier( mpi_comm_world, ierr )
-   write (*,"(A, I4, A)") "windbag: input file exists (rank = ", rank, ")"
+   write (*,"(A, I4, A)") "windbag: input file exists (mpi_rank = ", mpi_rank, ")"
    call mpi_finalize( ierr )
 end program windbag
