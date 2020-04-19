@@ -5,6 +5,12 @@ A computational fluid dynamics code for the direct numerical simulation of
 transitional and turbulent fluid flows.
 
 
+Usage
+-----
+
+    $ mpirun -n 2 ./windbag [INPUT_FILE]
+
+
 Planned features and goals
 --------------------------
 
@@ -31,6 +37,8 @@ Planned features and goals
 - output files natively readable by Paraview
 
 - open formats for post-processed output files (CSV)
+
+- arbitrary equations of state and material properties (nothing hardcoded).
 
 
 -------------------------------------------------------------------------------
