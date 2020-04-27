@@ -38,7 +38,12 @@ Planned features and goals
 
 - open formats for post-processed output files (CSV)
 
-- arbitrary equations of state and material properties (nothing hardcoded).
+- arbitrary equations of state and material properties (nothing hard-coded).
+
+- structured, readable log files (redirected from `stdout`).
+
+- detailed documentation covering verification, validation, and uncertainty
+  quantification.
 
 
 -------------------------------------------------------------------------------
