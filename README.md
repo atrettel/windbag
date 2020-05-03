@@ -20,6 +20,8 @@ Planned features and goals
 
 - high-order finite difference method (FDM)
 
+- compressible Navier-Stokes equations for the governing equations
+
 - only MPI for parallelization
 
 - simple Makefile for compilation
@@ -38,12 +40,15 @@ Planned features and goals
 
 - open formats for post-processed output files (CSV)
 
-- arbitrary equations of state and material properties (nothing hard-coded).
+- arbitrary equations of state and material properties (nothing hard-coded)
 
-- structured, readable log files (redirected from `stdout`).
+- structured, readable, and "auditable" log files
 
 - detailed documentation covering verification, validation, and uncertainty
-  quantification.
+  quantification
+
+- designed for DNS of simple geometries but still possible to simulate flows
+  with more complex geometries
 
 
 -------------------------------------------------------------------------------
