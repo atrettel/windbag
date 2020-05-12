@@ -18,27 +18,40 @@ program windbag
 
    implicit none
    character(len=64) :: filename
-   integer :: argc, filename_length, ierr, mpi_rank
+   integer :: argc, filename_length, ierr, world_rank
    logical :: file_exists
+   integer :: mpi_float_size
 
    call mpi_init( ierr )
-   call mpi_comm_rank( mpi_comm_world, mpi_rank, ierr )
-   if ( mpi_rank .eq. MPI_MASTER ) then
+   call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+   if ( world_rank .eq. WORLD_MASTER ) then
       argc = command_argument_count()
       if ( argc .eq. 0 ) then
          write (*,"(A)") "Usage: windbag [INPUT_FILE]"
-         call mpi_abort( mpi_comm_world, EXIT_SUCCESS, ierr )
+         call mpi_abort( MPI_COMM_WORLD, MPI_SUCCESS, ierr )
       end if
 
       call get_command_argument( 1, filename, filename_length, ierr )
       inquire( file=filename, exist=file_exists, iostat=ierr )
       if ( file_exists .eqv. .false. ) then
          write (*,"(A)") "windbag: input file does not exist"
-         call mpi_abort( mpi_comm_world, EXIT_FAILURE, ierr )
+         call mpi_abort( MPI_COMM_WORLD, MPI_ERR_NO_SUCH_FILE, ierr )
       end if
    end if
 
-   call mpi_barrier( mpi_comm_world, ierr )
-   write (*,"(A, I4, A)") "windbag: input file exists (mpi_rank = ", mpi_rank, ")"
+   call mpi_barrier( MPI_COMM_WORLD, ierr )
+   write (*,"(A, I4, A)") "windbag: input file exists (world_rank = ", &
+      world_rank, ")"
+
+   call mpi_sizeof( 1.0_FP, mpi_float_size, ierr )
+   call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, ierr )
+
+   if ( world_rank .eq. WORLD_MASTER ) then
+      print *, MPI_REAL
+      print *, MPI_REAL4
+      print *, MPI_REAL8
+      print *, MPI_FP
+   end if
+
    call mpi_finalize( ierr )
 end program windbag

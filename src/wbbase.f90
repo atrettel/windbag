@@ -12,9 +12,13 @@
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wbbase
+   use iso_fortran_env, only : real64
+   use mpi_f08, only : MPI_Datatype
    implicit none
 
-   integer, parameter :: MPI_MASTER = 0
-   integer, parameter :: EXIT_FAILURE = 1
-   integer, parameter :: EXIT_SUCCESS = 0
+   integer, parameter ::           FP = real64
+   integer, parameter ::           ND = 3
+   integer, parameter :: WORLD_MASTER = 0
+
+   type(MPI_Datatype) :: MPI_FP
 end module wbbase
