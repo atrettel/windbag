@@ -16,6 +16,10 @@ module wbbase
    use mpi_f08
    implicit none
 
+   private
+
+   public find_mpi_fp
+
    integer, public, parameter ::           FP = real64
    integer, public, parameter ::           ND = 3
    integer, public, parameter :: WORLD_MASTER = 0
