@@ -16,11 +16,11 @@ module wbbase
    use mpi_f08
    implicit none
 
-   integer, parameter ::           FP = real64
-   integer, parameter ::           ND = 3
-   integer, parameter :: WORLD_MASTER = 0
+   integer, public, parameter ::           FP = real64
+   integer, public, parameter ::           ND = 3
+   integer, public, parameter :: WORLD_MASTER = 0
 
-   type(MPI_Datatype) :: MPI_FP
+   type(MPI_Datatype), public, save :: MPI_FP
 contains
    subroutine find_mpi_fp
       integer :: mpi_float_size, ierr
