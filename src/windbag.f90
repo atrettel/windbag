@@ -12,7 +12,6 @@
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 program windbag
-   use iso_fortran_env
    use mpi_f08
    use wbbase
 
@@ -20,7 +19,6 @@ program windbag
    character(len=64) :: filename
    integer :: argc, filename_length, ierr, world_rank
    logical :: file_exists
-   integer :: mpi_float_size
 
    call mpi_init( ierr )
    call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
@@ -43,14 +41,13 @@ program windbag
    write (*,"(A, I4, A)") "windbag: input file exists (world_rank = ", &
       world_rank, ")"
 
-   call mpi_sizeof( 1.0_FP, mpi_float_size, ierr )
-   call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, ierr )
+   call find_mpi_fp
 
    if ( world_rank .eq. WORLD_MASTER ) then
-      print *, MPI_REAL
-      print *, MPI_REAL4
-      print *, MPI_REAL8
-      print *, MPI_FP
+      print *, "MPI_REAL  = ", MPI_REAL
+      print *, "MPI_REAL4 = ", MPI_REAL4
+      print *, "MPI_REAL8 = ", MPI_REAL8
+      print *, "MPI_FP    = ", MPI_FP
    end if
 
    call mpi_finalize( ierr )

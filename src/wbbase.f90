@@ -13,7 +13,7 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wbbase
    use iso_fortran_env, only : real64
-   use mpi_f08, only : MPI_Datatype
+   use mpi_f08
    implicit none
 
    integer, parameter ::           FP = real64
@@ -21,4 +21,11 @@ module wbbase
    integer, parameter :: WORLD_MASTER = 0
 
    type(MPI_Datatype) :: MPI_FP
+contains
+   subroutine find_mpi_fp
+      integer :: mpi_float_size, ierr
+      call mpi_sizeof( 1.0_FP, mpi_float_size, ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, &
+         ierr )
+   end subroutine
 end module wbbase
