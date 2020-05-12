@@ -13,7 +13,7 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 program windbag
    use iso_fortran_env
-   use mpi
+   use mpi_f08
    use wbbase
 
    implicit none
