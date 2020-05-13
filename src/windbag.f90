@@ -17,19 +17,21 @@ program windbag
 
    implicit none
    character(len=STRING_LENGTH) :: filename
-   integer :: ierr
+   integer :: ierr, i_rank
    type(WB_State) :: s
 
    call check_input_file( filename )
-   call initialize_state( s )
+   call initialize_state( s, filename )
 
-   if ( s%world_rank .eq. WORLD_MASTER ) then
-      write (*,"(A)") "windbag: input file exists"
-      print *, "MPI_REAL  = ", MPI_REAL
-      print *, "MPI_REAL4 = ", MPI_REAL4
-      print *, "MPI_REAL8 = ", MPI_REAL8
-      print *, "MPI_FP    = ", MPI_FP
-   end if
+   do i_rank = 0, s%world_size-1
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. i_rank ) then
+         write (*,"(A, I4)") "world_rank = ", s%world_rank
+         write (*,"(A, A)") "case_name = ", s%case_name
+         write (*,"(A, I4)") "nb = ", s%nb
+         write (*,"(A, I4)") "ng = ", s%ng
+      end if
+   end do
 
    call mpi_finalize( ierr )
 end program windbag

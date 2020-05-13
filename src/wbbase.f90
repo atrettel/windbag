@@ -28,6 +28,7 @@ module wbbase
    type(MPI_Datatype), public, save :: MPI_FP
 
    type WB_State
+      character(len=STRING_LENGTH) :: case_name
       integer :: block_rank, block_size
       integer :: world_rank, world_size
       integer :: ib, nb
@@ -64,11 +65,40 @@ contains
          ierr )
    end subroutine find_mpi_fp
 
-   subroutine initialize_state( s )
+   subroutine initialize_state( s, filename )
+      character(len=STRING_LENGTH) :: filename
       integer :: ierr
-      type(WB_State) :: s
+      type(WB_State), intent(out) :: s
 
       call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
+      call read_general_namelist( s, filename )
    end subroutine initialize_state
+
+   subroutine read_general_namelist( s, filename )
+      character(len=STRING_LENGTH), intent(in) :: filename
+      character(len=STRING_LENGTH) :: case_name
+      integer :: ierr, file_unit, nb, ng
+      type(WB_State), intent(inout) :: s
+      namelist /general/ case_name, nb, ng
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         open( newunit=file_unit, file=filename, form="formatted", &
+            action="read" )
+         read( unit=file_unit, nml=general )
+
+         s%case_name = trim(case_name)
+         s%nb = nb
+         s%ng = ng
+      end if
+
+      call mpi_bcast( s%case_name, len(s%case_name), MPI_CHARACTER, &
+         WORLD_MASTER, MPI_COMM_WORLD, ierr )
+
+      call mpi_bcast( s%nb, 1, MPI_INTEGER, WORLD_MASTER, &
+         MPI_COMM_WORLD, ierr )
+
+      call mpi_bcast( s%ng, 1, MPI_INTEGER, WORLD_MASTER, &
+         MPI_COMM_WORLD, ierr )
+   end subroutine read_general_namelist
 end module wbbase
