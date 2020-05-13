@@ -28,17 +28,35 @@ module wbbase
    type(MPI_Datatype), public, save :: MPI_FP
 
    type WB_Block
+      integer :: master_rank, block_size
       integer, dimension(ND) :: np, nx
       integer, dimension(ND,2) :: neighbors
+      logical, dimension(ND) :: periods
+      logical :: reorder = .false.
    end type WB_Block
+
+   type WB_Process
+      integer, dimension(ND) :: block_coords, nx
+      integer, dimension(ND,2) :: neighbors
+      integer :: ib
+   end type WB_Process
 
    type WB_State
       character(len=STRING_LENGTH) :: case_name
       integer :: block_rank, block_size
       integer :: world_rank, world_size
       integer :: ib, nb
+      integer :: nf
       integer :: ng
+      integer :: nv = 5
+      integer, dimension(ND) :: nx
+      integer, dimension(ND) :: block_coords
+      integer, dimension(ND,2) :: neighbors
+      real(FP) :: t = 0.0_FP
+      real(FP), dimension(:,:,:,:), allocatable :: f
+      type(MPI_Comm) :: comm_block
       type(WB_Block), dimension(:), allocatable :: blocks
+      type(WB_Process), dimension(:), allocatable :: processes
    end type WB_State
 contains
    subroutine check_input_file( filename )
