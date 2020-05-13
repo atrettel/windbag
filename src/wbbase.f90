@@ -18,18 +18,47 @@ module wbbase
 
    private
 
-   public find_mpi_fp
+   public check_input_file, find_mpi_fp
 
    integer, public, parameter ::           FP = real64
    integer, public, parameter ::           ND = 3
    integer, public, parameter :: WORLD_MASTER = 0
 
    type(MPI_Datatype), public, save :: MPI_FP
+
+   type WB_Field
+      integer block_rank, block_size
+      integer world_rank, world_size
+      integer ib, nb
+      integer ng
+   end type WB_Field
 contains
+   subroutine check_input_file( filename )
+      character(len=64), intent(out)  :: filename
+      integer :: argc, filename_length, ierr, world_rank
+      logical :: file_exists
+      call mpi_init( ierr )
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+      if ( world_rank .eq. WORLD_MASTER ) then
+         argc = command_argument_count()
+         if ( argc .eq. 0 ) then
+            write (*,"(A)") "Usage: windbag [INPUT_FILE]"
+            call mpi_abort( MPI_COMM_WORLD, MPI_SUCCESS, ierr )
+         end if
+         call get_command_argument( 1, filename, filename_length, ierr )
+         inquire( file=filename, exist=file_exists, iostat=ierr )
+         if ( file_exists .eqv. .false. ) then
+            write (*,"(A)") "windbag: input file does not exist"
+            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_NO_SUCH_FILE, ierr )
+         end if
+      end if
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+   end subroutine check_input_file
+
    subroutine find_mpi_fp
       integer :: mpi_float_size, ierr
       call mpi_sizeof( 1.0_FP, mpi_float_size, ierr )
       call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, &
          ierr )
-   end subroutine
+   end subroutine find_mpi_fp
 end module wbbase
