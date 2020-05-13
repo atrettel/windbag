@@ -16,7 +16,7 @@ program windbag
    use wbbase
 
    implicit none
-   character(len=64) :: filename
+   character(len=STRING_LENGTH) :: filename
    integer :: ierr
 
    call check_input_file( filename )

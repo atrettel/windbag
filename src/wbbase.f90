@@ -20,9 +20,10 @@ module wbbase
 
    public check_input_file, find_mpi_fp
 
-   integer, public, parameter ::           FP = real64
-   integer, public, parameter ::           ND = 3
-   integer, public, parameter :: WORLD_MASTER = 0
+   integer, public, parameter ::            FP = real64
+   integer, public, parameter ::            ND = 3
+   integer, public, parameter ::  WORLD_MASTER = 0
+   integer, public, parameter :: STRING_LENGTH = 64
 
    type(MPI_Datatype), public, save :: MPI_FP
 
@@ -34,7 +35,7 @@ module wbbase
    end type WB_Field
 contains
    subroutine check_input_file( filename )
-      character(len=64), intent(out)  :: filename
+      character(len=STRING_LENGTH), intent(out)  :: filename
       integer :: argc, filename_length, ierr, world_rank
       logical :: file_exists
       call mpi_init( ierr )
