@@ -18,17 +18,18 @@ program windbag
    implicit none
    character(len=STRING_LENGTH) :: filename
    integer :: ierr
+   type(WB_State) :: s
 
    call check_input_file( filename )
+   call initialize_state( s )
 
-   write (*,"(A)") "windbag: input file exists"
-
-   call find_mpi_fp
-
-   print *, "MPI_REAL  = ", MPI_REAL
-   print *, "MPI_REAL4 = ", MPI_REAL4
-   print *, "MPI_REAL8 = ", MPI_REAL8
-   print *, "MPI_FP    = ", MPI_FP
+   if ( s%world_rank .eq. WORLD_MASTER ) then
+      write (*,"(A)") "windbag: input file exists"
+      print *, "MPI_REAL  = ", MPI_REAL
+      print *, "MPI_REAL4 = ", MPI_REAL4
+      print *, "MPI_REAL8 = ", MPI_REAL8
+      print *, "MPI_FP    = ", MPI_FP
+   end if
 
    call mpi_finalize( ierr )
 end program windbag

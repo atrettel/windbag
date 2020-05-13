@@ -18,7 +18,7 @@ module wbbase
 
    private
 
-   public check_input_file, find_mpi_fp
+   public WB_State, check_input_file, initialize_state
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::            ND = 3
@@ -27,12 +27,12 @@ module wbbase
 
    type(MPI_Datatype), public, save :: MPI_FP
 
-   type WB_Field
-      integer block_rank, block_size
-      integer world_rank, world_size
-      integer ib, nb
-      integer ng
-   end type WB_Field
+   type WB_State
+      integer :: block_rank, block_size
+      integer :: world_rank, world_size
+      integer :: ib, nb
+      integer :: ng
+   end type WB_State
 contains
    subroutine check_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
@@ -40,6 +40,7 @@ contains
       logical :: file_exists
       call mpi_init( ierr )
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+      call find_mpi_fp
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
@@ -62,4 +63,12 @@ contains
       call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, &
          ierr )
    end subroutine find_mpi_fp
+
+   subroutine initialize_state( s )
+      integer :: ierr
+      type(WB_State) :: s
+
+      call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
+      call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
+   end subroutine initialize_state
 end module wbbase
