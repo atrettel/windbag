@@ -27,6 +27,11 @@ module wbbase
 
    type(MPI_Datatype), public, save :: MPI_FP
 
+   type WB_Block
+      integer, dimension(ND) :: np, nx
+      integer, dimension(ND,2) :: neighbors
+   end type WB_Block
+
    type WB_State
       character(len=STRING_LENGTH) :: case_name
       integer :: block_rank, block_size
@@ -69,11 +74,14 @@ contains
       character(len=STRING_LENGTH) :: filename
       integer :: ierr
       type(WB_State), intent(out) :: s
+      type(WB_Block), dimension(:), allocatable :: blocks
 
       call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
       call read_general_namelist( s, filename )
-      call read_block_namelists( s, filename )
+      call read_block_namelists( s, filename, blocks )
+
+      deallocate( blocks )
    end subroutine initialize_state
 
    subroutine read_general_namelist( s, filename )
@@ -102,43 +110,36 @@ contains
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
-   subroutine read_block_namelists( s, filename )
+   subroutine read_block_namelists( s, filename, blocks )
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: ierr, file_unit, ib, ib_loop
       type(WB_State), intent(inout) :: s
-      integer, dimension(:), allocatable :: np, neighbors_l, neighbors_u
-      integer, dimension(:,:), allocatable :: np_all_blocks
-      integer, dimension(:,:,:), allocatable :: neighbors_all_blocks
-      namelist /block/ ib, np, neighbors_l, neighbors_u
+      integer, dimension(ND) :: np, nx, neighbors_l, neighbors_u
+      type(WB_Block), dimension(:), allocatable :: blocks
+      namelist /block/ ib, np, nx, neighbors_l, neighbors_u
 
-      allocate( np(ND), neighbors_l(ND), neighbors_u(ND), &
-         np_all_blocks(s%nb,ND), neighbors_all_blocks(s%nb,ND,2) )
-
+      allocate( blocks(s%nb) )
       if ( s%world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
          do ib_loop = 1, s%nb
             read( unit=file_unit, nml=block )
 
-            np_all_blocks(ib,:) = np
-            neighbors_all_blocks(ib,:,1) = neighbors_l
-            neighbors_all_blocks(ib,:,2) = neighbors_u
+            blocks(ib)%np = np
+            blocks(ib)%neighbors(:,1) = neighbors_l
+            blocks(ib)%neighbors(:,2) = neighbors_u
+            blocks(ib)%nx = nx
          end do
          close( unit=file_unit )
-
-         print *, np_all_blocks
-         print *, neighbors_all_blocks
       end if
 
-      call mpi_bcast( np_all_blocks, s%nb*ND, MPI_INTEGER, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-
-      call mpi_bcast( neighbors_all_blocks, s%nb*ND*2, MPI_INTEGER, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-
-      print *, sum( product( np_all_blocks, 2 ), 1 )
-
-      deallocate( np, neighbors_l, neighbors_u, np_all_blocks, &
-         neighbors_all_blocks )
+      do ib = 1, s%nb
+         call mpi_bcast( blocks(ib)%np, ND, MPI_INTEGER, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( blocks(ib)%neighbors, ND*2, MPI_INTEGER, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( blocks(ib)%nx, ND, MPI_INTEGER, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+      end do
    end subroutine read_block_namelists
 end module wbbase

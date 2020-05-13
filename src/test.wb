@@ -8,11 +8,13 @@ ib=1,
 np=1,1,1,
 neighbors_l=2,0,1,
 neighbors_u=2,0,1,
+nx=128,64,32,
 /
 &block
 ib=2,
 np=1,1,1,
 neighbors_l=1,0,2,
 neighbors_u=1,0,2,
+nx=128,64,32,
 /
 
