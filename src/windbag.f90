@@ -33,5 +33,6 @@ program windbag
       end if
    end do
 
+   deallocate( s%blocks )
    call mpi_finalize( ierr )
 end program windbag
