@@ -13,7 +13,7 @@
 # Windbag.  If not, see <https://www.gnu.org/licenses/>.
 
 FC=mpifort
-FFLAGS=-std=f2008 -nocpp -fimplicit-none -Wall -O2
+FFLAGS=-std=f2008 -nocpp -fimplicit-none -Wall -O2 -fmax-errors=1
 
 project=windbag
 
