@@ -17,32 +17,37 @@ program windbag
 
    implicit none
    character(len=STRING_LENGTH) :: filename
-   integer :: ierr, i_rank, ib
+   integer :: ib, id, ierr, world_rank
    type(WB_State) :: s
 
    call mpi_init( ierr )
    call check_input_file( filename )
    call initialize_state( s, filename )
 
-   do i_rank = 0, s%world_size-1
-      call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( s%world_rank .eq. i_rank ) then
-         write (*,"(A, I4)") "world_rank = ", s%world_rank
-         write (*,"(A, A)") "case_name = ", s%case_name
-         write (*,"(A, I4)") "nb = ", s%nb
-         write (*,"(A, I4)") "ng = ", s%ng
-
-         do ib = 1, s%nb
-            print *, "ib = ", ib
-            print *, "block_size = ", s%block_size
-            print *, "np = ", s%blocks(ib)%np
-            print *, "neighbors_l = ", s%blocks(ib)%neighbors(:,1)
-            print *, "neighbors_u = ", s%blocks(ib)%neighbors(:,2)
-            print *, "nx = ", s%blocks(ib)%nx
-            print *, "periods = ", s%blocks(ib)%periods
+   if ( s%world_rank .eq. WORLD_MASTER ) then
+      do ib = 1, s%nb
+         write (*,"(A)") "----------------------------------------"
+         write (*,"(A, I1)") "Block ", ib
+         write (*,"(A, I1)") "block_size = ", s%blocks(ib)%block_size
+         write (*,"(A)", advance="no") "np         = "
+         do id = 1, ND
+            write(*,"(I3, A)", advance="no") s%blocks(ib)%np(id), ", "
          end do
-      end if
-   end do
+         write (*,"(A)") ""
+         write (*,"(A)", advance="no") "nx         = "
+         do id = 1, ND
+            write(*,"(I4, A)", advance="no") s%blocks(ib)%nx(id), ", "
+         end do
+         write (*,"(A)") ""
+         write (*,"(A, L)")  "reorder    = ", s%blocks(ib)%reorder
+      end do
+      write (*,"(A)") "----------------------------------------"
+      do world_rank = 0, s%world_size-1
+         write (*,"(A, I3, A, I2)") "Process ", world_rank, ": ", &
+            s%processes(world_rank)%ib
+      end do
+      write (*,"(A)") "----------------------------------------"
+   end if
 
    call deallocate_state( s )
    call mpi_finalize( ierr )
