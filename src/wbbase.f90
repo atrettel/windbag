@@ -118,7 +118,8 @@ contains
          s%ng = ng
 
          if ( s%nb .gt. s%world_size ) then
-            write (*,"(A)") "windbag: nb > world_size"
+            write (*,"(A)") &
+               "windbag: number of blocks is greater than world size"
             call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
          end if
       end if
@@ -133,7 +134,7 @@ contains
 
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      integer :: ierr, file_unit, ib, ib_loop, id
+      integer :: ierr, file_unit, ib, ib_loop, id, world_size=0
       type(WB_State), intent(inout) :: s
       integer, dimension(ND) :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
@@ -151,6 +152,8 @@ contains
             s%blocks(ib)%neighbors(:,2) = neighbors_u
             s%blocks(ib)%nx = nx
 
+            world_size = world_size + s%blocks(ib)%block_size
+
             do id = 1, ND
                if ( neighbors_l(id) .eq. ib .and. neighbors_u(id) .eq. ib ) then
                   s%blocks(ib)%periods(id) = .true.
@@ -160,6 +163,12 @@ contains
             end do
          end do
          close( unit=file_unit )
+
+         if ( world_size .ne. s%world_size ) then
+            write (*,"(A)") &
+               "windbag: block domain decomposition does not match world size"
+            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
+         end if
       end if
 
       do ib = 1, s%nb
