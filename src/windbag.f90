@@ -17,7 +17,7 @@ program windbag
 
    implicit none
    character(len=STRING_LENGTH) :: filename
-   integer :: ierr, i_rank
+   integer :: ierr, i_rank, ib
    type(WB_State) :: s
 
    call check_input_file( filename )
@@ -30,6 +30,16 @@ program windbag
          write (*,"(A, A)") "case_name = ", s%case_name
          write (*,"(A, I4)") "nb = ", s%nb
          write (*,"(A, I4)") "ng = ", s%ng
+
+         do ib = 1, s%nb
+            print *, "ib = ", ib
+            print *, "block_size = ", s%block_size
+            print *, "np = ", s%blocks(ib)%np
+            print *, "neighbors_l = ", s%blocks(ib)%neighbors(:,1)
+            print *, "neighbors_u = ", s%blocks(ib)%neighbors(:,2)
+            print *, "nx = ", s%blocks(ib)%nx
+            print *, "periods = ", s%blocks(ib)%periods
+         end do
       end if
    end do
 

@@ -128,7 +128,7 @@ contains
 
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      integer :: ierr, file_unit, ib, ib_loop
+      integer :: ierr, file_unit, ib, ib_loop, id
       type(WB_State), intent(inout) :: s
       integer, dimension(ND) :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
@@ -140,20 +140,33 @@ contains
          do ib_loop = 1, s%nb
             read( unit=file_unit, nml=block )
 
+            s%blocks(ib)%block_size = product(np)
             s%blocks(ib)%np = np
             s%blocks(ib)%neighbors(:,1) = neighbors_l
             s%blocks(ib)%neighbors(:,2) = neighbors_u
             s%blocks(ib)%nx = nx
+
+            do id = 1, ND
+               if ( neighbors_l(id) .eq. ib .and. neighbors_u(id) .eq. ib ) then
+                  s%blocks(ib)%periods(id) = .true.
+               else
+                  s%blocks(ib)%periods(id) = .false.
+               end if
+            end do
          end do
          close( unit=file_unit )
       end if
 
       do ib = 1, s%nb
+         call mpi_bcast( s%blocks(ib)%block_size, 1, MPI_INTEGER, &
+            WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%np, ND, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%neighbors, ND*2, MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%nx, ND, MPI_INTEGER, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( s%blocks(ib)%periods, ND, MPI_LOGICAL, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
       end do
    end subroutine read_block_namelists
