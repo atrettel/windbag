@@ -44,7 +44,6 @@ module wbbase
    type WB_State
       character(len=STRING_LENGTH) :: case_name
       integer :: block_rank, block_size
-      integer :: cart_rank, cart_size
       integer :: world_rank, world_size
       integer :: ib, nb
       integer :: nf
@@ -55,7 +54,7 @@ module wbbase
       integer, dimension(ND,2) :: neighbors
       real(FP) :: t = 0.0_FP
       real(FP), dimension(:,:,:,:), allocatable :: f
-      type(MPI_Comm) :: comm_block, comm_cart
+      type(MPI_Comm) :: comm_block
       type(WB_Block), dimension(:), allocatable :: blocks
       type(WB_Process), dimension(:), allocatable :: processes
    end type WB_State
@@ -135,7 +134,6 @@ contains
       deallocate( s%blocks )
       deallocate( s%processes )
       call mpi_comm_free( s%comm_block, ierr )
-      call mpi_comm_free( s%comm_cart, ierr )
    end subroutine deallocate_state
 
    subroutine find_mpi_fp
@@ -250,10 +248,10 @@ contains
 
    subroutine setup_processes( s )
       integer :: assigned_processes, ib, ierr, world_rank
+      type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
       allocate( s%processes(0:s%world_size-1) )
-
       ib = 1
       assigned_processes = 0
       do world_rank = 0, s%world_size-1
@@ -266,23 +264,20 @@ contains
       end do
 
       call mpi_comm_split( MPI_COMM_WORLD, s%processes(s%world_rank)%ib, 0, &
-         s%comm_block, ierr )
+         comm_split, ierr )
+      ib = s%processes(s%world_rank)%ib
+      call mpi_cart_create( comm_split, ND, s%blocks(ib)%np, &
+         s%blocks(ib)%periods, s%blocks(ib)%reorder, s%comm_block, ierr )
+      call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
-
-      ib = s%processes(s%world_rank)%ib
-      call mpi_cart_create( s%comm_block, ND, s%blocks(ib)%np, &
-         s%blocks(ib)%periods, s%blocks(ib)%reorder, s%comm_cart, ierr )
-      call mpi_comm_rank( s%comm_cart, s%cart_rank, ierr )
-      call mpi_comm_size( s%comm_cart, s%cart_size, ierr )
-      call mpi_cart_coords( s%comm_cart, s%cart_rank, ND, s%block_coords, &
+      call mpi_cart_coords( s%comm_block, s%block_rank, ND, s%block_coords, &
          ierr )
 
       do world_rank = 0, s%world_size-1
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( world_rank .eq. s%world_rank ) then
-            print *, s%world_rank, s%block_rank, s%block_size, s%cart_rank, &
-               s%cart_size, s%block_coords
+            print *, s%world_rank, s%block_rank, s%block_size, s%block_coords
          end if
       end do
       call mpi_barrier( MPI_COMM_WORLD, ierr )
