@@ -59,6 +59,33 @@ module wbbase
       type(WB_Process), dimension(:), allocatable :: processes
    end type WB_State
 contains
+   subroutine check_block_neighbors( s )
+      type(WB_State), intent(in) :: s
+      integer :: ib, id, ierr, neighbor_l, neighbor_u
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         ! Ensure that lower and upper pairs exist, and that their number of
+         ! points and processes match.
+         do ib = 1, s%nb
+            do id = 1, ND
+               neighbor_l = s%blocks(ib)%neighbors(id,1)
+               if ( neighbor_l .ne. 0 ) then
+                  neighbor_u = s%blocks(neighbor_l)%neighbors(id,2)
+                  if ( ib .ne. neighbor_u ) then
+                     write (*,"(A, I1, A, I1, A, I1)") &
+                        "windbag: lower face of block ", ib, &
+                        " does not neighbor upper face of block ", neighbor_l, &
+                        " in direction ", id
+                     call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
+                  else
+                     ! Check number of points and processes match.
+                  end if
+               end if
+            end do
+         end do
+      end if
+   end subroutine check_block_neighbors
+
    subroutine check_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
       integer :: argc, filename_length, ierr, world_rank
@@ -98,6 +125,7 @@ contains
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
       call read_general_namelist( s, filename )
       call read_block_namelists( s, filename )
+      call check_block_neighbors( s )
    end subroutine initialize_state
 
    subroutine read_general_namelist( s, filename )
