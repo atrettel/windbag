@@ -131,6 +131,7 @@ contains
       type(WB_State), intent(inout) :: s
 
       deallocate( s%blocks )
+      deallocate( s%processes )
    end subroutine deallocate_state
 
    subroutine find_mpi_fp
@@ -150,6 +151,7 @@ contains
       call read_general_namelist( s, filename )
       call read_block_namelists( s, filename )
       call check_block_neighbors( s )
+      call setup_processes( s )
    end subroutine initialize_state
 
    subroutine read_general_namelist( s, filename )
@@ -241,4 +243,22 @@ contains
             MPI_COMM_WORLD, ierr )
       end do
    end subroutine read_block_namelists
+
+   subroutine setup_processes( s )
+      integer :: assigned_processes, ib, world_rank
+      type(WB_State), intent(inout) :: s
+
+      allocate( s%processes(0:s%world_size-1) )
+
+      ib = 1
+      assigned_processes = 0
+      do world_rank = 0, s%world_size-1
+         s%processes(world_rank)%ib = ib
+         assigned_processes = assigned_processes + 1
+         if ( assigned_processes .eq. s%blocks(ib)%block_size ) then
+            assigned_processes = 0
+            ib = ib + 1
+         end if
+      end do
+   end subroutine setup_processes
 end module wbbase
