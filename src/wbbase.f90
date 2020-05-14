@@ -18,7 +18,7 @@ module wbbase
 
    private
 
-   public WB_State, check_input_file, initialize_state
+   public WB_State, check_input_file, deallocate_state, initialize_state
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::            ND = 3
@@ -109,7 +109,6 @@ contains
       character(len=STRING_LENGTH), intent(out)  :: filename
       integer :: argc, filename_length, ierr, world_rank
       logical :: file_exists
-      call mpi_init( ierr )
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call find_mpi_fp
       if ( world_rank .eq. WORLD_MASTER ) then
@@ -127,6 +126,12 @@ contains
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine check_input_file
+
+   subroutine deallocate_state( s )
+      type(WB_State), intent(inout) :: s
+
+      deallocate( s%blocks )
+   end subroutine deallocate_state
 
    subroutine find_mpi_fp
       integer :: mpi_float_size, ierr

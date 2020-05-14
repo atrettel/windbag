@@ -20,6 +20,7 @@ program windbag
    integer :: ierr, i_rank, ib
    type(WB_State) :: s
 
+   call mpi_init( ierr )
    call check_input_file( filename )
    call initialize_state( s, filename )
 
@@ -43,6 +44,6 @@ program windbag
       end if
    end do
 
-   deallocate( s%blocks )
+   call deallocate_state( s )
    call mpi_finalize( ierr )
 end program windbag
