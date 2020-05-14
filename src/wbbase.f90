@@ -116,6 +116,11 @@ contains
          s%case_name = trim(case_name)
          s%nb = nb
          s%ng = ng
+
+         if ( s%nb .gt. s%world_size ) then
+            write (*,"(A)") "windbag: nb > world_size"
+            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
+         end if
       end if
 
       call mpi_bcast( s%case_name, len(s%case_name), MPI_CHARACTER, &
