@@ -193,6 +193,13 @@ contains
          do ib_loop = 1, s%nb
             read( unit=file_unit, nml=block )
 
+            if ( ib .gt. s%nb .or. ib .lt. 1 ) then
+               write (*,"(A, I1, A, I1, A)") &
+                  "windbag: block ", ib, &
+                  " is out of range (min = 1 and max = ", s%nb, ")"
+               call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
+            end if
+
             s%blocks(ib)%block_size = product(np)
             s%blocks(ib)%np = np
             s%blocks(ib)%neighbors(:,1) = neighbors_l
