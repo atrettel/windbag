@@ -22,13 +22,14 @@ module wbbase
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::            ND = 3
+   integer, public, parameter ::  BLOCK_MASTER = 0
    integer, public, parameter ::  WORLD_MASTER = 0
    integer, public, parameter :: STRING_LENGTH = 64
 
    type(MPI_Datatype), public, save :: MPI_FP
 
    type WB_Block
-      integer :: master_rank, block_size
+      integer :: block_size
       integer, dimension(ND) :: np, nx
       integer, dimension(ND,2) :: neighbors
       logical, dimension(ND) :: periods
