@@ -61,7 +61,7 @@ module wbbase
 contains
    subroutine check_block_neighbors( s )
       type(WB_State), intent(in) :: s
-      integer :: ib, id, ierr, neighbor_l, neighbor_u
+      integer :: ib, id, id2, ierr, neighbor_l, neighbor_u
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          ! Ensure that lower and upper pairs exist, and that their number of
@@ -78,7 +78,26 @@ contains
                         " in direction ", id
                      call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
                   else
-                     ! Check number of points and processes match.
+                     do id2 = 1, ND
+                        if ( id2 .ne. id .and. s%blocks(ib)%np(id2) .ne. &
+                           s%blocks(neighbor_l)%np(id2) ) then
+                           write (*,"(A, I1, A, I1, A, I1, A, I1)") &
+                              "windbag: face in direction ", id, &
+                              " shared by blocks ", ib, " and ", neighbor_l, &
+                              " does not match processes in direction ", id2
+                           call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
+                              ierr )
+                        end if
+                        if ( id2 .ne. id .and. s%blocks(ib)%nx(id2) .ne. &
+                           s%blocks(neighbor_l)%nx(id2) ) then
+                           write (*,"(A, I1, A, I1, A, I1, A, I1)") &
+                              "windbag: face in direction ", id, &
+                              " shared by blocks ", ib, " and ", neighbor_l, &
+                              " does not match points in direction ", id2
+                           call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
+                              ierr )
+                        end if
+                     end do
                   end if
                end if
             end do
