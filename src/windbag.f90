@@ -46,8 +46,12 @@ program windbag
          write (*,"(A, I3, A, I2)", advance="no") "Process ", world_rank, &
             ": ", s%processes(world_rank)%ib
          do id = 1, ND
-            write(*,"(I4, A)", advance="no") &
+            write(*,"(I3, A)", advance="no") &
                s%processes(world_rank)%block_coords(id), ", "
+         end do
+         do id = 1, ND
+            write(*,"(I4, A)", advance="no") &
+               s%processes(world_rank)%nx(id), ", "
          end do
          write (*,"(A)") ""
       end do

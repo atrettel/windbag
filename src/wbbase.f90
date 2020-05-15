@@ -248,7 +248,7 @@ contains
    end subroutine read_block_namelists
 
    subroutine setup_processes( s )
-      integer :: assigned_processes, ib, ierr, world_rank
+      integer :: assigned_processes, ib, id, ierr, world_rank
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
@@ -274,9 +274,20 @@ contains
       call mpi_cart_coords( s%comm_block, s%block_rank, ND, s%block_coords, &
          ierr )
 
+      do id = 1, ND
+         s%nx(id) = s%blocks(ib)%nx(id) / s%blocks(ib)%np(id)
+         if ( s%block_coords(id) .eq. s%blocks(ib)%np(id)-1 ) then
+            s%nx(id) = s%nx(id) + modulo( s%blocks(ib)%nx(id), &
+               s%blocks(ib)%np(id) )
+         end if
+      end do
+
       s%processes(s%world_rank)%block_coords = s%block_coords
+      s%processes(s%world_rank)%nx = s%nx
       do world_rank = 0, s%world_size-1
          call mpi_bcast( s%processes(world_rank)%block_coords, 3, &
+            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( s%processes(world_rank)%nx, 3, &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
       end do
    end subroutine setup_processes
