@@ -42,6 +42,8 @@ program windbag
          write (*,"(A, L)")  "reorder    = ", s%blocks(ib)%reorder
       end do
       write (*,"(A)") "----------------------------------------"
+      write (*,"(A)") "Process information from the master process"
+      write (*,"(A)") "----------------------------------------"
       do world_rank = 0, s%world_size-1
          write (*,"(A, I3, A, I2)", advance="no") "Process ", world_rank, &
             ": ", s%processes(world_rank)%ib
@@ -56,7 +58,25 @@ program windbag
          write (*,"(A)") ""
       end do
       write (*,"(A)") "----------------------------------------"
+      write (*,"(A)") "Process information from each process"
+      write (*,"(A)") "----------------------------------------"
    end if
+   do world_rank = 0, s%world_size-1
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. world_rank ) then
+         write (*,"(A, I3, A, I2)", advance="no") "Process ", s%world_rank, &
+            ": ", s%ib
+         do id = 1, ND
+            write(*,"(I3, A)", advance="no") &
+               s%block_coords(id), ", "
+         end do
+         do id = 1, ND
+            write(*,"(I4, A)", advance="no") &
+               s%nx(id), ", "
+         end do
+         write (*,"(A)") ""
+      end if
+   end do
 
    call deallocate_state( s )
    call mpi_finalize( ierr )
