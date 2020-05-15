@@ -264,10 +264,10 @@ contains
          end if
       end do
 
-      ib = s%processes(s%world_rank)%ib
-      call mpi_comm_split( MPI_COMM_WORLD, ib, 0, comm_split, ierr )
-      call mpi_cart_create( comm_split, ND, s%blocks(ib)%np, &
-         s%blocks(ib)%periods, s%blocks(ib)%reorder, s%comm_block, ierr )
+      s%ib = s%processes(s%world_rank)%ib
+      call mpi_comm_split( MPI_COMM_WORLD, s%ib, 0, comm_split, ierr )
+      call mpi_cart_create( comm_split, ND, s%blocks(s%ib)%np, &
+         s%blocks(s%ib)%periods, s%blocks(s%ib)%reorder, s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
@@ -275,10 +275,10 @@ contains
          ierr )
 
       do id = 1, ND
-         s%nx(id) = s%blocks(ib)%nx(id) / s%blocks(ib)%np(id)
-         if ( s%block_coords(id) .eq. s%blocks(ib)%np(id)-1 ) then
-            s%nx(id) = s%nx(id) + modulo( s%blocks(ib)%nx(id), &
-               s%blocks(ib)%np(id) )
+         s%nx(id) = s%blocks(s%ib)%nx(id) / s%blocks(s%ib)%np(id)
+         if ( s%block_coords(id) .eq. s%blocks(s%ib)%np(id)-1 ) then
+            s%nx(id) = s%nx(id) + modulo( s%blocks(s%ib)%nx(id), &
+               s%blocks(s%ib)%np(id) )
          end if
       end do
 
