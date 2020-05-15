@@ -264,9 +264,8 @@ contains
          end if
       end do
 
-      call mpi_comm_split( MPI_COMM_WORLD, s%processes(s%world_rank)%ib, 0, &
-         comm_split, ierr )
       ib = s%processes(s%world_rank)%ib
+      call mpi_comm_split( MPI_COMM_WORLD, ib, 0, comm_split, ierr )
       call mpi_cart_create( comm_split, ND, s%blocks(ib)%np, &
          s%blocks(ib)%periods, s%blocks(ib)%reorder, s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
