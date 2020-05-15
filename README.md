@@ -22,13 +22,13 @@ Planned features and goals
 
 - compressible Navier-Stokes equations for the governing equations
 
-- only MPI for parallelization
+- only MPI for parallelization (no additional external libraries)
 
 - simple Makefile for compilation
 
-- no preprocessor commands or `common` blocks
+- no preprocessor, period
 
-- minimal number of hard-coded variables and external libraries
+- minimal number of hard-coded variables and global variables
 
 - single command line argument (the namelist-based input file)
 
@@ -47,8 +47,8 @@ Planned features and goals
 - detailed documentation covering verification, validation, and uncertainty
   quantification
 
-- designed for DNS of simple geometries but still possible to simulate flows
-  with more complex geometries
+- designed for DNS of flows with simple geometries but still possible to
+  simulate flows with more complex geometries
 
 
 -------------------------------------------------------------------------------
