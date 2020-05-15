@@ -275,12 +275,10 @@ contains
       call mpi_cart_coords( s%comm_block, s%block_rank, ND, s%block_coords, &
          ierr )
 
+      s%processes(s%world_rank)%block_coords = s%block_coords
       do world_rank = 0, s%world_size-1
-         call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( world_rank .eq. s%world_rank ) then
-            print *, s%world_rank, s%block_rank, s%block_size, s%block_coords
-         end if
+         call mpi_bcast( s%processes(world_rank)%block_coords, 3, &
+            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
       end do
-      call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine setup_processes
 end module wbbase
