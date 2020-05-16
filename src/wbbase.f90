@@ -248,7 +248,7 @@ contains
    end subroutine read_block_namelists
 
    subroutine setup_processes( s )
-      integer :: assigned_processes, ib, id, ierr, world_rank
+      integer :: assigned_processes, ib, id, ierr, total_points, world_rank
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
@@ -290,5 +290,18 @@ contains
          call mpi_bcast( s%processes(world_rank)%nx, 3, &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
       end do
+
+      ! Check if the sum of the points in a block's processes equals the total
+      ! number of points.
+      call mpi_reduce( product(s%nx), total_points, ND, MPI_INTEGER, MPI_SUM, &
+         BLOCK_MASTER, s%comm_block, ierr )
+      if ( s%block_rank .eq. BLOCK_MASTER .and. &
+         product(s%blocks(s%ib)%nx) .ne. total_points ) then
+         write (*,"(A, I2, A, I8, A, I8, A)") &
+            "windbag: total points in block ", s%ib, &
+            " (", product(s%blocks(s%ib)%nx), &
+            ") does not match sum of points in processes (", total_points, ")"
+         call mpi_abort( MPI_COMM_WORLD, MPI_ERR_SIZE, ierr )
+      end if
    end subroutine setup_processes
 end module wbbase
