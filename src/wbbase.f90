@@ -26,6 +26,8 @@ module wbbase
    integer, public, parameter ::  WORLD_MASTER = 0
    integer, public, parameter :: STRING_LENGTH = 64
 
+   character(len=*), public, parameter :: PROGRAM_NAME = "windbag"
+
    type(MPI_Datatype), public, save :: MPI_FP
 
    type WB_Block
@@ -73,17 +75,17 @@ contains
                if ( neighbor_l .ne. 0 ) then
                   neighbor_u = s%blocks(neighbor_l)%neighbors(id,2)
                   if ( ib .ne. neighbor_u ) then
-                     write (*,"(A, I1, A, I1, A, I1)") &
-                        "windbag: lower face of block ", ib, &
-                        " does not neighbor upper face of block ", neighbor_l, &
-                        " in direction ", id
+                     write (*,"(A, A, I1, A, I1, A, I1)") &
+                        PROGRAM_NAME, ": lower face of block ", ib, &
+                        " does not neighbor upper face of block ", &
+                        neighbor_l, " in direction ", id
                      call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
                   else
                      do id2 = 1, ND
                         if ( id2 .ne. id .and. s%blocks(ib)%np(id2) .ne. &
                            s%blocks(neighbor_l)%np(id2) ) then
-                           write (*,"(A, I1, A, I1, A, I1, A, I1)") &
-                              "windbag: face in direction ", id, &
+                           write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
+                              PROGRAM_NAME, ": face in direction ", id, &
                               " shared by blocks ", ib, " and ", neighbor_l, &
                               " does not match processes in direction ", id2
                            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
@@ -91,8 +93,8 @@ contains
                         end if
                         if ( id2 .ne. id .and. s%blocks(ib)%nx(id2) .ne. &
                            s%blocks(neighbor_l)%nx(id2) ) then
-                           write (*,"(A, I1, A, I1, A, I1, A, I1)") &
-                              "windbag: face in direction ", id, &
+                           write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
+                              PROGRAM_NAME, ": face in direction ", id, &
                               " shared by blocks ", ib, " and ", neighbor_l, &
                               " does not match points in direction ", id2
                            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
@@ -115,13 +117,13 @@ contains
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
-            write (*,"(A)") "Usage: windbag [INPUT_FILE]"
+            write (*,"(A, A, A)") "Usage: ", PROGRAM_NAME, " [INPUT_FILE]"
             call mpi_abort( MPI_COMM_WORLD, MPI_SUCCESS, ierr )
          end if
          call get_command_argument( 1, filename, filename_length, ierr )
          inquire( file=filename, exist=file_exists, iostat=ierr )
          if ( file_exists .eqv. .false. ) then
-            write (*,"(A)") "windbag: input file does not exist"
+            write (*,"(A, A)") PROGRAM_NAME, ": input file does not exist"
             call mpi_abort( MPI_COMM_WORLD, MPI_ERR_NO_SUCH_FILE, ierr )
          end if
       end if
@@ -175,8 +177,8 @@ contains
          s%ng = ng
 
          if ( s%nb .gt. s%world_size ) then
-            write (*,"(A)") &
-               "windbag: number of blocks is greater than world size"
+            write (*,"(A, A)") PROGRAM_NAME, &
+               ": number of blocks is greater than world size"
             call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
          end if
       end if
@@ -204,8 +206,8 @@ contains
             read( unit=file_unit, nml=block )
 
             if ( ib .gt. s%nb .or. ib .lt. 1 ) then
-               write (*,"(A, I1, A, I1, A)") &
-                  "windbag: block ", ib, &
+               write (*,"(A, A, I1, A, I1, A)") &
+                  PROGRAM_NAME, ": block ", ib, &
                   " is out of range (min = 1 and max = ", s%nb, ")"
                call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
             end if
@@ -227,8 +229,8 @@ contains
          close( unit=file_unit )
 
          if ( sum( s%blocks(:)%block_size ) .ne. s%world_size ) then
-            write (*,"(A)") &
-               "windbag: block domain decomposition does not match world size"
+            write (*,"(A, A)") PROGRAM_NAME, &
+               ": block domain decomposition does not match world size"
             call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
          end if
       end if
@@ -297,8 +299,8 @@ contains
          BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
-         write (*,"(A, I2, A, I8, A, I8, A)") &
-            "windbag: total points in block ", s%ib, &
+         write (*,"(A, A, I2, A, I8, A, I8, A)") &
+            PROGRAM_NAME, ": total points in block ", s%ib, &
             " (", product(s%blocks(s%ib)%nx), &
             ") does not match sum of points in processes (", total_points, ")"
          call mpi_abort( MPI_COMM_WORLD, MPI_ERR_SIZE, ierr )
