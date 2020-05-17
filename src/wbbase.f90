@@ -18,7 +18,8 @@ module wbbase
 
    private
 
-   public WB_State, check_input_file, deallocate_state, initialize_state
+   public WB_State, check_input_file, deallocate_state, initialize_state, &
+      print_block_information
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::            ND = 3
@@ -159,6 +160,53 @@ contains
       call check_block_neighbors( s )
       call setup_processes( s )
    end subroutine initialize_state
+
+   subroutine print_block_information( s )
+      integer :: ib, id
+      type(WB_State), intent(in) :: s
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") "## Block information"
+         write (*,"(A)") ""
+
+         write (*,"(A)", advance="no") "| `ib` |    size "
+         do id = 1, ND
+            write (*,"(A, I1, A)", advance="no") "| `np(", id, ")` "
+         end do
+         write (*,"(A)", advance="no") "|     points "
+         do id = 1, ND
+            write (*,"(A, I1, A)", advance="no") "| `nx(", id, ")` "
+         end do
+         write (*,"(A)") "|"
+
+         write (*,"(A)", advance="no") "| ---: | ------: "
+         do id = 1, ND
+            write (*,"(A)", advance="no") "| ------: "
+         end do
+         write (*,"(A)", advance="no") "| ---------: "
+         do id = 1, ND
+            write (*,"(A)", advance="no") "| ------: "
+         end do
+         write (*,"(A)") "|"
+
+         do ib = 1, s%nb
+            write (*,"(A, I4, A)", advance="no") "| ", ib, " "
+            write (*,"(A, I7, A)", advance="no") "| ", &
+               s%blocks(ib)%block_size, " "
+            do id = 1, ND
+               write (*,"(A, I7, A)", advance="no") "| ", &
+                  s%blocks(ib)%np(id), " "
+            end do
+            write (*,"(A, I10, A)", advance="no") "| ", &
+               product(s%blocks(ib)%nx), " "
+            do id = 1, ND
+               write (*,"(A, I7, A)", advance="no") "| ", &
+                  s%blocks(ib)%nx(id), " "
+            end do
+            write (*,"(A)") "|"
+         end do
+      end if
+   end subroutine
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
