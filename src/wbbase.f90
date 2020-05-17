@@ -39,6 +39,7 @@ module wbbase
    end type WB_Block
 
    type WB_Process
+      integer :: block_rank
       integer, dimension(ND) :: block_coords, nx
       integer, dimension(ND,2) :: neighbors
       integer :: ib
@@ -284,9 +285,12 @@ contains
          end if
       end do
 
+      s%processes(s%world_rank)%block_rank = s%block_rank
       s%processes(s%world_rank)%block_coords = s%block_coords
       s%processes(s%world_rank)%nx = s%nx
       do world_rank = 0, s%world_size-1
+         call mpi_bcast( s%processes(world_rank)%block_rank, 1, &
+            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%processes(world_rank)%block_coords, 3, &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%processes(world_rank)%nx, 3, &
