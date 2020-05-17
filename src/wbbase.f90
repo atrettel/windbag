@@ -169,41 +169,25 @@ contains
          write (*,"(A)") "## Block information"
          write (*,"(A)") ""
 
-         write (*,"(A)", advance="no") "| `ib` |    size "
-         do id = 1, ND
-            write (*,"(A, I1, A)", advance="no") "| `np(", id, ")` "
-         end do
-         write (*,"(A)", advance="no") "|     points "
-         do id = 1, ND
-            write (*,"(A, I1, A)", advance="no") "| `nx(", id, ")` "
-         end do
-         write (*,"(A)") "|"
+         write (*,"(A)", advance="no") "| `ib` |    size | `nd`           "
+         write (*,"(A)", advance="yes") "|       points | `nx`              |"
 
-         write (*,"(A)", advance="no") "| ---: | ------: "
-         do id = 1, ND
-            write (*,"(A)", advance="no") "| ------: "
-         end do
-         write (*,"(A)", advance="no") "| ---------: "
-         do id = 1, ND
-            write (*,"(A)", advance="no") "| ------: "
-         end do
-         write (*,"(A)") "|"
+         write (*,"(A)", advance="no") "| ---: | ------: | :------------- "
+         write (*,"(A)", advance="yes") "| -----------: | :---------------- |"
 
          do ib = 1, s%nb
             write (*,"(A, I4, A)", advance="no") "| ", ib, " "
             write (*,"(A, I7, A)", advance="no") "| ", &
-               s%blocks(ib)%block_size, " "
+               s%blocks(ib)%block_size, " | ("
             do id = 1, ND
-               write (*,"(A, I7, A)", advance="no") "| ", &
-                  s%blocks(ib)%np(id), " "
+               write (*,"(I3, A)", advance="no") s%blocks(ib)%np(id), ","
             end do
-            write (*,"(A, I10, A)", advance="no") "| ", &
-               product(s%blocks(ib)%nx), " "
+            write (*,"(A, I12, A)", advance="no") ") | ", &
+               product(s%blocks(ib)%nx), " | ("
             do id = 1, ND
-               write (*,"(A, I7, A)", advance="no") "| ", &
-                  s%blocks(ib)%nx(id), " "
+               write (*,"(I4, A)", advance="no") s%blocks(ib)%nx(id), ","
             end do
-            write (*,"(A)") "|"
+            write (*,"(A)") ") |"
          end do
       end if
    end subroutine
