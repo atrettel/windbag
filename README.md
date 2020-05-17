@@ -26,7 +26,7 @@ Planned features and goals
 
 - simple Makefile for compilation
 
-- no preprocessor, period
+- no preprocessor use
 
 - minimal number of hard-coded variables and global variables
 
