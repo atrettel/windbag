@@ -24,11 +24,7 @@ program windbag
    call check_input_file( filename )
    call initialize_state( s, filename )
 
-   call print_block_information( s )
-   if ( s%world_rank .eq. WORLD_MASTER ) then
-      print *, ""
-   end if
-   call print_process_information( s )
+   call print_initial_information( s )
 
    call deallocate_state( s )
    call mpi_finalize( ierr )
