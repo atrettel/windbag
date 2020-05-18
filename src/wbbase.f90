@@ -12,7 +12,7 @@
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wbbase
-   use iso_fortran_env, only : real64
+   use iso_fortran_env, only : compiler_options, compiler_version, real64
    use mpi_f08
    implicit none
 
@@ -195,10 +195,35 @@ contains
    end subroutine
 
    subroutine print_initial_information( s )
+      character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
+      integer :: ierr, mpi_major_version_number, mpi_minor_version_number, &
+         string_length
       type(WB_State), intent(in) :: s
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION
+         write (*,"(A, A, A, A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION, &
+            ", case `", s%case_name, "`"
+         write (*,"(A)") ""
+
+         call mpi_get_version( mpi_major_version_number, &
+            mpi_minor_version_number, ierr )
+         write (*,"(A, I1, A, I1)") "- MPI version: ", &
+            mpi_major_version_number, ".", mpi_minor_version_number
+         write (*,"(A)") ""
+
+         call mpi_get_library_version( lib_version, string_length, ierr )
+         write (*,"(A, A)") "- MPI library version: ", trim(lib_version)
+         write (*,"(A)") ""
+
+         write (*,"(A, A, A, A, A)") "- Compiled using ", compiler_version(), &
+            " using the following options: `", compiler_options(), "`"
+         write (*,"(A)") ""
+
+         if ( MPI_SUBARRAYS_SUPPORTED ) then
+            write (*,"(A)") "- MPI subarrays are supported."
+         else
+            write (*,"(A)") "- MPI subarrays are not supported."
+         end if
          write (*,"(A)") ""
       end if
       call print_block_information( s )
