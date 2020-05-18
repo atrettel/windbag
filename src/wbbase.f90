@@ -43,7 +43,6 @@ module wbbase
    type WB_Process
       integer :: block_rank
       integer, dimension(ND) :: block_coords, nx
-      integer, dimension(ND,2) :: neighbors
       integer :: ib
    end type WB_Process
 
@@ -149,6 +148,55 @@ contains
       call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, &
          ierr )
    end subroutine find_mpi_fp
+
+   subroutine identify_process_neighbors( s )
+      integer :: id, idir, ierr, block_neighbor, world_rank
+      integer, dimension(2) :: block_ranks
+      integer, dimension(ND) :: block_coords
+      type(WB_State), intent(inout) :: s
+
+      do id = 1, ND
+         call mpi_cart_shift( s%comm_block, id, 1, &
+            block_ranks(1), block_ranks(2), ierr )
+         do idir = 1, 2
+            if ( block_ranks(idir) .ne. MPI_PROC_NULL ) then
+               do world_rank = 0, s%world_size-1
+                  if ( s%processes(world_rank)%ib .eq. s%ib .and. &
+                     s%processes(world_rank)%block_rank .eq. &
+                     block_ranks(idir) ) then
+                     exit
+                  end if
+               end do
+               s%neighbors(id,idir) = world_rank
+            else
+               block_neighbor = s%blocks(s%ib)%neighbors(id,idir)
+               if ( block_neighbor .eq. 0 ) then
+                  s%neighbors(id,idir) = MPI_PROC_NULL
+               else
+                  ! This block neighbors another block.  This neighboring block
+                  ! sits on the opposite side of the current block.  Both
+                  ! processes share the same block coordinates except for the
+                  ! current direction id.  The block coordinates for the id
+                  ! direction would be opposites for each.
+                  block_coords = s%block_coords
+                  if ( s%block_coords(id) .eq. 0 ) then
+                     block_coords(id) = s%blocks(block_neighbor)%np(id)-1
+                  else
+                     block_coords(id) = 0
+                  end if
+                  do world_rank = 0, s%world_size-1
+                     if ( s%processes(world_rank)%ib .eq. block_neighbor &
+                        .and. all( s%processes(world_rank)%block_coords &
+                        .eq. block_coords ) ) then
+                        exit
+                     end if
+                  end do
+                  s%neighbors(id,idir) = world_rank
+               end if
+            end if
+         end do
+      end do
+   end subroutine identify_process_neighbors
 
    subroutine initialize_state( s, filename )
       character(len=STRING_LENGTH) :: filename
@@ -435,5 +483,7 @@ contains
             ") does not match sum of points in processes (", total_points, ")"
          call mpi_abort( MPI_COMM_WORLD, MPI_ERR_SIZE, ierr )
       end if
+
+      call identify_process_neighbors( s )
    end subroutine setup_processes
 end module wbbase
