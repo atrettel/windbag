@@ -156,7 +156,7 @@ contains
       type(WB_State), intent(inout) :: s
 
       do id = 1, ND
-         call mpi_cart_shift( s%comm_block, id, 1, &
+         call mpi_cart_shift( s%comm_block, id-1, 1, &
             block_ranks(1), block_ranks(2), ierr )
          do idir = 1, 2
             if ( block_ranks(idir) .ne. MPI_PROC_NULL ) then
