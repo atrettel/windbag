@@ -277,6 +277,7 @@ contains
       end if
       call print_block_information( s )
       call print_process_information( s )
+      call print_process_neighbors( s )
    end subroutine print_initial_information
 
    subroutine print_process_information( s )
@@ -331,6 +332,53 @@ contains
          write (*,"(A)") ""
       end if
    end subroutine print_process_information
+
+   subroutine print_process_neighbors( s )
+      integer :: id, idir, ierr, world_rank
+      type(WB_State), intent(in) :: s
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") "## Process neighbors"
+         write (*,"(A)") ""
+
+         write (*,"(A)", advance="no") "| `world_rank` "
+         do id = 1, ND
+            write (*,"(A, I1, A)", advance="no") "|       ", id, "L "
+            write (*,"(A, I1, A)", advance="no") "|       ", id, "U "
+         end do
+         write (*,"(A)") "|"
+
+         write (*,"(A)", advance="no") "| -----------: "
+         do id = 1, ND
+            write (*,"(A, I1, A)", advance="no") "| -------: "
+            write (*,"(A, I1, A)", advance="no") "| -------: "
+         end do
+         write (*,"(A)") "|"
+      end if
+
+      do world_rank = 0, s%world_size-1
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         if ( s%world_rank .eq. world_rank ) then
+            write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
+            do id = 1, ND
+               do idir = 1, 2
+                  if ( s%neighbors(id,idir) .eq. MPI_PROC_NULL ) then
+                     write (*,"(A)", advance="no") "|          "
+                  else
+                     write (*,"(A, I8, A)", advance="no") "| ", &
+                        s%neighbors(id,idir), " "
+                  end if
+               end do
+            end do
+            write (*,"(A)") "|"
+         end if
+      end do
+
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") ""
+      end if
+   end subroutine print_process_neighbors
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
