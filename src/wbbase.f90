@@ -193,20 +193,23 @@ contains
    end subroutine
 
    subroutine print_process_information( s )
-      integer :: id, ierr, world_rank
+      integer :: id, ierr, string_length, world_rank
+      character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
       type(WB_State), intent(in) :: s
+
+      call mpi_get_processor_name( processor_name, string_length, ierr )
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          write (*,"(A)") "## Process information"
          write (*,"(A)") ""
 
          write (*,"(A)", advance="no") &
-            "| `world_rank` | `ib` | `block_rank` "
+            "| `world_rank` | hostname     | `ib` | `block_rank` "
          write (*,"(A)", advance="yes") &
             "| `block_coords` |    points |           `nx` |"
 
          write (*,"(A)", advance="no") &
-            "| -----------: | ---: | -----------: "
+            "| -----------: | :----------- | ---: | -----------: "
          write (*,"(A)", advance="yes") &
             "| :------------- | --------: | :------------- |"
       end if
@@ -215,6 +218,8 @@ contains
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
             write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
+            write (*,"(A, A12, A)", advance="no") "| ", &
+               trim(processor_name), " "
             write (*,"(A, I4, A)", advance="no") "| ", &
                s%ib, " "
             write (*,"(A, I12, A)", advance="no") "| ", &
