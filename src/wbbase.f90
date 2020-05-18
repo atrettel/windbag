@@ -193,7 +193,7 @@ contains
    end subroutine
 
    subroutine print_process_information( s )
-      integer :: id, world_rank
+      integer :: id, ierr, world_rank
       type(WB_State), intent(in) :: s
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
@@ -209,27 +209,30 @@ contains
             "| -----------: | ---: | -----------: "
          write (*,"(A)", advance="yes") &
             "| :------------- | --------: | :------------- |"
+      end if
 
-         do world_rank = 0, s%world_size-1
-            write (*,"(A, I12, A)", advance="no") "| ", world_rank, " "
+      do world_rank = 0, s%world_size-1
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         if ( s%world_rank .eq. world_rank ) then
+            write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
             write (*,"(A, I4, A)", advance="no") "| ", &
-               s%processes(world_rank)%ib, " "
+               s%ib, " "
             write (*,"(A, I12, A)", advance="no") "| ", &
-               s%processes(world_rank)%block_rank, " "
+               s%block_rank, " "
             write (*,"(A)", advance="no") "| ("
             do id = 1, ND
                write (*,"(I3, A)", advance="no") &
-                  s%processes(world_rank)%block_coords(id), ","
+                  s%block_coords(id), ","
             end do
             write (*,"(A, I9, A)", advance="no") ") | ", &
-               product(s%processes(world_rank)%nx), " | ("
+               product(s%nx), " | ("
             do id = 1, ND
                write (*,"(I3, A)", advance="no") &
-                  s%processes(world_rank)%nx(id), ","
+                  s%nx(id), ","
             end do
             write (*,"(A)") ") |"
-         end do
-      end if
+         end if
+      end do
 
    end subroutine print_process_information
 
