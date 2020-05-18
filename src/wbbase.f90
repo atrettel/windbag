@@ -19,7 +19,7 @@ module wbbase
    private
 
    public WB_State, check_input_file, deallocate_state, initialize_state, &
-      print_block_information
+      print_block_information, print_process_information
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::            ND = 3
@@ -191,6 +191,47 @@ contains
          end do
       end if
    end subroutine
+
+   subroutine print_process_information( s )
+      integer :: id, world_rank
+      type(WB_State), intent(in) :: s
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") "## Process information"
+         write (*,"(A)") ""
+
+         write (*,"(A)", advance="no") &
+            "| `world_rank` | `ib` | `block_rank` "
+         write (*,"(A)", advance="yes") &
+            "| `block_coords` |    points |           `nx` |"
+
+         write (*,"(A)", advance="no") &
+            "| -----------: | ---: | -----------: "
+         write (*,"(A)", advance="yes") &
+            "| :------------- | --------: | :------------- |"
+
+         do world_rank = 0, s%world_size-1
+            write (*,"(A, I12, A)", advance="no") "| ", world_rank, " "
+            write (*,"(A, I4, A)", advance="no") "| ", &
+               s%processes(world_rank)%ib, " "
+            write (*,"(A, I12, A)", advance="no") "| ", &
+               s%processes(world_rank)%block_rank, " "
+            write (*,"(A)", advance="no") "| ("
+            do id = 1, ND
+               write (*,"(I3, A)", advance="no") &
+                  s%processes(world_rank)%block_coords(id), ","
+            end do
+            write (*,"(A, I9, A)", advance="no") ") | ", &
+               product(s%processes(world_rank)%nx), " | ("
+            do id = 1, ND
+               write (*,"(I3, A)", advance="no") &
+                  s%processes(world_rank)%nx(id), ","
+            end do
+            write (*,"(A)") ") |"
+         end do
+      end if
+
+   end subroutine print_process_information
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
