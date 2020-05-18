@@ -179,7 +179,7 @@ contains
                   ! current direction id.  The block coordinates for the id
                   ! direction would be opposites for each.
                   block_coords = s%block_coords
-                  if ( s%block_coords(id) .eq. 0 ) then
+                  if ( idir .eq. 1 ) then
                      block_coords(id) = s%blocks(block_neighbor)%np(id)-1
                   else
                      block_coords(id) = 0
