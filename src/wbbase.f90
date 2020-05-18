@@ -33,6 +33,7 @@ module wbbase
    type(MPI_Datatype), public, save :: MPI_FP
 
    type WB_Block
+      private
       integer :: block_size
       integer, dimension(ND) :: np, nx
       integer, dimension(ND,2) :: neighbors
@@ -41,27 +42,28 @@ module wbbase
    end type WB_Block
 
    type WB_Process
+      private
       integer :: block_rank
       integer, dimension(ND) :: block_coords, nx
       integer :: ib
    end type WB_Process
 
    type WB_State
-      character(len=:), allocatable :: case_name
-      integer :: block_rank, block_size
-      integer :: world_rank, world_size
-      integer :: ib, nb
-      integer :: nf
-      integer :: ng
-      integer :: nv = 5
-      integer, dimension(ND) :: nx
-      integer, dimension(ND) :: block_coords
-      integer, dimension(ND,2) :: neighbors
-      real(FP) :: t = 0.0_FP
-      real(FP), dimension(:,:,:,:), allocatable :: f
-      type(MPI_Comm) :: comm_block
-      type(WB_Block), dimension(:), allocatable :: blocks
-      type(WB_Process), dimension(:), allocatable :: processes
+      character(len=:), allocatable, public :: case_name
+      integer, private :: block_rank, block_size
+      integer, public :: world_rank, world_size
+      integer, public :: ib, nb
+      integer, public :: nf
+      integer, public :: ng
+      integer, public :: nv = 5
+      integer, dimension(ND), public :: nx
+      integer, dimension(ND), private :: block_coords
+      integer, dimension(ND,2), public :: neighbors
+      real(FP), public :: t = 0.0_FP
+      real(FP), dimension(:,:,:,:), allocatable, public :: f
+      type(MPI_Comm), private :: comm_block
+      type(WB_Block), dimension(:), allocatable, private :: blocks
+      type(WB_Process), dimension(:), allocatable, private :: processes
    end type WB_State
 contains
    subroutine check_block_neighbors( s )
