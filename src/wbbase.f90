@@ -48,7 +48,7 @@ module wbbase
    end type WB_Process
 
    type WB_State
-      character(len=STRING_LENGTH) :: case_name
+      character(len=:), allocatable :: case_name
       integer :: block_rank, block_size
       integer :: world_rank, world_size
       integer :: ib, nb
@@ -137,6 +137,7 @@ contains
       integer :: ierr
       type(WB_State), intent(inout) :: s
 
+      deallocate( s%case_name )
       deallocate( s%blocks )
       deallocate( s%processes )
       call mpi_comm_free( s%comm_block, ierr )
@@ -269,7 +270,6 @@ contains
          read( unit=file_unit, nml=general )
          close( unit=file_unit )
 
-         s%case_name = trim(case_name)
          s%nb = nb
          s%ng = ng
 
@@ -280,8 +280,11 @@ contains
          end if
       end if
 
-      call mpi_bcast( s%case_name, len(s%case_name), MPI_CHARACTER, &
+      call mpi_bcast( case_name, STRING_LENGTH, MPI_CHARACTER, &
          WORLD_MASTER, MPI_COMM_WORLD, ierr )
+
+      s%case_name = trim(case_name)
+
       call mpi_bcast( s%nb, 1, MPI_INTEGER, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
       call mpi_bcast( s%ng, 1, MPI_INTEGER, WORLD_MASTER, &
