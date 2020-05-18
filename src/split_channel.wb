@@ -1,5 +1,5 @@
 &general
-case_name='channel',
+case_name='split_channel',
 nb=2,
 ng=3,
 /

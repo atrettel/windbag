@@ -1,0 +1,12 @@
+&general
+case_name='homogeneous',
+nb=1,
+ng=3,
+/
+&block
+ib=1,
+np=4,2,2,
+neighbors_l=1,1,1,
+neighbors_u=1,1,1,
+nx=256,256,256,
+/
