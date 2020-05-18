@@ -19,7 +19,7 @@ module wbbase
    private
 
    public WB_State, check_input_file, deallocate_state, initialize_state, &
-      print_state_information
+      print_initial_information
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::            ND = 3
@@ -193,6 +193,20 @@ contains
       end if
    end subroutine
 
+   subroutine print_initial_information( s )
+      type(WB_State), intent(in) :: s
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION
+         write (*,"(A)") ""
+      end if
+      call print_block_information( s )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") ""
+      end if
+      call print_process_information( s )
+   end subroutine print_initial_information
+
    subroutine print_process_information( s )
       integer :: id, ierr, string_length, world_rank
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
@@ -241,20 +255,6 @@ contains
       end do
 
    end subroutine print_process_information
-
-   subroutine print_state_information( s )
-      type(WB_State), intent(in) :: s
-
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION
-         write (*,"(A)") ""
-      end if
-      call print_block_information( s )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") ""
-      end if
-      call print_process_information( s )
-   end subroutine print_state_information
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
