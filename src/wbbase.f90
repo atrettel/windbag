@@ -191,6 +191,7 @@ contains
             end do
             write (*,"(A)") ") |"
          end do
+         write (*,"(A)") ""
       end if
    end subroutine
 
@@ -227,9 +228,6 @@ contains
          write (*,"(A)") ""
       end if
       call print_block_information( s )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") ""
-      end if
       call print_process_information( s )
    end subroutine print_initial_information
 
@@ -280,6 +278,10 @@ contains
          end if
       end do
 
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") ""
+      end if
    end subroutine print_process_information
 
    subroutine read_general_namelist( s, filename )
