@@ -154,7 +154,7 @@ contains
    end subroutine find_mpi_fp
 
    subroutine identify_process_neighbors( s )
-      integer :: id, idir, ierr, block_neighbor, world_rank
+      integer :: id, i_dir, ierr, block_neighbor, world_rank
       integer, dimension(2) :: block_ranks
       integer, dimension(N_DIM) :: block_coords
       type(WB_State), intent(inout) :: s
@@ -162,20 +162,20 @@ contains
       do id = 1, N_DIM
          call mpi_cart_shift( s%comm_block, id-1, 1, &
             block_ranks(1), block_ranks(2), ierr )
-         do idir = 1, 2
-            if ( block_ranks(idir) .ne. MPI_PROC_NULL ) then
+         do i_dir = 1, 2
+            if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
                do world_rank = 0, s%world_size-1
                   if ( s%processes(world_rank)%ib .eq. s%ib .and. &
                      s%processes(world_rank)%block_rank .eq. &
-                     block_ranks(idir) ) then
+                     block_ranks(i_dir) ) then
                      exit
                   end if
                end do
-               s%neighbors(id,idir) = world_rank
+               s%neighbors(id,i_dir) = world_rank
             else
-               block_neighbor = s%blocks(s%ib)%neighbors(id,idir)
+               block_neighbor = s%blocks(s%ib)%neighbors(id,i_dir)
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
-                  s%neighbors(id,idir) = MPI_PROC_NULL
+                  s%neighbors(id,i_dir) = MPI_PROC_NULL
                else
                   ! This block neighbors another block.  This neighboring block
                   ! sits on the opposite side of the current block.  Both
@@ -183,7 +183,7 @@ contains
                   ! current direction id.  The block coordinates for the id
                   ! direction would be opposites for each.
                   block_coords = s%block_coords
-                  if ( idir .eq. 1 ) then
+                  if ( i_dir .eq. 1 ) then
                      block_coords(id) = s%blocks(block_neighbor)%np(id)-1
                   else
                      block_coords(id) = 0
@@ -195,7 +195,7 @@ contains
                         exit
                      end if
                   end do
-                  s%neighbors(id,idir) = world_rank
+                  s%neighbors(id,i_dir) = world_rank
                end if
             end if
          end do
@@ -338,7 +338,7 @@ contains
    end subroutine print_process_information
 
    subroutine print_process_neighbors( s )
-      integer :: id, idir, ierr, world_rank
+      integer :: id, i_dir, ierr, world_rank
       type(WB_State), intent(in) :: s
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
@@ -365,12 +365,12 @@ contains
          if ( s%world_rank .eq. world_rank ) then
             write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
             do id = 1, N_DIM
-               do idir = 1, 2
-                  if ( s%neighbors(id,idir) .eq. MPI_PROC_NULL ) then
+               do i_dir = 1, 2
+                  if ( s%neighbors(id,i_dir) .eq. MPI_PROC_NULL ) then
                      write (*,"(A)", advance="no") "|          "
                   else
                      write (*,"(A, I8, A)", advance="no") "| ", &
-                        s%neighbors(id,idir), " "
+                        s%neighbors(id,i_dir), " "
                   end if
                end do
             end do
