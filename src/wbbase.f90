@@ -29,6 +29,10 @@ module wbbase
 
    integer, public, parameter :: NO_BLOCK_NEIGHBOR = 0
 
+   integer, public, parameter ::     N_DIR = 2
+   integer, public, parameter :: LOWER_DIR = 1
+   integer, public, parameter :: UPPER_DIR = 2
+
    character(len=*), public, parameter :: PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::      VERSION = "0.0.0"
 
@@ -38,7 +42,7 @@ module wbbase
       private
       integer :: block_size
       integer, dimension(N_DIM) :: np, nx
-      integer, dimension(N_DIM,2) :: neighbors
+      integer, dimension(N_DIM,N_DIR) :: neighbors
       logical, dimension(N_DIM) :: periods
       logical :: reorder = .false.
    end type WB_Block
@@ -60,7 +64,7 @@ module wbbase
       integer, public :: nv = 5
       integer, dimension(N_DIM), public :: nx
       integer, dimension(N_DIM), private :: block_coords
-      integer, dimension(N_DIM,2), public :: neighbors
+      integer, dimension(N_DIM,N_DIR), public :: neighbors
       real(FP), public :: t = 0.0_FP
       real(FP), dimension(:,:,:,:), allocatable, public :: f
       type(MPI_Comm), private :: comm_block
@@ -77,9 +81,9 @@ contains
          ! points and processes match.
          do ib = 1, s%nb
             do i_dim = 1, N_DIM
-               neighbor_l = s%blocks(ib)%neighbors(i_dim,1)
+               neighbor_l = s%blocks(ib)%neighbors(i_dim,LOWER_DIR)
                if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-                  neighbor_u = s%blocks(neighbor_l)%neighbors(i_dim,2)
+                  neighbor_u = s%blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
                   if ( ib .ne. neighbor_u ) then
                      write (*,"(A, A, I1, A, I1, A, I1)") &
                         PROGRAM_NAME, ": lower face of block ", ib, &
@@ -155,14 +159,14 @@ contains
 
    subroutine identify_process_neighbors( s )
       integer :: i_dim, i_dir, ierr, block_neighbor, world_rank
-      integer, dimension(2) :: block_ranks
+      integer, dimension(N_DIR) :: block_ranks
       integer, dimension(N_DIM) :: block_coords
       type(WB_State), intent(inout) :: s
 
       do i_dim = 1, N_DIM
          call mpi_cart_shift( s%comm_block, i_dim-1, 1, &
-            block_ranks(1), block_ranks(2), ierr )
-         do i_dir = 1, 2
+            block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
+         do i_dir = 1, N_DIR
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
                do world_rank = 0, s%world_size-1
                   if ( s%processes(world_rank)%ib .eq. s%ib .and. &
@@ -183,7 +187,7 @@ contains
                   ! current spatial dimension i_dim.  The block coordinates for
                   ! dimension i_dim would be opposites for each.
                   block_coords = s%block_coords
-                  if ( i_dir .eq. 1 ) then
+                  if ( i_dir .eq. LOWER_DIR ) then
                      block_coords(i_dim) = s%blocks(block_neighbor)%np(i_dim)-1
                   else
                      block_coords(i_dim) = 0
@@ -365,7 +369,7 @@ contains
          if ( s%world_rank .eq. world_rank ) then
             write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
             do i_dim = 1, N_DIM
-               do i_dir = 1, 2
+               do i_dir = 1, N_DIR
                   if ( s%neighbors(i_dim,i_dir) .eq. MPI_PROC_NULL ) then
                      write (*,"(A)", advance="no") "|          "
                   else
@@ -441,8 +445,8 @@ contains
 
             s%blocks(ib)%block_size = product(np)
             s%blocks(ib)%np = np
-            s%blocks(ib)%neighbors(:,1) = neighbors_l
-            s%blocks(ib)%neighbors(:,2) = neighbors_u
+            s%blocks(ib)%neighbors(:,LOWER_DIR) = neighbors_l
+            s%blocks(ib)%neighbors(:,UPPER_DIR) = neighbors_u
             s%blocks(ib)%nx = nx
 
             do i_dim = 1, N_DIM
@@ -467,7 +471,7 @@ contains
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%np, N_DIM, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%neighbors, N_DIM*2, MPI_INTEGER, &
+         call mpi_bcast( s%blocks(ib)%neighbors, N_DIM*N_DIR, MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%nx, N_DIM, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
