@@ -180,8 +180,8 @@ contains
                   ! This block neighbors another block.  This neighboring block
                   ! sits on the opposite side of the current block.  Both
                   ! processes share the same block coordinates except for the
-                  ! current direction id.  The block coordinates for the id
-                  ! direction would be opposites for each.
+                  ! current spatial dimension id.  The block coordinates for
+                  ! dimension id would be opposites for each.
                   block_coords = s%block_coords
                   if ( i_dir .eq. 1 ) then
                      block_coords(id) = s%blocks(block_neighbor)%np(id)-1
