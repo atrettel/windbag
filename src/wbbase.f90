@@ -70,7 +70,7 @@ module wbbase
 contains
    subroutine check_block_neighbors( s )
       type(WB_State), intent(in) :: s
-      integer :: ib, id, id2, ierr, neighbor_l, neighbor_u
+      integer :: ib, id, i_dim_d, ierr, neighbor_l, neighbor_u
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          ! Ensure that lower and upper pairs exist, and that their number of
@@ -87,22 +87,22 @@ contains
                         neighbor_l, " in direction ", id
                      call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
                   else
-                     do id2 = 1, N_DIM
-                        if ( id2 .ne. id .and. s%blocks(ib)%np(id2) .ne. &
-                           s%blocks(neighbor_l)%np(id2) ) then
+                     do i_dim_d = 1, N_DIM
+                        if ( i_dim_d .ne. id .and. s%blocks(ib)%np(i_dim_d) .ne. &
+                           s%blocks(neighbor_l)%np(i_dim_d) ) then
                            write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
                               PROGRAM_NAME, ": face in direction ", id, &
                               " shared by blocks ", ib, " and ", neighbor_l, &
-                              " does not match processes in direction ", id2
+                              " does not match processes in direction ", i_dim_d
                            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
                               ierr )
                         end if
-                        if ( id2 .ne. id .and. s%blocks(ib)%nx(id2) .ne. &
-                           s%blocks(neighbor_l)%nx(id2) ) then
+                        if ( i_dim_d .ne. id .and. s%blocks(ib)%nx(i_dim_d) .ne. &
+                           s%blocks(neighbor_l)%nx(i_dim_d) ) then
                            write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
                               PROGRAM_NAME, ": face in direction ", id, &
                               " shared by blocks ", ib, " and ", neighbor_l, &
-                              " does not match points in direction ", id2
+                              " does not match points in direction ", i_dim_d
                            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
                               ierr )
                         end if
