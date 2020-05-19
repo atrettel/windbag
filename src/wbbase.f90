@@ -27,6 +27,8 @@ module wbbase
    integer, public, parameter ::  WORLD_MASTER = 0
    integer, public, parameter :: STRING_LENGTH = 64
 
+   integer, public, parameter :: NO_BLOCK_NEIGHBOR = 0
+
    character(len=*), public, parameter :: PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::      VERSION = "0.0.0"
 
@@ -76,7 +78,7 @@ contains
          do ib = 1, s%nb
             do id = 1, ND
                neighbor_l = s%blocks(ib)%neighbors(id,1)
-               if ( neighbor_l .ne. 0 ) then
+               if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
                   neighbor_u = s%blocks(neighbor_l)%neighbors(id,2)
                   if ( ib .ne. neighbor_u ) then
                      write (*,"(A, A, I1, A, I1, A, I1)") &
@@ -172,7 +174,7 @@ contains
                s%neighbors(id,idir) = world_rank
             else
                block_neighbor = s%blocks(s%ib)%neighbors(id,idir)
-               if ( block_neighbor .eq. 0 ) then
+               if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
                   s%neighbors(id,idir) = MPI_PROC_NULL
                else
                   ! This block neighbors another block.  This neighboring block
