@@ -404,9 +404,8 @@ contains
          s%ng = ng
 
          if ( s%nb .gt. s%world_size ) then
-            write (*,"(A, A)") PROGRAM_NAME, &
-               ": number of blocks is greater than world size"
-            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
+            call wb_abort( "number of blocks is greater than world size", &
+               MPI_ERR_RANK )
          end if
       end if
 
@@ -459,9 +458,9 @@ contains
          close( unit=file_unit )
 
          if ( sum( s%blocks(:)%block_size ) .ne. s%world_size ) then
-            write (*,"(A, A)") PROGRAM_NAME, &
-               ": block domain decomposition does not match world size"
-            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
+            call wb_abort( &
+               "block domain decomposition does not match world size", &
+               MPI_ERR_RANK )
          end if
       end if
 
