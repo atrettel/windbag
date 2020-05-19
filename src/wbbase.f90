@@ -12,14 +12,15 @@
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wbbase
-   use iso_fortran_env, only : compiler_options, compiler_version, real64
+   use iso_fortran_env, only : compiler_options, compiler_version, &
+      error_unit, real64
    use mpi_f08
    implicit none
 
    private
 
    public WB_State, check_input_file, deallocate_state, initialize_state, &
-      print_initial_information
+      print_initial_information, wb_abort
 
    integer, public, parameter ::            FP = real64
    integer, public, parameter ::         N_DIM = 3
@@ -127,14 +128,12 @@ contains
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
-            write (*,"(A, A, A)") "Usage: ", PROGRAM_NAME, " [INPUT_FILE]"
-            call mpi_abort( MPI_COMM_WORLD, MPI_SUCCESS, ierr )
+            call wb_abort( "no input file given", MPI_ERR_BAD_FILE )
          end if
          call get_command_argument( 1, filename, filename_length, ierr )
          inquire( file=filename, exist=file_exists, iostat=ierr )
          if ( file_exists .eqv. .false. ) then
-            write (*,"(A, A)") PROGRAM_NAME, ": input file does not exist"
-            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_NO_SUCH_FILE, ierr )
+            call wb_abort( "input file does not exist", MPI_ERR_NO_SUCH_FILE )
          end if
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
@@ -542,4 +541,12 @@ contains
 
       call identify_process_neighbors( s )
    end subroutine setup_processes
+
+   subroutine wb_abort( message, errno )
+      character(len=*), intent(in) :: message
+      integer, intent(in) :: errno
+      integer :: ierr
+      write (error_unit, "(A, A, A)") PROGRAM_NAME, ": ", message
+      call mpi_abort( MPI_COMM_WORLD, errno, ierr )
+   end subroutine wb_abort
 end module wbbase
