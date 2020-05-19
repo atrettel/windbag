@@ -22,7 +22,7 @@ module wbbase
       print_initial_information
 
    integer, public, parameter ::            FP = real64
-   integer, public, parameter ::            ND = 3
+   integer, public, parameter ::         N_DIM = 3
    integer, public, parameter ::  BLOCK_MASTER = 0
    integer, public, parameter ::  WORLD_MASTER = 0
    integer, public, parameter :: STRING_LENGTH = 64
@@ -37,16 +37,16 @@ module wbbase
    type WB_Block
       private
       integer :: block_size
-      integer, dimension(ND) :: np, nx
-      integer, dimension(ND,2) :: neighbors
-      logical, dimension(ND) :: periods
+      integer, dimension(N_DIM) :: np, nx
+      integer, dimension(N_DIM,2) :: neighbors
+      logical, dimension(N_DIM) :: periods
       logical :: reorder = .false.
    end type WB_Block
 
    type WB_Process
       private
       integer :: block_rank
-      integer, dimension(ND) :: block_coords, nx
+      integer, dimension(N_DIM) :: block_coords, nx
       integer :: ib
    end type WB_Process
 
@@ -58,9 +58,9 @@ module wbbase
       integer, public :: nf
       integer, public :: ng
       integer, public :: nv = 5
-      integer, dimension(ND), public :: nx
-      integer, dimension(ND), private :: block_coords
-      integer, dimension(ND,2), public :: neighbors
+      integer, dimension(N_DIM), public :: nx
+      integer, dimension(N_DIM), private :: block_coords
+      integer, dimension(N_DIM,2), public :: neighbors
       real(FP), public :: t = 0.0_FP
       real(FP), dimension(:,:,:,:), allocatable, public :: f
       type(MPI_Comm), private :: comm_block
@@ -76,7 +76,7 @@ contains
          ! Ensure that lower and upper pairs exist, and that their number of
          ! points and processes match.
          do ib = 1, s%nb
-            do id = 1, ND
+            do id = 1, N_DIM
                neighbor_l = s%blocks(ib)%neighbors(id,1)
                if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
                   neighbor_u = s%blocks(neighbor_l)%neighbors(id,2)
@@ -87,7 +87,7 @@ contains
                         neighbor_l, " in direction ", id
                      call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
                   else
-                     do id2 = 1, ND
+                     do id2 = 1, N_DIM
                         if ( id2 .ne. id .and. s%blocks(ib)%np(id2) .ne. &
                            s%blocks(neighbor_l)%np(id2) ) then
                            write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
@@ -156,10 +156,10 @@ contains
    subroutine identify_process_neighbors( s )
       integer :: id, idir, ierr, block_neighbor, world_rank
       integer, dimension(2) :: block_ranks
-      integer, dimension(ND) :: block_coords
+      integer, dimension(N_DIM) :: block_coords
       type(WB_State), intent(inout) :: s
 
-      do id = 1, ND
+      do id = 1, N_DIM
          call mpi_cart_shift( s%comm_block, id-1, 1, &
             block_ranks(1), block_ranks(2), ierr )
          do idir = 1, 2
@@ -233,12 +233,12 @@ contains
             write (*,"(A, I4, A)", advance="no") "| ", ib, " "
             write (*,"(A, I7, A)", advance="no") "| ", &
                s%blocks(ib)%block_size, " | ("
-            do id = 1, ND
+            do id = 1, N_DIM
                write (*,"(I3, A)", advance="no") s%blocks(ib)%np(id), ","
             end do
             write (*,"(A, I12, A)", advance="no") ") | ", &
                product(s%blocks(ib)%nx), " | ("
-            do id = 1, ND
+            do id = 1, N_DIM
                write (*,"(I4, A)", advance="no") s%blocks(ib)%nx(id), ","
             end do
             write (*,"(A)") ") |"
@@ -317,13 +317,13 @@ contains
             write (*,"(A, I12, A)", advance="no") "| ", &
                s%block_rank, " "
             write (*,"(A)", advance="no") "| ("
-            do id = 1, ND
+            do id = 1, N_DIM
                write (*,"(I3, A)", advance="no") &
                   s%block_coords(id), ","
             end do
             write (*,"(A, I9, A)", advance="no") ") | ", &
                product(s%nx), " | ("
-            do id = 1, ND
+            do id = 1, N_DIM
                write (*,"(I3, A)", advance="no") &
                   s%nx(id), ","
             end do
@@ -346,14 +346,14 @@ contains
          write (*,"(A)") ""
 
          write (*,"(A)", advance="no") "| `world_rank` "
-         do id = 1, ND
+         do id = 1, N_DIM
             write (*,"(A, I1, A)", advance="no") "|       ", id, "L "
             write (*,"(A, I1, A)", advance="no") "|       ", id, "U "
          end do
          write (*,"(A)") "|"
 
          write (*,"(A)", advance="no") "| -----------: "
-         do id = 1, ND
+         do id = 1, N_DIM
             write (*,"(A, I1, A)", advance="no") "| -------: "
             write (*,"(A, I1, A)", advance="no") "| -------: "
          end do
@@ -364,7 +364,7 @@ contains
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
             write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
-            do id = 1, ND
+            do id = 1, N_DIM
                do idir = 1, 2
                   if ( s%neighbors(id,idir) .eq. MPI_PROC_NULL ) then
                      write (*,"(A)", advance="no") "|          "
@@ -422,7 +422,7 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: ierr, file_unit, ib, ib_loop, id
       type(WB_State), intent(inout) :: s
-      integer, dimension(ND) :: np, nx, neighbors_l, neighbors_u
+      integer, dimension(N_DIM) :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
 
       allocate( s%blocks(s%nb) )
@@ -445,7 +445,7 @@ contains
             s%blocks(ib)%neighbors(:,2) = neighbors_u
             s%blocks(ib)%nx = nx
 
-            do id = 1, ND
+            do id = 1, N_DIM
                if ( neighbors_l(id) .eq. ib .and. neighbors_u(id) .eq. ib ) then
                   s%blocks(ib)%periods(id) = .true.
                else
@@ -465,13 +465,13 @@ contains
       do ib = 1, s%nb
          call mpi_bcast( s%blocks(ib)%block_size, 1, MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%np, ND, MPI_INTEGER, WORLD_MASTER, &
+         call mpi_bcast( s%blocks(ib)%np, N_DIM, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%neighbors, ND*2, MPI_INTEGER, &
+         call mpi_bcast( s%blocks(ib)%neighbors, N_DIM*2, MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%nx, ND, MPI_INTEGER, WORLD_MASTER, &
+         call mpi_bcast( s%blocks(ib)%nx, N_DIM, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%periods, ND, MPI_LOGICAL, WORLD_MASTER, &
+         call mpi_bcast( s%blocks(ib)%periods, N_DIM, MPI_LOGICAL, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
       end do
    end subroutine read_block_namelists
@@ -495,15 +495,15 @@ contains
 
       s%ib = s%processes(s%world_rank)%ib
       call mpi_comm_split( MPI_COMM_WORLD, s%ib, 0, comm_split, ierr )
-      call mpi_cart_create( comm_split, ND, s%blocks(s%ib)%np, &
+      call mpi_cart_create( comm_split, N_DIM, s%blocks(s%ib)%np, &
          s%blocks(s%ib)%periods, s%blocks(s%ib)%reorder, s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
-      call mpi_cart_coords( s%comm_block, s%block_rank, ND, s%block_coords, &
+      call mpi_cart_coords( s%comm_block, s%block_rank, N_DIM, s%block_coords, &
          ierr )
 
-      do id = 1, ND
+      do id = 1, N_DIM
          s%nx(id) = s%blocks(s%ib)%nx(id) / s%blocks(s%ib)%np(id)
          if ( s%block_coords(id) .eq. s%blocks(s%ib)%np(id)-1 ) then
             s%nx(id) = s%nx(id) + modulo( s%blocks(s%ib)%nx(id), &
@@ -525,7 +525,7 @@ contains
 
       ! Check if the sum of the points in a block's processes equals the total
       ! number of points.
-      call mpi_reduce( product(s%nx), total_points, ND, MPI_INTEGER, MPI_SUM, &
+      call mpi_reduce( product(s%nx), total_points, N_DIM, MPI_INTEGER, MPI_SUM, &
          BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
