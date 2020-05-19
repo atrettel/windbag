@@ -70,37 +70,37 @@ module wbbase
 contains
    subroutine check_block_neighbors( s )
       type(WB_State), intent(in) :: s
-      integer :: ib, id, i_dim_d, ierr, neighbor_l, neighbor_u
+      integer :: ib, i_dim, i_dim_d, ierr, neighbor_l, neighbor_u
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          ! Ensure that lower and upper pairs exist, and that their number of
          ! points and processes match.
          do ib = 1, s%nb
-            do id = 1, N_DIM
-               neighbor_l = s%blocks(ib)%neighbors(id,1)
+            do i_dim = 1, N_DIM
+               neighbor_l = s%blocks(ib)%neighbors(i_dim,1)
                if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-                  neighbor_u = s%blocks(neighbor_l)%neighbors(id,2)
+                  neighbor_u = s%blocks(neighbor_l)%neighbors(i_dim,2)
                   if ( ib .ne. neighbor_u ) then
                      write (*,"(A, A, I1, A, I1, A, I1)") &
                         PROGRAM_NAME, ": lower face of block ", ib, &
                         " does not neighbor upper face of block ", &
-                        neighbor_l, " in direction ", id
+                        neighbor_l, " in direction ", i_dim
                      call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
                   else
                      do i_dim_d = 1, N_DIM
-                        if ( i_dim_d .ne. id .and. s%blocks(ib)%np(i_dim_d) .ne. &
+                        if ( i_dim_d .ne. i_dim .and. s%blocks(ib)%np(i_dim_d) .ne. &
                            s%blocks(neighbor_l)%np(i_dim_d) ) then
                            write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
-                              PROGRAM_NAME, ": face in direction ", id, &
+                              PROGRAM_NAME, ": face in direction ", i_dim, &
                               " shared by blocks ", ib, " and ", neighbor_l, &
                               " does not match processes in direction ", i_dim_d
                            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
                               ierr )
                         end if
-                        if ( i_dim_d .ne. id .and. s%blocks(ib)%nx(i_dim_d) .ne. &
+                        if ( i_dim_d .ne. i_dim .and. s%blocks(ib)%nx(i_dim_d) .ne. &
                            s%blocks(neighbor_l)%nx(i_dim_d) ) then
                            write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
-                              PROGRAM_NAME, ": face in direction ", id, &
+                              PROGRAM_NAME, ": face in direction ", i_dim, &
                               " shared by blocks ", ib, " and ", neighbor_l, &
                               " does not match points in direction ", i_dim_d
                            call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
@@ -154,13 +154,13 @@ contains
    end subroutine find_mpi_fp
 
    subroutine identify_process_neighbors( s )
-      integer :: id, i_dir, ierr, block_neighbor, world_rank
+      integer :: i_dim, i_dir, ierr, block_neighbor, world_rank
       integer, dimension(2) :: block_ranks
       integer, dimension(N_DIM) :: block_coords
       type(WB_State), intent(inout) :: s
 
-      do id = 1, N_DIM
-         call mpi_cart_shift( s%comm_block, id-1, 1, &
+      do i_dim = 1, N_DIM
+         call mpi_cart_shift( s%comm_block, i_dim-1, 1, &
             block_ranks(1), block_ranks(2), ierr )
          do i_dir = 1, 2
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
@@ -171,22 +171,22 @@ contains
                      exit
                   end if
                end do
-               s%neighbors(id,i_dir) = world_rank
+               s%neighbors(i_dim,i_dir) = world_rank
             else
-               block_neighbor = s%blocks(s%ib)%neighbors(id,i_dir)
+               block_neighbor = s%blocks(s%ib)%neighbors(i_dim,i_dir)
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
-                  s%neighbors(id,i_dir) = MPI_PROC_NULL
+                  s%neighbors(i_dim,i_dir) = MPI_PROC_NULL
                else
                   ! This block neighbors another block.  This neighboring block
                   ! sits on the opposite side of the current block.  Both
                   ! processes share the same block coordinates except for the
-                  ! current spatial dimension id.  The block coordinates for
-                  ! dimension id would be opposites for each.
+                  ! current spatial dimension i_dim.  The block coordinates for
+                  ! dimension i_dim would be opposites for each.
                   block_coords = s%block_coords
                   if ( i_dir .eq. 1 ) then
-                     block_coords(id) = s%blocks(block_neighbor)%np(id)-1
+                     block_coords(i_dim) = s%blocks(block_neighbor)%np(i_dim)-1
                   else
-                     block_coords(id) = 0
+                     block_coords(i_dim) = 0
                   end if
                   do world_rank = 0, s%world_size-1
                      if ( s%processes(world_rank)%ib .eq. block_neighbor &
@@ -195,7 +195,7 @@ contains
                         exit
                      end if
                   end do
-                  s%neighbors(id,i_dir) = world_rank
+                  s%neighbors(i_dim,i_dir) = world_rank
                end if
             end if
          end do
@@ -216,7 +216,7 @@ contains
    end subroutine initialize_state
 
    subroutine print_block_information( s )
-      integer :: ib, id
+      integer :: ib, i_dim
       type(WB_State), intent(in) :: s
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
@@ -233,13 +233,13 @@ contains
             write (*,"(A, I4, A)", advance="no") "| ", ib, " "
             write (*,"(A, I7, A)", advance="no") "| ", &
                s%blocks(ib)%block_size, " | ("
-            do id = 1, N_DIM
-               write (*,"(I3, A)", advance="no") s%blocks(ib)%np(id), ","
+            do i_dim = 1, N_DIM
+               write (*,"(I3, A)", advance="no") s%blocks(ib)%np(i_dim), ","
             end do
             write (*,"(A, I12, A)", advance="no") ") | ", &
                product(s%blocks(ib)%nx), " | ("
-            do id = 1, N_DIM
-               write (*,"(I4, A)", advance="no") s%blocks(ib)%nx(id), ","
+            do i_dim = 1, N_DIM
+               write (*,"(I4, A)", advance="no") s%blocks(ib)%nx(i_dim), ","
             end do
             write (*,"(A)") ") |"
          end do
@@ -285,7 +285,7 @@ contains
    end subroutine print_initial_information
 
    subroutine print_process_information( s )
-      integer :: id, ierr, string_length, world_rank
+      integer :: i_dim, ierr, string_length, world_rank
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
       type(WB_State), intent(in) :: s
 
@@ -317,15 +317,15 @@ contains
             write (*,"(A, I12, A)", advance="no") "| ", &
                s%block_rank, " "
             write (*,"(A)", advance="no") "| ("
-            do id = 1, N_DIM
+            do i_dim = 1, N_DIM
                write (*,"(I3, A)", advance="no") &
-                  s%block_coords(id), ","
+                  s%block_coords(i_dim), ","
             end do
             write (*,"(A, I9, A)", advance="no") ") | ", &
                product(s%nx), " | ("
-            do id = 1, N_DIM
+            do i_dim = 1, N_DIM
                write (*,"(I3, A)", advance="no") &
-                  s%nx(id), ","
+                  s%nx(i_dim), ","
             end do
             write (*,"(A)") ") |"
          end if
@@ -338,7 +338,7 @@ contains
    end subroutine print_process_information
 
    subroutine print_process_neighbors( s )
-      integer :: id, i_dir, ierr, world_rank
+      integer :: i_dim, i_dir, ierr, world_rank
       type(WB_State), intent(in) :: s
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
@@ -346,14 +346,14 @@ contains
          write (*,"(A)") ""
 
          write (*,"(A)", advance="no") "| `world_rank` "
-         do id = 1, N_DIM
-            write (*,"(A, I1, A)", advance="no") "|       ", id, "L "
-            write (*,"(A, I1, A)", advance="no") "|       ", id, "U "
+         do i_dim = 1, N_DIM
+            write (*,"(A, I1, A)", advance="no") "|       ", i_dim, "L "
+            write (*,"(A, I1, A)", advance="no") "|       ", i_dim, "U "
          end do
          write (*,"(A)") "|"
 
          write (*,"(A)", advance="no") "| -----------: "
-         do id = 1, N_DIM
+         do i_dim = 1, N_DIM
             write (*,"(A, I1, A)", advance="no") "| -------: "
             write (*,"(A, I1, A)", advance="no") "| -------: "
          end do
@@ -364,13 +364,13 @@ contains
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
             write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
-            do id = 1, N_DIM
+            do i_dim = 1, N_DIM
                do i_dir = 1, 2
-                  if ( s%neighbors(id,i_dir) .eq. MPI_PROC_NULL ) then
+                  if ( s%neighbors(i_dim,i_dir) .eq. MPI_PROC_NULL ) then
                      write (*,"(A)", advance="no") "|          "
                   else
                      write (*,"(A, I8, A)", advance="no") "| ", &
-                        s%neighbors(id,i_dir), " "
+                        s%neighbors(i_dim,i_dir), " "
                   end if
                end do
             end do
@@ -420,7 +420,7 @@ contains
 
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      integer :: ierr, file_unit, ib, ib_loop, id
+      integer :: ierr, file_unit, ib, ib_loop, i_dim
       type(WB_State), intent(inout) :: s
       integer, dimension(N_DIM) :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
@@ -445,11 +445,11 @@ contains
             s%blocks(ib)%neighbors(:,2) = neighbors_u
             s%blocks(ib)%nx = nx
 
-            do id = 1, N_DIM
-               if ( neighbors_l(id) .eq. ib .and. neighbors_u(id) .eq. ib ) then
-                  s%blocks(ib)%periods(id) = .true.
+            do i_dim = 1, N_DIM
+               if ( neighbors_l(i_dim) .eq. ib .and. neighbors_u(i_dim) .eq. ib ) then
+                  s%blocks(ib)%periods(i_dim) = .true.
                else
-                  s%blocks(ib)%periods(id) = .false.
+                  s%blocks(ib)%periods(i_dim) = .false.
                end if
             end do
          end do
@@ -477,7 +477,7 @@ contains
    end subroutine read_block_namelists
 
    subroutine setup_processes( s )
-      integer :: assigned_processes, ib, id, ierr, total_points, world_rank
+      integer :: assigned_processes, ib, i_dim, ierr, total_points, world_rank
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
@@ -503,11 +503,11 @@ contains
       call mpi_cart_coords( s%comm_block, s%block_rank, N_DIM, s%block_coords, &
          ierr )
 
-      do id = 1, N_DIM
-         s%nx(id) = s%blocks(s%ib)%nx(id) / s%blocks(s%ib)%np(id)
-         if ( s%block_coords(id) .eq. s%blocks(s%ib)%np(id)-1 ) then
-            s%nx(id) = s%nx(id) + modulo( s%blocks(s%ib)%nx(id), &
-               s%blocks(s%ib)%np(id) )
+      do i_dim = 1, N_DIM
+         s%nx(i_dim) = s%blocks(s%ib)%nx(i_dim) / s%blocks(s%ib)%np(i_dim)
+         if ( s%block_coords(i_dim) .eq. s%blocks(s%ib)%np(i_dim)-1 ) then
+            s%nx(i_dim) = s%nx(i_dim) + modulo( s%blocks(s%ib)%nx(i_dim), &
+               s%blocks(s%ib)%np(i_dim) )
          end if
       end do
 
