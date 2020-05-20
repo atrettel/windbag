@@ -51,7 +51,7 @@ module wbbase
    type WB_Process
       private
       integer :: block_rank
-      integer, dimension(N_DIM) :: block_coords, nx
+      integer, dimension(:), allocatable :: block_coords, nx
       integer :: ib
    end type WB_Process
 
@@ -139,13 +139,19 @@ contains
    end subroutine check_input_file
 
    subroutine deallocate_state( s )
-      integer :: ierr
+      integer :: ierr, world_rank
       type(WB_State), intent(inout) :: s
 
       deallocate( s%case_name )
-      deallocate( s%blocks )
-      deallocate( s%processes )
       call mpi_comm_free( s%comm_block, ierr )
+
+      deallocate( s%blocks )
+
+      do world_rank = 0, s%world_size-1
+         deallocate( s%processes(world_rank)%block_coords )
+         deallocate( s%processes(world_rank)%nx )
+      end do
+      deallocate( s%processes )
    end subroutine deallocate_state
 
    subroutine find_mpi_fp
@@ -482,6 +488,11 @@ contains
       type(WB_State), intent(inout) :: s
 
       allocate( s%processes(0:s%world_size-1) )
+      do world_rank = 0, s%world_size-1
+         allocate( s%processes(world_rank)%block_coords(N_DIM) )
+         allocate( s%processes(world_rank)%nx(N_DIM) )
+      end do
+
       ib = 1
       assigned_processes = 0
       do world_rank = 0, s%world_size-1
