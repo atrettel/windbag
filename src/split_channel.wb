@@ -2,6 +2,7 @@
 case_name='split_channel',
 nb=2,
 ng=3,
+n_dim=3,
 /
 &block
 ib=1,

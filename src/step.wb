@@ -2,6 +2,7 @@
 case_name='step',
 nb=3,
 ng=3,
+n_dim=3,
 /
 &block
 ib=1,
