@@ -42,9 +42,9 @@ module wbbase
    type WB_Block
       private
       integer :: block_size
-      integer, dimension(N_DIM) :: np, nx
-      integer, dimension(N_DIM,N_DIR) :: neighbors
-      logical, dimension(N_DIM) :: periods
+      integer, dimension(:), allocatable :: np, nx
+      integer, dimension(:,:), allocatable :: neighbors
+      logical, dimension(:), allocatable :: periods
       logical :: reorder = .false.
    end type WB_Block
 
@@ -139,12 +139,18 @@ contains
    end subroutine check_input_file
 
    subroutine deallocate_state( s )
-      integer :: ierr, world_rank
+      integer :: ib, ierr, world_rank
       type(WB_State), intent(inout) :: s
 
       deallocate( s%case_name )
       call mpi_comm_free( s%comm_block, ierr )
 
+      do ib = 1, s%nb
+         deallocate( s%blocks(ib)%np )
+         deallocate( s%blocks(ib)%nx )
+         deallocate( s%blocks(ib)%neighbors )
+         deallocate( s%blocks(ib)%periods )
+      end do
       deallocate( s%blocks )
 
       do world_rank = 0, s%world_size-1
@@ -433,6 +439,13 @@ contains
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
 
       allocate( s%blocks(s%nb) )
+      do ib = 1, s%nb
+         allocate( s%blocks(ib)%np(N_DIM) )
+         allocate( s%blocks(ib)%nx(N_DIM) )
+         allocate( s%blocks(ib)%neighbors(N_DIM,N_DIR) )
+         allocate( s%blocks(ib)%periods(N_DIM) )
+      end do
+
       if ( s%world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
