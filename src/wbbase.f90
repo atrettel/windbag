@@ -435,10 +435,8 @@ contains
             read( unit=file_unit, nml=block )
 
             if ( ib .gt. s%nb .or. ib .lt. 1 ) then
-               write (*,"(A, A, I1, A, I1, A)") &
-                  PROGRAM_NAME, ": block ", ib, &
-                  " is out of range (min = 1 and max = ", s%nb, ")"
-               call mpi_abort( MPI_COMM_WORLD, MPI_ERR_RANK, ierr )
+               call wb_abort( "block N1 is out of acceptable range", &
+                  MPI_ERR_RANK, (/ ib /) )
             end if
 
             s%blocks(ib)%block_size = product(np)
@@ -541,11 +539,18 @@ contains
       call identify_process_neighbors( s )
    end subroutine setup_processes
 
-   subroutine wb_abort( message, errno )
+   subroutine wb_abort( message, errno, int_array )
       character(len=*), intent(in) :: message
       integer, intent(in) :: errno
-      integer :: ierr
+      integer :: i, ierr
+      integer, dimension(:), optional, intent(in) :: int_array
+
       write (error_unit, "(A, A, A)") PROGRAM_NAME, ": ", message
+      if ( present(int_array) ) then
+         do i = 1, size(int_array)
+            write (error_unit, "(A, I1, A, I8)") "N", i, " = ", int_array(i)
+         end do
+      end if
       call mpi_abort( MPI_COMM_WORLD, errno, ierr )
    end subroutine wb_abort
 end module wbbase
