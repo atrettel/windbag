@@ -92,7 +92,8 @@ contains
                                      (/ ib, neighbor_l, i_dim /) )
                   else
                      do i_dim_d = 1, N_DIM
-                        if ( i_dim_d .ne. i_dim .and. s%blocks(ib)%np(i_dim_d) .ne. &
+                        if ( i_dim_d .ne. i_dim .and. &
+                           s%blocks(ib)%np(i_dim_d) .ne. &
                            s%blocks(neighbor_l)%np(i_dim_d) ) then
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
@@ -100,7 +101,8 @@ contains
                               MPI_ERR_TOPOLOGY, &
                               (/ i_dim, ib, neighbor_l, i_dim_d /) )
                         end if
-                        if ( i_dim_d .ne. i_dim .and. s%blocks(ib)%nx(i_dim_d) .ne. &
+                        if ( i_dim_d .ne. i_dim .and. &
+                           s%blocks(ib)%nx(i_dim_d) .ne. &
                            s%blocks(neighbor_l)%nx(i_dim_d) ) then
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
@@ -443,7 +445,8 @@ contains
             s%blocks(ib)%nx = nx
 
             do i_dim = 1, N_DIM
-               if ( neighbors_l(i_dim) .eq. ib .and. neighbors_u(i_dim) .eq. ib ) then
+               if ( neighbors_l(i_dim) .eq. ib .and. &
+                  neighbors_u(i_dim) .eq. ib ) then
                   s%blocks(ib)%periods(i_dim) = .true.
                else
                   s%blocks(ib)%periods(i_dim) = .false.
@@ -468,8 +471,8 @@ contains
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%nx, N_DIM, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%periods, N_DIM, MPI_LOGICAL, WORLD_MASTER, &
-            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( s%blocks(ib)%periods, N_DIM, MPI_LOGICAL, &
+            WORLD_MASTER, MPI_COMM_WORLD, ierr )
       end do
    end subroutine read_block_namelists
 
@@ -497,8 +500,8 @@ contains
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
-      call mpi_cart_coords( s%comm_block, s%block_rank, N_DIM, s%block_coords, &
-         ierr )
+      call mpi_cart_coords( s%comm_block, s%block_rank, N_DIM, &
+         s%block_coords, ierr )
 
       do i_dim = 1, N_DIM
          s%nx(i_dim) = s%blocks(s%ib)%nx(i_dim) / s%blocks(s%ib)%np(i_dim)
@@ -522,8 +525,8 @@ contains
 
       ! Check if the sum of the points in a block's processes equals the total
       ! number of points.
-      call mpi_reduce( product(s%nx), total_points, N_DIM, MPI_INTEGER, MPI_SUM, &
-         BLOCK_MASTER, s%comm_block, ierr )
+      call mpi_reduce( product(s%nx), total_points, N_DIM, MPI_INTEGER, &
+         MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
          call wb_abort( "total points in block N1 does not match sum of &
