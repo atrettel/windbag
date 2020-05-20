@@ -526,11 +526,10 @@ contains
          BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
-         write (*,"(A, A, I2, A, I8, A, I8, A)") &
-            PROGRAM_NAME, ": total points in block ", s%ib, &
-            " (", product(s%blocks(s%ib)%nx), &
-            ") does not match sum of points in processes (", total_points, ")"
-         call mpi_abort( MPI_COMM_WORLD, MPI_ERR_SIZE, ierr )
+         call wb_abort( "total points in block N1 does not match sum of &
+                        &points in individual processes", &
+            MPI_ERR_SIZE, &
+            (/ s%ib /) )
       end if
 
       call identify_process_neighbors( s )
