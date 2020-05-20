@@ -86,11 +86,10 @@ contains
                if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
                   neighbor_u = s%blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
                   if ( ib .ne. neighbor_u ) then
-                     write (*,"(A, A, I1, A, I1, A, I1)") &
-                        PROGRAM_NAME, ": lower face of block ", ib, &
-                        " does not neighbor upper face of block ", &
-                        neighbor_l, " in direction ", i_dim
-                     call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, ierr )
+                     call wb_abort( "lower face of block N1 does not neighbor &
+                                    &upper face of block N2 in direction N3", &
+                                     MPI_ERR_TOPOLOGY, &
+                                     (/ ib, neighbor_l, i_dim /) )
                   else
                      do i_dim_d = 1, N_DIM
                         if ( i_dim_d .ne. i_dim .and. s%blocks(ib)%np(i_dim_d) .ne. &
