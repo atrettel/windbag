@@ -59,7 +59,7 @@ module wbbase
       integer, private :: block_rank, block_size
       integer, public :: world_rank, world_size
       integer, public :: ib, nb
-      integer, public :: n_dim = 3
+      integer, public :: n_dim
       integer, public :: nf
       integer, public :: ng
       integer, public :: nv = 5
@@ -406,9 +406,9 @@ contains
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
-      integer :: ierr, file_unit, nb, ng
+      integer :: ierr, file_unit, nb, ng, n_dim
       type(WB_State), intent(inout) :: s
-      namelist /general/ case_name, nb, ng
+      namelist /general/ case_name, nb, ng, n_dim
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
@@ -416,8 +416,9 @@ contains
          read( unit=file_unit, nml=general )
          close( unit=file_unit )
 
-         s%nb = nb
-         s%ng = ng
+         s%nb    = nb
+         s%ng    = ng
+         s%n_dim = n_dim
 
          if ( s%nb .gt. s%world_size ) then
             call wb_abort( "number of blocks is greater than world size", &
@@ -433,6 +434,8 @@ contains
       call mpi_bcast( s%nb, 1, MPI_INTEGER, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
       call mpi_bcast( s%ng, 1, MPI_INTEGER, WORLD_MASTER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( s%n_dim, 1, MPI_INTEGER, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
