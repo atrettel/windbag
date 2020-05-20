@@ -75,7 +75,7 @@ module wbbase
 contains
    subroutine check_block_neighbors( s )
       type(WB_State), intent(in) :: s
-      integer :: ib, i_dim, i_dim_d, ierr, neighbor_l, neighbor_u
+      integer :: ib, i_dim, i_dim_d, neighbor_l, neighbor_u
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          ! Ensure that lower and upper pairs exist, and that their number of
@@ -102,12 +102,11 @@ contains
                         end if
                         if ( i_dim_d .ne. i_dim .and. s%blocks(ib)%nx(i_dim_d) .ne. &
                            s%blocks(neighbor_l)%nx(i_dim_d) ) then
-                           write (*,"(A, A, I1, A, I1, A, I1, A, I1)") &
-                              PROGRAM_NAME, ": face in direction ", i_dim, &
-                              " shared by blocks ", ib, " and ", neighbor_l, &
-                              " does not match points in direction ", i_dim_d
-                           call mpi_abort( MPI_COMM_WORLD, MPI_ERR_TOPOLOGY, &
-                              ierr )
+                           call wb_abort( "face in direction N1 shared by &
+                                          &blocks N2 and N3 does not match &
+                                          &points in direction N4", &
+                              MPI_ERR_TOPOLOGY, &
+                              (/ i_dim, ib, neighbor_l, i_dim_d /) )
                         end if
                      end do
                   end if
