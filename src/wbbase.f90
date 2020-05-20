@@ -173,9 +173,10 @@ contains
    subroutine identify_process_neighbors( s )
       integer :: i_dim, i_dir, ierr, block_neighbor, world_rank
       integer, dimension(N_DIR) :: block_ranks
-      integer, dimension(N_DIM) :: block_coords
+      integer, dimension(:), allocatable :: block_coords
       type(WB_State), intent(inout) :: s
 
+      allocate( block_coords(N_DIM) )
       do i_dim = 1, N_DIM
          call mpi_cart_shift( s%comm_block, i_dim-1, 1, &
             block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
@@ -217,6 +218,7 @@ contains
             end if
          end do
       end do
+      deallocate( block_coords )
    end subroutine identify_process_neighbors
 
    subroutine initialize_state( s, filename )
