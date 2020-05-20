@@ -63,9 +63,9 @@ module wbbase
       integer, public :: nf
       integer, public :: ng
       integer, public :: nv = 5
-      integer, dimension(N_DIM), public :: nx
-      integer, dimension(N_DIM), private :: block_coords
-      integer, dimension(N_DIM,N_DIR), public :: neighbors
+      integer, dimension(:), allocatable, public :: nx
+      integer, dimension(:), allocatable, private :: block_coords
+      integer, dimension(:,:), allocatable, public :: neighbors
       real(FP), public :: t = 0.0_FP
       real(FP), dimension(:,:,:,:), allocatable, public :: f
       type(MPI_Comm), private :: comm_block
@@ -143,6 +143,9 @@ contains
       type(WB_State), intent(inout) :: s
 
       deallocate( s%case_name )
+      deallocate( s%nx )
+      deallocate( s%block_coords )
+      deallocate( s%neighbors )
       call mpi_comm_free( s%comm_block, ierr )
 
       do ib = 1, s%nb
@@ -499,6 +502,10 @@ contains
       integer :: assigned_processes, ib, i_dim, ierr, total_points, world_rank
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
+
+      allocate( s%nx(N_DIM) )
+      allocate( s%block_coords(N_DIM) )
+      allocate( s%neighbors(N_DIM,N_DIR) )
 
       allocate( s%processes(0:s%world_size-1) )
       do world_rank = 0, s%world_size-1
