@@ -538,16 +538,22 @@ contains
       call identify_process_neighbors( s )
    end subroutine setup_processes
 
-   subroutine wb_abort( message, errno, int_array )
+   subroutine wb_abort( message, errno, ints, floats )
       character(len=*), intent(in) :: message
       integer, intent(in) :: errno
       integer :: i, ierr
-      integer, dimension(:), optional, intent(in) :: int_array
+      integer, dimension(:), optional, intent(in) :: ints
+      real(FP), dimension(:), optional, intent(in) :: floats
 
       write (error_unit, "(A, A, A)") PROGRAM_NAME, ": ", message
-      if ( present(int_array) ) then
-         do i = 1, size(int_array)
-            write (error_unit, "(A, I1, A, I8)") "N", i, " = ", int_array(i)
+      if ( present(ints) ) then
+         do i = 1, size(ints)
+            write (error_unit, "(A, I1, A, I8)") "N", i, " = ", ints(i)
+         end do
+      end if
+      if ( present(floats) ) then
+         do i = 1, size(floats)
+            write (error_unit, "(A, I1, A, ES9.2)") "F", i, " = ", floats(i)
          end do
       end if
       call mpi_abort( MPI_COMM_WORLD, errno, ierr )
