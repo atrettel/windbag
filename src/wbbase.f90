@@ -440,8 +440,13 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: ierr, file_unit, ib, ib_loop, i_dim
       type(WB_State), intent(inout) :: s
-      integer, dimension(N_DIM) :: np, nx, neighbors_l, neighbors_u
+      integer, dimension(:), allocatable :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
+
+      allocate( np(N_DIM) )
+      allocate( nx(N_DIM) )
+      allocate( neighbors_l(N_DIM) )
+      allocate( neighbors_u(N_DIM) )
 
       allocate( s%blocks(s%nb) )
       do ib = 1, s%nb
@@ -498,6 +503,11 @@ contains
          call mpi_bcast( s%blocks(ib)%periods, N_DIM, MPI_LOGICAL, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
       end do
+
+      deallocate( np )
+      deallocate( nx )
+      deallocate( neighbors_l )
+      deallocate( neighbors_u )
    end subroutine read_block_namelists
 
    subroutine setup_processes( s )
