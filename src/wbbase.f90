@@ -22,10 +22,11 @@ module wbbase
    public WB_State, check_input_file, deallocate_state, initialize_state, &
       print_initial_information, wb_abort
 
-   integer, public, parameter ::            FP = real64
-   integer, public, parameter ::  BLOCK_MASTER = 0
-   integer, public, parameter ::  WORLD_MASTER = 0
-   integer, public, parameter :: STRING_LENGTH = 64
+   integer, public, parameter       ::     FP = real64
+   type(MPI_Datatype), public, save :: MPI_FP
+
+   integer, public, parameter :: BLOCK_MASTER = 0
+   integer, public, parameter :: WORLD_MASTER = 0
 
    integer, public, parameter :: NO_BLOCK_NEIGHBOR = 0
 
@@ -33,10 +34,19 @@ module wbbase
    integer, public, parameter :: LOWER_DIR = 1
    integer, public, parameter :: UPPER_DIR = 2
 
-   character(len=*), public, parameter :: PROGRAM_NAME = "windbag"
-   character(len=*), public, parameter ::      VERSION = "0.0.0"
+   integer, public, parameter :: DEFAULT_IB       = 1
+   integer, public, parameter :: DEFAULT_N_DIM    = 3
+   integer, public, parameter :: DEFAULT_NB       = 1
+   integer, public, parameter :: DEFAULT_NG       = 3
+   integer, public, parameter :: DEFAULT_NP       = 0
+   integer, public, parameter :: DEFAULT_NX       = 0
+   integer, public, parameter :: DEFAULT_NEIGHBOR = 1
 
-   type(MPI_Datatype), public, save :: MPI_FP
+   integer, public, parameter :: STRING_LENGTH = 64
+
+   character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
+   character(len=*), public, parameter ::           VERSION = "0.0.0"
+   character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
 
    type WB_Block
       private
@@ -405,8 +415,9 @@ contains
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      character(len=STRING_LENGTH) :: case_name
-      integer :: ierr, file_unit, nb, ng, n_dim
+      character(len=STRING_LENGTH) :: case_name=DEFAULT_CASE_NAME
+      integer :: ierr, file_unit, n_dim=DEFAULT_N_DIM, nb=DEFAULT_NB, &
+         ng=DEFAULT_NG
       type(WB_State), intent(inout) :: s
       namelist /general/ case_name, nb, ng, n_dim
 
@@ -441,7 +452,7 @@ contains
 
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      integer :: ierr, file_unit, ib, ib_loop, i_dim
+      integer :: ierr, file_unit, ib=DEFAULT_IB, ib_loop, i_dim
       type(WB_State), intent(inout) :: s
       integer, dimension(:), allocatable :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
@@ -451,12 +462,19 @@ contains
       allocate( neighbors_l(s%n_dim) )
       allocate( neighbors_u(s%n_dim) )
 
+      do i_dim = 1, s%n_dim
+         np(i_dim)          = DEFAULT_NP
+         nx(i_dim)          = DEFAULT_NX
+         neighbors_l(i_dim) = DEFAULT_NEIGHBOR
+         neighbors_u(i_dim) = DEFAULT_NEIGHBOR
+      end do
+
       allocate( s%blocks(s%nb) )
-      do ib = 1, s%nb
-         allocate( s%blocks(ib)%np(s%n_dim) )
-         allocate( s%blocks(ib)%nx(s%n_dim) )
-         allocate( s%blocks(ib)%neighbors(s%n_dim,N_DIR) )
-         allocate( s%blocks(ib)%periods(s%n_dim) )
+      do ib_loop = 1, s%nb
+         allocate( s%blocks(ib_loop)%np(s%n_dim) )
+         allocate( s%blocks(ib_loop)%nx(s%n_dim) )
+         allocate( s%blocks(ib_loop)%neighbors(s%n_dim,N_DIR) )
+         allocate( s%blocks(ib_loop)%periods(s%n_dim) )
       end do
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
