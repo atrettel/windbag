@@ -13,7 +13,7 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wbbase
    use iso_fortran_env, only : compiler_options, compiler_version, &
-      error_unit, real64
+      error_unit, int32, real64
    use mpi_f08
    implicit none
 
@@ -47,6 +47,18 @@ module wbbase
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
+
+   ! Big-endian architectures put the most significant byte first, and
+   ! little-endian architectures put the least significant byte first.  Binary
+   ! output requires knowing the architecture's endianness.  This statement
+   ! casts an integer for 1 as a single character (the X is arbitrary) and then
+   ! gets the ASCII code for the first character (the result only contains the
+   ! leading bits of the integer).  If the result is 1, then the architecture
+   ! is little-endian, since the least significant byte came first.  If the
+   ! result is 0, then the architecture is big-endian.  Little-endian
+   ! architectures are more common nowadays.
+   logical, public, parameter :: ARCH_IS_LITTLE_ENDIAN = &
+      ichar( transfer( 1_int32, "X" ) ) .eq. 1
 
    type WB_Block
       private
