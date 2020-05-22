@@ -521,9 +521,9 @@ contains
          call write_string_table_entry( f, "points", 12 )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, label, 7 )
+            call write_string_table_entry( f, label, 7, &
+               end_row=(i_dim .eq. s%n_dim) )
          end do
-         write (f, "(A)", advance="yes") "|"
 
          call write_rule_table_entry( f,  4, alignment=RIGHT_ALIGNED )
          call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
@@ -532,9 +532,9 @@ contains
          end do
          call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
-            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED )
+            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED, &
+               end_row=(i_dim .eq. s%n_dim) )
          end do
-         write (f, "(A)", advance="yes") "|"
 
          do ib = 1, s%nb
             call write_integer_table_entry( f, ib, 4 )
@@ -544,9 +544,9 @@ contains
             end do
             call write_integer_table_entry( f, product(s%blocks(ib)%nx), 12 )
             do i_dim = 1, s%n_dim
-               call write_integer_table_entry( f, s%blocks(ib)%nx(i_dim), 7 )
+               call write_integer_table_entry( f, s%blocks(ib)%nx(i_dim), 7, &
+                  end_row=(i_dim .eq. s%n_dim) )
             end do
-            write (f, "(A)", advance="yes") "|"
          end do
       end if
    end subroutine
