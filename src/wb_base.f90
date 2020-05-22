@@ -97,7 +97,7 @@ module wb_base
 contains
    subroutine check_block_neighbors( s )
       type(WB_State), intent(in) :: s
-      integer :: ib, i_dim, i_dim_d, neighbor_l, neighbor_u
+      integer :: ib, i_dim, j_dim, neighbor_l, neighbor_u
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          ! Ensure that lower and upper pairs exist, and that their number of
@@ -113,24 +113,24 @@ contains
                                      MPI_ERR_TOPOLOGY, &
                                      (/ ib, neighbor_l, i_dim /) )
                   else
-                     do i_dim_d = 1, s%n_dim
-                        if ( i_dim_d .ne. i_dim .and. &
-                           s%blocks(ib)%np(i_dim_d) .ne. &
-                           s%blocks(neighbor_l)%np(i_dim_d) ) then
+                     do j_dim = 1, s%n_dim
+                        if ( j_dim .ne. i_dim .and. &
+                           s%blocks(ib)%np(j_dim) .ne. &
+                           s%blocks(neighbor_l)%np(j_dim) ) then
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
                                           &processes in direction N4", &
                               MPI_ERR_TOPOLOGY, &
-                              (/ i_dim, ib, neighbor_l, i_dim_d /) )
+                              (/ i_dim, ib, neighbor_l, j_dim /) )
                         end if
-                        if ( i_dim_d .ne. i_dim .and. &
-                           s%blocks(ib)%nx(i_dim_d) .ne. &
-                           s%blocks(neighbor_l)%nx(i_dim_d) ) then
+                        if ( j_dim .ne. i_dim .and. &
+                           s%blocks(ib)%nx(j_dim) .ne. &
+                           s%blocks(neighbor_l)%nx(j_dim) ) then
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
                                           &points in direction N4", &
                               MPI_ERR_TOPOLOGY, &
-                              (/ i_dim, ib, neighbor_l, i_dim_d /) )
+                              (/ i_dim, ib, neighbor_l, j_dim /) )
                         end if
                      end do
                   end if
