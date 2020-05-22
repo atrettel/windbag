@@ -57,8 +57,8 @@ module wb_base
    ! is little-endian, since the least significant byte came first.  If the
    ! result is 0, then the architecture is big-endian.  Little-endian
    ! architectures are more common nowadays.
-   logical, public, parameter :: ARCH_IS_LITTLE_ENDIAN = &
-      ichar( transfer( 1_int32, "X" ) ) .eq. 1
+   logical, public, parameter :: ARCH_IS_BIG_ENDIAN = &
+      ichar( transfer( 1_int32, "X" ) ) .eq. 0
 
    type WB_Block
       private
@@ -577,6 +577,12 @@ contains
                              &precision."
          end if
          write (f,"(A)") ""
+
+         if ( ARCH_IS_BIG_ENDIAN ) then
+            write (f,"(A)") "- Architecture is big-endian."
+         else
+            write (f,"(A)") "- Architecture is little-endian."
+         end if
 
          call mpi_get_version( mpi_major_version_number, &
             mpi_minor_version_number, ierr )
