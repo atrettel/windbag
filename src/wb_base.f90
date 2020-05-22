@@ -11,7 +11,7 @@
 ! 
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
-module wbbase
+module wb_base
    use iso_fortran_env, only : compiler_options, compiler_version, &
       error_unit, int32, real64
    use mpi_f08
@@ -664,4 +664,4 @@ contains
       end if
       call mpi_abort( MPI_COMM_WORLD, errno, ierr )
    end subroutine wb_abort
-end module wbbase
+end module wb_base

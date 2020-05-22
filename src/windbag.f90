@@ -13,7 +13,7 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 program windbag
    use mpi_f08
-   use wbbase
+   use wb_base
 
    implicit none
    character(len=STRING_LENGTH) :: filename
