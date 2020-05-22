@@ -1,0 +1,6 @@
+&general
+case_name="general_too_few_dimensions",
+n_dim=0,
+nb=2,
+ng=3,
+/
