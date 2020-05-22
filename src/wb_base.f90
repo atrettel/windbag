@@ -261,6 +261,7 @@ contains
 
       call write_block_information( output_unit, s )
       call write_process_information( output_unit, s )
+      call write_process_neighbors( output_unit, s )
    end subroutine print_initial_information
 
    subroutine read_general_namelist( s, filename )
@@ -619,4 +620,69 @@ contains
          write (*,"(A)") ""
       end if
    end subroutine write_process_information
+
+   subroutine write_process_neighbors( f, s )
+      integer, intent(in) :: f
+      type(WB_State), intent(in) :: s
+      integer :: i_dim, i_dir, ierr, j_dir, world_rank, face_count=0, neighbor
+      integer, dimension(N_DIR) :: dirs = (/ LOWER_DIR, UPPER_DIR /)
+      character(len=STRING_LENGTH) :: label
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") "## Process neighbors"
+         write (*,"(A)") ""
+
+         call write_string_table_entry( f, "`world_rank`", 12 )
+         do i_dim = 1, s%n_dim
+            do i_dir = 1, N_DIR
+               j_dir = dirs(i_dir)
+               face_count = face_count + 1
+               if ( j_dir .eq. LOWER_DIR ) then
+                  write (label,"(I1, A)") i_dim, "L"
+               else
+                  write (label,"(I1, A)") i_dim, "U"
+               end if
+               call write_string_table_entry( f, trim(label), 8, &
+                  end_row=( face_count .eq. s%n_dim*N_DIR ) )
+            end do
+         end do
+
+         face_count = 0
+         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         do i_dim = 1, s%n_dim
+            do i_dir = 1, N_DIR
+               face_count = face_count + 1
+               call write_rule_table_entry( f, 8, alignment=RIGHT_ALIGNED, &
+                  end_row=( face_count .eq. s%n_dim*N_DIR ) )
+            end do
+         end do
+      end if
+
+      do world_rank = 0, s%world_size-1
+         face_count = 0
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         if ( s%world_rank .eq. world_rank ) then
+            call write_integer_table_entry( f, s%world_rank, 12 )
+            do i_dim = 1, s%n_dim
+               do i_dir = 1, N_DIR
+                  j_dir = dirs(i_dir)
+                  face_count = face_count + 1
+                  neighbor = s%neighbors(i_dim,j_dir)
+                  if ( neighbor .eq. MPI_PROC_NULL ) then
+                     call write_string_table_entry( f, "-", 8, &
+                        end_row=( face_count .eq. s%n_dim*N_DIR ) )
+                  else
+                     call write_integer_table_entry( f, neighbor, 8, &
+                        end_row=( face_count .eq. s%n_dim*N_DIR ) )
+                  end if
+               end do
+            end do
+         end if
+      end do
+
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") ""
+      end if
+   end subroutine write_process_neighbors
 end module wb_base
