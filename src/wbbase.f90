@@ -443,9 +443,21 @@ contains
          s%ng    = ng
          s%n_dim = n_dim
 
+         if ( s%nb .lt. 1 ) then
+            call wb_abort( "number of blocks is less than 1", &
+               MPI_ERR_COUNT )
+         end if
          if ( s%nb .gt. s%world_size ) then
             call wb_abort( "number of blocks is greater than world size", &
-               MPI_ERR_RANK )
+               MPI_ERR_COUNT )
+         end if
+         if ( s%ng .lt. 1 ) then
+            call wb_abort( "number of ghost points is less than 1", &
+               MPI_ERR_COUNT )
+         end if
+         if ( s%n_dim .lt. 1 .or. s%n_dim .gt. 3 ) then
+            call wb_abort( "number of dimensions must be 1, 2, or 3", &
+               MPI_ERR_COUNT )
          end if
       end if
 
