@@ -518,7 +518,7 @@ contains
          call write_string_table_entry( f, "`ib`",         4 )
          call write_string_table_entry( f, "`block_size`", 12 )
          do i_dim = 1, s%n_dim
-            write (label,"(A, I1, A)") "`nd(", i_dim, ")`"
+            write (label,"(A, I1, A)") "`np(", i_dim, ")`"
             call write_string_table_entry( f, trim(label), 7 )
          end do
          call write_string_table_entry( f, "points", 12 )
