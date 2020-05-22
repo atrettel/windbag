@@ -519,6 +519,11 @@ contains
             s%blocks(ib)%nx = nx
 
             do i_dim = 1, s%n_dim
+               if ( s%blocks(ib)%np(i_dim) .lt. 1 ) then
+                  call wb_abort( "number of processes in direction N1 of &
+                                 &block N2 is less than 1", &
+                                 MPI_ERR_COUNT, (/ i_dim, ib /) )
+               end if
                if ( s%blocks(ib)%nx(i_dim) .lt. s%ng ) then
                   call wb_abort( "number of points in direction N1 of block &
                                  &N2 is less than number of ghost points N3", &
