@@ -1,0 +1,13 @@
+&general
+case_name="channel",
+n_dim=3,
+nb=1,
+ng=3,
+/
+&block
+ib=1,
+np=2,1,1,
+neighbors_l=1,0,1,
+neighbors_u=1,0,1,
+nx=256,128,64,
+/

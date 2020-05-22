@@ -1,8 +1,8 @@
 &general
-case_name='step',
+case_name="step_2d",
+n_dim=2,
 nb=3,
 ng=3,
-n_dim=2,
 /
 &block
 ib=1,
