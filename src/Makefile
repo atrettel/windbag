@@ -17,7 +17,7 @@ FFLAGS=-std=f2008 -nocpp -fimplicit-none -Wall -O2 -fmax-errors=1
 
 project=windbag
 
-OBJ := $(patsubst wb_%.f90,wb_%.o,$(wildcard wb_*.f90))
+OBJ = wb_text.o wb_base.o
 
 $(project): $(project).f90 $(OBJ)
 	$(FC) $(FFLAGS) $^ -o $@
