@@ -476,7 +476,7 @@ contains
 
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      integer :: ierr, file_unit, ib=DEFAULT_IB, ib_loop, i_dim
+      integer :: ierr, file_unit, ib=DEFAULT_IB, ib_loop, i_dim, i_dir
       type(WB_State), intent(inout) :: s
       integer, dimension(:), allocatable :: np, nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
@@ -529,6 +529,14 @@ contains
                                  &N2 is less than number of ghost points N3", &
                                  MPI_ERR_COUNT, (/ i_dim, ib, s%ng /) )
                end if
+               do i_dir = 1, N_DIR
+                  if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
+                     NO_BLOCK_NEIGHBOR ) then
+                     call wb_abort( "neighbor to block N1 in direction N2 and &
+                                    &dimension N3 is negative", &
+                                    MPI_ERR_COUNT, (/ ib, i_dir, i_dim /) )
+                  end if
+               end do
                if ( neighbors_l(i_dim) .eq. ib .and. &
                   neighbors_u(i_dim) .eq. ib ) then
                   s%blocks(ib)%periods(i_dim) = .true.
