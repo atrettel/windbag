@@ -519,6 +519,11 @@ contains
             s%blocks(ib)%nx = nx
 
             do i_dim = 1, s%n_dim
+               if ( s%blocks(ib)%nx(i_dim) .lt. s%ng ) then
+                  call wb_abort( "number of points in direction N1 of block &
+                                 &N2 is less than number of ghost points N3", &
+                                 MPI_ERR_COUNT, (/ i_dim, ib, s%ng /) )
+               end if
                if ( neighbors_l(i_dim) .eq. ib .and. &
                   neighbors_u(i_dim) .eq. ib ) then
                   s%blocks(ib)%periods(i_dim) = .true.
