@@ -17,12 +17,12 @@ FFLAGS=-std=f2008 -nocpp -fimplicit-none -Wall -O2 -fmax-errors=1
 
 project=windbag
 
-OBJ := $(patsubst wb%.f90,wb%.o,$(wildcard wb*.f90))
+OBJ := $(patsubst wb_%.f90,wb_%.o,$(wildcard wb_*.f90))
 
 $(project): $(project).f90 $(OBJ)
 	$(FC) $(FFLAGS) $^ -o $@
 
-wb%.o: wb%.f90
+wb_%.o: wb_%.f90
 	$(FC) $(FFLAGS) -c $^ -o $@
 
 .PHONY: clean
