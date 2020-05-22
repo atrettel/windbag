@@ -12,9 +12,9 @@
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wb_base
-   use iso_fortran_env, only : compiler_options, compiler_version, &
-      error_unit, int32, real64
+   use iso_fortran_env
    use mpi_f08
+   use wb_log
    implicit none
 
    private
@@ -256,174 +256,11 @@ contains
       call setup_processes( s )
    end subroutine initialize_state
 
-   subroutine print_block_information( s )
-      integer :: ib, i_dim
-      type(WB_State), intent(in) :: s
-
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") "## Block information"
-         write (*,"(A)") ""
-
-         write (*,"(A)", advance="no") "| `ib` |    size | `nd`           "
-         write (*,"(A)", advance="yes") "|       points | `nx`              |"
-
-         write (*,"(A)", advance="no") "| ---: | ------: | :------------- "
-         write (*,"(A)", advance="yes") "| -----------: | :---------------- |"
-
-         do ib = 1, s%nb
-            write (*,"(A, I4, A)", advance="no") "| ", ib, " "
-            write (*,"(A, I7, A)", advance="no") "| ", &
-               s%blocks(ib)%block_size, " | ("
-            do i_dim = 1, s%n_dim
-               write (*,"(I3, A)", advance="no") s%blocks(ib)%np(i_dim), ","
-            end do
-            write (*,"(A, I12, A)", advance="no") ") | ", &
-               product(s%blocks(ib)%nx), " | ("
-            do i_dim = 1, s%n_dim
-               write (*,"(I4, A)", advance="no") s%blocks(ib)%nx(i_dim), ","
-            end do
-            write (*,"(A)") ") |"
-         end do
-         write (*,"(A)") ""
-      end if
-   end subroutine
-
    subroutine print_initial_information( s )
-      character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
-      integer :: ierr, mpi_major_version_number, mpi_minor_version_number, &
-         string_length
       type(WB_State), intent(in) :: s
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A, A, A, A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION, &
-            ", case `", s%case_name, "`"
-         write (*,"(A)") ""
-
-         call mpi_get_version( mpi_major_version_number, &
-            mpi_minor_version_number, ierr )
-         write (*,"(A, I1, A, I1)") "- MPI version: ", &
-            mpi_major_version_number, ".", mpi_minor_version_number
-         write (*,"(A)") ""
-
-         call mpi_get_library_version( lib_version, string_length, ierr )
-         write (*,"(A, A)") "- MPI library version: ", trim(lib_version)
-         write (*,"(A)") ""
-
-         write (*,"(A, A, A, A, A)") "- Compiled using ", compiler_version(), &
-            " using the following options: `", compiler_options(), "`"
-         write (*,"(A)") ""
-
-         if ( MPI_SUBARRAYS_SUPPORTED ) then
-            write (*,"(A)") "- MPI subarrays are supported."
-         else
-            write (*,"(A)") "- MPI subarrays are not supported."
-         end if
-         write (*,"(A)") ""
-      end if
-      call print_block_information( s )
-      call print_process_information( s )
-      call print_process_neighbors( s )
+      call write_block_information( output_unit, s )
    end subroutine print_initial_information
-
-   subroutine print_process_information( s )
-      integer :: i_dim, ierr, string_length, world_rank
-      character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
-      type(WB_State), intent(in) :: s
-
-      call mpi_get_processor_name( processor_name, string_length, ierr )
-
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") "## Process information"
-         write (*,"(A)") ""
-
-         write (*,"(A)", advance="no") &
-            "| `world_rank` | hostname     | `ib` | `block_rank` "
-         write (*,"(A)", advance="yes") &
-            "| `block_coords` |    points |           `nx` |"
-
-         write (*,"(A)", advance="no") &
-            "| -----------: | :----------- | ---: | -----------: "
-         write (*,"(A)", advance="yes") &
-            "| :------------- | --------: | :------------- |"
-      end if
-
-      do world_rank = 0, s%world_size-1
-         call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( s%world_rank .eq. world_rank ) then
-            write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
-            write (*,"(A, A12, A)", advance="no") "| ", &
-               trim(processor_name), " "
-            write (*,"(A, I4, A)", advance="no") "| ", &
-               s%ib, " "
-            write (*,"(A, I12, A)", advance="no") "| ", &
-               s%block_rank, " "
-            write (*,"(A)", advance="no") "| ("
-            do i_dim = 1, s%n_dim
-               write (*,"(I3, A)", advance="no") &
-                  s%block_coords(i_dim), ","
-            end do
-            write (*,"(A, I9, A)", advance="no") ") | ", &
-               product(s%nx), " | ("
-            do i_dim = 1, s%n_dim
-               write (*,"(I3, A)", advance="no") &
-                  s%nx(i_dim), ","
-            end do
-            write (*,"(A)") ") |"
-         end if
-      end do
-
-      call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") ""
-      end if
-   end subroutine print_process_information
-
-   subroutine print_process_neighbors( s )
-      integer :: i_dim, i_dir, ierr, world_rank
-      type(WB_State), intent(in) :: s
-
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") "## Process neighbors"
-         write (*,"(A)") ""
-
-         write (*,"(A)", advance="no") "| `world_rank` "
-         do i_dim = 1, s%n_dim
-            write (*,"(A, I1, A)", advance="no") "|       ", i_dim, "L "
-            write (*,"(A, I1, A)", advance="no") "|       ", i_dim, "U "
-         end do
-         write (*,"(A)") "|"
-
-         write (*,"(A)", advance="no") "| -----------: "
-         do i_dim = 1, s%n_dim
-            write (*,"(A, I1, A)", advance="no") "| -------: "
-            write (*,"(A, I1, A)", advance="no") "| -------: "
-         end do
-         write (*,"(A)") "|"
-      end if
-
-      do world_rank = 0, s%world_size-1
-         call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( s%world_rank .eq. world_rank ) then
-            write (*,"(A, I12, A)", advance="no") "| ", s%world_rank, " "
-            do i_dim = 1, s%n_dim
-               do i_dir = 1, N_DIR
-                  if ( s%neighbors(i_dim,i_dir) .eq. MPI_PROC_NULL ) then
-                     write (*,"(A)", advance="no") "|          "
-                  else
-                     write (*,"(A, I8, A)", advance="no") "| ", &
-                        s%neighbors(i_dim,i_dir), " "
-                  end if
-               end do
-            end do
-            write (*,"(A)") "|"
-         end if
-      end do
-
-      call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") ""
-      end if
-   end subroutine print_process_neighbors
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -664,4 +501,53 @@ contains
       end if
       call mpi_abort( MPI_COMM_WORLD, errno, ierr )
    end subroutine wb_abort
+
+   subroutine write_block_information( f, s )
+      integer, intent(in) :: f
+      type(WB_State), intent(in) :: s
+      integer :: ib, i_dim
+      character(len=STRING_LENGTH) :: label
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (f,"(A)") "## Block information"
+         write (f,"(A)") ""
+
+         call write_string_table_entry( f, "`ib`",         4 )
+         call write_string_table_entry( f, "`block_size`", 12 )
+         do i_dim = 1, s%n_dim
+            write (label,"(A, I1, A)") "`nd(", i_dim, ")`"
+            call write_string_table_entry( f, label, 7 )
+         end do
+         call write_string_table_entry( f, "points", 12 )
+         do i_dim = 1, s%n_dim
+            write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
+            call write_string_table_entry( f, label, 7 )
+         end do
+         write (f, "(A)", advance="yes") "|"
+
+         call write_rule_table_entry( f,  4, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         do i_dim = 1, s%n_dim
+            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED )
+         end do
+         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         do i_dim = 1, s%n_dim
+            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED )
+         end do
+         write (f, "(A)", advance="yes") "|"
+
+         do ib = 1, s%nb
+            call write_integer_table_entry( f, ib, 4 )
+            call write_integer_table_entry( f, s%blocks(ib)%block_size, 12 )
+            do i_dim = 1, s%n_dim
+               call write_integer_table_entry( f, s%blocks(ib)%np(i_dim), 7 )
+            end do
+            call write_integer_table_entry( f, product(s%blocks(ib)%nx), 12 )
+            do i_dim = 1, s%n_dim
+               call write_integer_table_entry( f, s%blocks(ib)%nx(i_dim), 7 )
+            end do
+            write (f, "(A)", advance="yes") "|"
+         end do
+      end if
+   end subroutine
 end module wb_base
