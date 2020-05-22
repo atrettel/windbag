@@ -259,6 +259,7 @@ contains
    subroutine print_initial_information( s )
       type(WB_State), intent(in) :: s
 
+      call write_global_information( output_unit, s )
       call write_block_information( output_unit, s )
       call write_process_information( output_unit, s )
       call write_process_neighbors( output_unit, s )
@@ -553,7 +554,52 @@ contains
 
          write (f,"(A)") ""
       end if
-   end subroutine
+   end subroutine write_block_information
+
+   subroutine write_global_information( f, s )
+      integer, intent(in) :: f
+      type(WB_State), intent(in) :: s
+      integer :: ierr, mpi_major_version_number, mpi_minor_version_number, &
+         version_length
+      character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (f,"(A, A, A, A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION, &
+            ", case `", s%case_name, "`"
+         write (f,"(A)") ""
+
+         if ( FP .eq. real64 ) then
+            write (f,"(A)") "- Floating point numbers are double precision."
+         else if (FP .eq. real32 ) then
+            write (f,"(A)") "- Floating point numbers are single precision."
+         else
+            write (f,"(A)") "- Floating point numbers are an unknown &
+                             &precision."
+         end if
+         write (f,"(A)") ""
+
+         call mpi_get_version( mpi_major_version_number, &
+            mpi_minor_version_number, ierr )
+         write (f,"(A, I1, A, I1)") "- MPI version: ", &
+            mpi_major_version_number, ".", mpi_minor_version_number
+         write (f,"(A)") ""
+
+         call mpi_get_library_version( lib_version, version_length, ierr )
+         write (f,"(A, A)") "- MPI library version: ", trim(lib_version)
+         write (f,"(A)") ""
+
+         write (f,"(A, A, A, A, A)") "- Compiled using ", compiler_version(), &
+            " using the following options: `", compiler_options(), "`"
+         write (f,"(A)") ""
+
+         if ( MPI_SUBARRAYS_SUPPORTED ) then
+            write (f,"(A)") "- MPI subarrays are supported."
+         else
+            write (f,"(A)") "- MPI subarrays are not supported."
+         end if
+         write (f,"(A)") ""
+      end if
+   end subroutine write_global_information
 
    subroutine write_process_information( f, s )
       integer, intent(in) :: f
