@@ -260,6 +260,7 @@ contains
       type(WB_State), intent(in) :: s
 
       call write_block_information( output_unit, s )
+      call write_process_information( output_unit, s )
    end subroutine print_initial_information
 
    subroutine read_general_namelist( s, filename )
@@ -548,6 +549,74 @@ contains
                   end_row=(i_dim .eq. s%n_dim) )
             end do
          end do
+
+         write (f,"(A)") ""
       end if
    end subroutine
+
+   subroutine write_process_information( f, s )
+      integer, intent(in) :: f
+      type(WB_State), intent(in) :: s
+      integer :: i_dim, ierr, processor_length, world_rank
+      character(len=STRING_LENGTH) :: label
+      character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
+
+      call mpi_get_processor_name( processor_name, processor_length, ierr )
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") "## Process information"
+         write (*,"(A)") ""
+
+         call write_string_table_entry( f, "`world_rank`", 12 )
+         call write_string_table_entry( f, "hostname",     16 )
+         call write_string_table_entry( f, "`ib`",          4 )
+         call write_string_table_entry( f, "`block_rank`", 12 )
+         do i_dim = 1, s%n_dim
+            write (label,"(A, I1, A)") "(", i_dim, ")"
+            call write_string_table_entry( f, label, 6 )
+         end do
+         call write_string_table_entry( f, "points", 12 )
+         do i_dim = 1, s%n_dim
+            write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
+            call write_string_table_entry( f, label, 7, &
+               end_row=(i_dim .eq. s%n_dim) )
+         end do
+
+         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, 16, alignment=LEFT_ALIGNED  )
+         call write_rule_table_entry( f,  4, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         do i_dim = 1, s%n_dim
+            call write_rule_table_entry( f, 6, alignment=RIGHT_ALIGNED )
+         end do
+         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         do i_dim = 1, s%n_dim
+            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED, &
+               end_row=(i_dim .eq. s%n_dim) )
+         end do
+      end if
+
+      do world_rank = 0, s%world_size-1
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         if ( s%world_rank .eq. world_rank ) then
+            call write_integer_table_entry( f, s%world_rank,         12 )
+            call write_string_table_entry(  f, trim(processor_name), 16 )
+            call write_integer_table_entry( f, s%ib,                  4 )
+            call write_integer_table_entry( f, s%block_rank,         12 )
+            do i_dim = 1, s%n_dim
+               call write_integer_table_entry( f, s%block_coords(i_dim), 6 )
+            end do
+            call write_integer_table_entry( f, product(s%nx), 12 )
+            do i_dim = 1, s%n_dim
+               call write_integer_table_entry( f, s%nx(i_dim), 7, &
+                  end_row=(i_dim .eq. s%n_dim) )
+            end do
+         end if
+      end do
+
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         write (*,"(A)") ""
+      end if
+   end subroutine write_process_information
 end module wb_base
