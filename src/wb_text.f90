@@ -11,7 +11,7 @@
 ! 
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
-module wb_log
+module wb_text
    implicit none
 
    integer, public, parameter ::      UNALIGNED = 0
@@ -78,4 +78,4 @@ contains
          write (f, "(A)", advance="yes") "|"
       end if
    end subroutine write_rule_table_entry
-end module wb_log
+end module wb_text

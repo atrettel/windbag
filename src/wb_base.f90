@@ -14,7 +14,7 @@
 module wb_base
    use iso_fortran_env
    use mpi_f08
-   use wb_log
+   use wb_text
    implicit none
 
    private
