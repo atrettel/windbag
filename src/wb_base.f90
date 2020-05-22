@@ -518,12 +518,12 @@ contains
          call write_string_table_entry( f, "`block_size`", 12 )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`nd(", i_dim, ")`"
-            call write_string_table_entry( f, label, 7 )
+            call write_string_table_entry( f, trim(label), 7 )
          end do
          call write_string_table_entry( f, "points", 12 )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, label, 7, &
+            call write_string_table_entry( f, trim(label), 7, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
@@ -574,12 +574,12 @@ contains
          call write_string_table_entry( f, "`block_rank`", 12 )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "(", i_dim, ")"
-            call write_string_table_entry( f, label, 6 )
+            call write_string_table_entry( f, trim(label), 6 )
          end do
          call write_string_table_entry( f, "points", 12 )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, label, 7, &
+            call write_string_table_entry( f, trim(label), 7, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
