@@ -523,40 +523,47 @@ contains
          write (f,"(A)") "## Block information"
          write (f,"(A)") ""
 
-         call write_string_table_entry( f, "`ib`",         4 )
-         call write_string_table_entry( f, "`block_size`", 12 )
+         call write_string_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
+         call write_string_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
-            call write_string_table_entry( f, trim(label), 7 )
+            call write_string_table_entry( f, trim(label), NP_COLUMN_WIDTH )
          end do
-         call write_string_table_entry( f, "points", 12 )
+         call write_string_table_entry( f, "points", POINTS_COLUMN_WIDTH )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, trim(label), 7, &
+            call write_string_table_entry( f, trim(label), NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
-         call write_rule_table_entry( f,  4, alignment=RIGHT_ALIGNED )
-         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, IB_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, SIZE_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
-            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED )
+            call write_rule_table_entry( f, NP_COLUMN_WIDTH, &
+               alignment=RIGHT_ALIGNED )
          end do
-         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, POINTS_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
-            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED, &
-               end_row=(i_dim .eq. s%n_dim) )
+            call write_rule_table_entry( f, NX_COLUMN_WIDTH, &
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
          end do
 
          do ib = 1, s%nb
-            call write_integer_table_entry( f, ib, 4 )
-            call write_integer_table_entry( f, s%blocks(ib)%block_size, 12 )
+            call write_integer_table_entry( f, ib, IB_COLUMN_WIDTH )
+            call write_integer_table_entry( f, s%blocks(ib)%block_size, &
+               SIZE_COLUMN_WIDTH )
             do i_dim = 1, s%n_dim
-               call write_integer_table_entry( f, s%blocks(ib)%np(i_dim), 7 )
+               call write_integer_table_entry( f, s%blocks(ib)%np(i_dim), &
+                  NP_COLUMN_WIDTH )
             end do
-            call write_integer_table_entry( f, product(s%blocks(ib)%nx), 12 )
+            call write_integer_table_entry( f, product(s%blocks(ib)%nx), &
+               POINTS_COLUMN_WIDTH )
             do i_dim = 1, s%n_dim
-               call write_integer_table_entry( f, s%blocks(ib)%nx(i_dim), 7, &
-                  end_row=(i_dim .eq. s%n_dim) )
+               call write_integer_table_entry( f, s%blocks(ib)%nx(i_dim), &
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
             end do
          end do
 
@@ -660,49 +667,61 @@ contains
          write (*,"(A)") "## Process information"
          write (*,"(A)") ""
 
-         call write_string_table_entry( f, "`world_rank`", 12 )
-         call write_string_table_entry( f, "hostname",     16 )
-         call write_string_table_entry( f, "`ib`",          4 )
-         call write_string_table_entry( f, "`block_rank`", 12 )
+         call write_string_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
+         call write_string_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
+         call write_string_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
+         call write_string_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "(", i_dim, ")"
-            call write_string_table_entry( f, trim(label), 6 )
+            call write_string_table_entry( f, trim(label), &
+               COORDS_COLUMN_WIDTH )
          end do
-         call write_string_table_entry( f, "points", 12 )
+         call write_string_table_entry( f, "points", POINTS_COLUMN_WIDTH )
          do i_dim = 1, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, trim(label), 7, &
+            call write_string_table_entry( f, trim(label), NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
-         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
-         call write_rule_table_entry( f, 16, alignment=LEFT_ALIGNED  )
-         call write_rule_table_entry( f,  4, alignment=RIGHT_ALIGNED )
-         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, HOSTNAME_COLUMN_WIDTH, &
+            alignment=LEFT_ALIGNED  )
+         call write_rule_table_entry( f, IB_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
-            call write_rule_table_entry( f, 6, alignment=RIGHT_ALIGNED )
+            call write_rule_table_entry( f, COORDS_COLUMN_WIDTH, &
+               alignment=RIGHT_ALIGNED )
          end do
-         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, POINTS_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
-            call write_rule_table_entry( f,  7, alignment=RIGHT_ALIGNED, &
-               end_row=(i_dim .eq. s%n_dim) )
+            call write_rule_table_entry( f, NX_COLUMN_WIDTH, &
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
          end do
       end if
 
       do world_rank = 0, s%world_size-1
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
-            call write_integer_table_entry( f, s%world_rank,         12 )
-            call write_string_table_entry(  f, trim(processor_name), 16 )
-            call write_integer_table_entry( f, s%ib,                  4 )
-            call write_integer_table_entry( f, s%block_rank,         12 )
+            call write_integer_table_entry( f, s%world_rank, &
+               RANK_COLUMN_WIDTH )
+            call write_string_table_entry(  f, trim(processor_name), &
+               HOSTNAME_COLUMN_WIDTH )
+            call write_integer_table_entry( f, s%ib, IB_COLUMN_WIDTH )
+            call write_integer_table_entry( f, s%block_rank, &
+               RANK_COLUMN_WIDTH )
             do i_dim = 1, s%n_dim
-               call write_integer_table_entry( f, s%block_coords(i_dim), 6 )
+               call write_integer_table_entry( f, s%block_coords(i_dim), &
+                  COORDS_COLUMN_WIDTH )
             end do
-            call write_integer_table_entry( f, product(s%nx), 12 )
+            call write_integer_table_entry( f, product(s%nx), &
+               POINTS_COLUMN_WIDTH )
             do i_dim = 1, s%n_dim
-               call write_integer_table_entry( f, s%nx(i_dim), 7, &
-                  end_row=(i_dim .eq. s%n_dim) )
+               call write_integer_table_entry( f, s%nx(i_dim), &
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
             end do
          end if
       end do
@@ -724,7 +743,7 @@ contains
          write (*,"(A)") "## Process neighbors"
          write (*,"(A)") ""
 
-         call write_string_table_entry( f, "`world_rank`", 12 )
+         call write_string_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1, s%n_dim
             do i_dir = 1, N_DIR
                j_dir = dirs(i_dir)
@@ -734,17 +753,20 @@ contains
                else
                   write (label,"(I1, A)") i_dim, "U"
                end if
-               call write_string_table_entry( f, trim(label), 8, &
+               call write_string_table_entry( f, trim(label), &
+                  RANK_COLUMN_WIDTH, &
                   end_row=( face_count .eq. s%n_dim*N_DIR ) )
             end do
          end do
 
          face_count = 0
-         call write_rule_table_entry( f, 12, alignment=RIGHT_ALIGNED )
+         call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
             do i_dir = 1, N_DIR
                face_count = face_count + 1
-               call write_rule_table_entry( f, 8, alignment=RIGHT_ALIGNED, &
+               call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+                  alignment=RIGHT_ALIGNED, &
                   end_row=( face_count .eq. s%n_dim*N_DIR ) )
             end do
          end do
@@ -754,17 +776,20 @@ contains
          face_count = 0
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
-            call write_integer_table_entry( f, s%world_rank, 12 )
+            call write_integer_table_entry( f, s%world_rank, &
+               RANK_COLUMN_WIDTH )
             do i_dim = 1, s%n_dim
                do i_dir = 1, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1
                   neighbor = s%neighbors(i_dim,j_dir)
                   if ( neighbor .eq. MPI_PROC_NULL ) then
-                     call write_string_table_entry( f, "-", 8, &
+                     call write_string_table_entry( f, "-", &
+                        RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. s%n_dim*N_DIR ) )
                   else
-                     call write_integer_table_entry( f, neighbor, 8, &
+                     call write_integer_table_entry( f, neighbor, &
+                        RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. s%n_dim*N_DIR ) )
                   end if
                end do

@@ -18,6 +18,15 @@ module wb_text
    integer, public, parameter ::   LEFT_ALIGNED = 1
    integer, public, parameter ::  RIGHT_ALIGNED = 2
    integer, public, parameter :: CENTER_ALIGNED = 3
+
+   integer, public, parameter ::   COORDS_COLUMN_WIDTH =  6
+   integer, public, parameter :: HOSTNAME_COLUMN_WIDTH = 16
+   integer, public, parameter ::       IB_COLUMN_WIDTH =  4
+   integer, public, parameter ::   POINTS_COLUMN_WIDTH = 16
+   integer, public, parameter ::     RANK_COLUMN_WIDTH = 12
+   integer, public, parameter ::     SIZE_COLUMN_WIDTH = 12
+   integer, public, parameter ::       NP_COLUMN_WIDTH =  7
+   integer, public, parameter ::       NX_COLUMN_WIDTH =  7
 contains
    subroutine write_string_table_entry( f, entry, width, end_row )
       integer, intent(in) :: f, width
