@@ -25,6 +25,9 @@ module wb_base
    integer, public, parameter       ::     FP = real64
    type(MPI_Datatype), public, save :: MPI_FP
 
+   integer, public, parameter       ::     SP = int64
+   type(MPI_Datatype), public, save :: MPI_SP
+
    integer, public, parameter :: BLOCK_MASTER = 0
    integer, public, parameter :: WORLD_MASTER = 0
 
@@ -58,7 +61,7 @@ module wb_base
    ! result is 0, then the architecture is big-endian.  Little-endian
    ! architectures are more common nowadays.
    logical, public, parameter :: ARCH_IS_BIG_ENDIAN = &
-      ichar( transfer( 1_int32, "X" ) ) .eq. 0
+      ichar( transfer( 1_SP, "X" ) ) .eq. 0
 
    type WB_Block
       private
@@ -145,7 +148,7 @@ contains
       integer :: argc, filename_length, ierr, world_rank
       logical :: file_exists
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
-      call find_mpi_fp
+      call find_mpi_precisions
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
@@ -185,12 +188,17 @@ contains
       deallocate( s%processes )
    end subroutine deallocate_state
 
-   subroutine find_mpi_fp
-      integer :: mpi_float_size, ierr
+   subroutine find_mpi_precisions
+      integer :: mpi_float_size, mpi_int_size, ierr
+
       call mpi_sizeof( 1.0_FP, mpi_float_size, ierr )
       call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, &
          ierr )
-   end subroutine find_mpi_fp
+
+      call mpi_sizeof( 1_SP, mpi_int_size, ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_int_size, MPI_SP, &
+         ierr )
+   end subroutine find_mpi_precisions
 
    subroutine identify_process_neighbors( s )
       integer :: i_dim, i_dir, ierr, block_neighbor, world_rank
