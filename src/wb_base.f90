@@ -40,7 +40,7 @@ module wb_base
    integer,     public, parameter :: DEFAULT_NP             = 0
    integer(SP), public, parameter :: DEFAULT_NX             = 0_SP
 
-   integer, public, parameter :: STRING_LENGTH = 64
+   integer(MP), public, parameter :: STRING_LENGTH = 64_MP
 
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
