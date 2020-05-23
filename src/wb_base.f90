@@ -36,9 +36,9 @@ module wb_base
 
    integer, public, parameter :: NO_BLOCK_NEIGHBOR = 0
 
-   integer, public, parameter ::     N_DIR = 2
-   integer, public, parameter :: LOWER_DIR = 1
-   integer, public, parameter :: UPPER_DIR = 2
+   integer(SP), public, parameter ::     N_DIR = 2_SP
+   integer(SP), public, parameter :: LOWER_DIR = 1_SP
+   integer(SP), public, parameter :: UPPER_DIR = 2_SP
 
    integer,     public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1
    integer,     public, parameter :: DEFAULT_IB             = 1
@@ -210,7 +210,8 @@ contains
    end subroutine find_mpi_precisions
 
    subroutine identify_process_neighbors( s )
-      integer :: i_dim, i_dir, ierr, block_neighbor, world_rank
+      integer :: i_dim, ierr, block_neighbor, world_rank
+      integer(SP) :: i_dir
       integer, dimension(N_DIR) :: block_ranks
       integer, dimension(:), allocatable :: block_coords
       type(WB_State), intent(inout) :: s
@@ -219,7 +220,7 @@ contains
       do i_dim = 1, s%n_dim
          call mpi_cart_shift( s%comm_block, i_dim-1, 1, &
             block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
-         do i_dir = 1, N_DIR
+         do i_dir = 1_SP, N_DIR
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
                do world_rank = 0, s%world_size-1
                   if ( s%processes(world_rank)%ib .eq. s%ib .and. &
@@ -333,7 +334,8 @@ contains
 
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      integer :: ierr, file_unit, ib=DEFAULT_IB, ib_loop, i_dim, i_dir
+      integer :: ierr, file_unit, ib=DEFAULT_IB, ib_loop, i_dim
+      integer(SP) :: i_dir
       type(WB_State), intent(inout) :: s
       integer, dimension(:), allocatable :: np, neighbors_l, neighbors_u
       integer(SP), dimension(:), allocatable :: nx
@@ -388,13 +390,13 @@ contains
                                  MPI_ERR_COUNT, &
                                  (/ int(i_dim,SP), int(ib,SP), s%ng /) )
                end if
-               do i_dir = 1, N_DIR
+               do i_dir = 1_SP, N_DIR
                   if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
                      NO_BLOCK_NEIGHBOR ) then
                      call wb_abort( "neighbor to block N1 in direction N2 and &
                                     &dimension N3 is negative", &
                                     MPI_ERR_COUNT, &
-                                    int( (/ ib, i_dir, i_dim /), SP ) )
+                                    (/ int(ib,SP), i_dir, int(i_dim,SP) /) )
                   end if
                end do
                if ( neighbors_l(i_dim) .eq. ib .and. &
@@ -419,7 +421,7 @@ contains
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%np, s%n_dim, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%neighbors, s%n_dim*N_DIR, MPI_INTEGER, &
+         call mpi_bcast( s%blocks(ib)%neighbors, s%n_dim*int(N_DIR,MP), MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%nx, s%n_dim, MPI_SP, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
@@ -780,8 +782,9 @@ contains
    subroutine write_process_neighbors( f, s )
       integer, intent(in) :: f
       type(WB_State), intent(in) :: s
-      integer :: i_dim, i_dir, ierr, j_dir, world_rank, face_count=0, neighbor
-      integer, dimension(N_DIR) :: dirs = (/ LOWER_DIR, UPPER_DIR /)
+      integer :: i_dim, ierr, world_rank, face_count=0, neighbor
+      integer(SP) :: i_dir, j_dir
+      integer(SP), dimension(N_DIR) :: dirs = (/ LOWER_DIR, UPPER_DIR /)
       character(len=STRING_LENGTH) :: label
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
@@ -790,7 +793,7 @@ contains
 
          call write_string_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1, s%n_dim
-            do i_dir = 1, N_DIR
+            do i_dir = 1_SP, N_DIR
                j_dir = dirs(i_dir)
                face_count = face_count + 1
                if ( j_dir .eq. LOWER_DIR ) then
@@ -800,7 +803,7 @@ contains
                end if
                call write_string_table_entry( f, trim(label), &
                   RANK_COLUMN_WIDTH, &
-                  end_row=( face_count .eq. s%n_dim*N_DIR ) )
+                  end_row=( face_count .eq. s%n_dim*int(N_DIR,MP) ) )
             end do
          end do
 
@@ -808,7 +811,7 @@ contains
          call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1, s%n_dim
-            do i_dir = 1, N_DIR
+            do i_dir = 1_SP, N_DIR
                face_count = face_count + 1
                call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
                   alignment=RIGHT_ALIGNED, &
@@ -824,18 +827,18 @@ contains
             call write_integer_table_entry( f, int(s%world_rank,int64), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1, s%n_dim
-               do i_dir = 1, N_DIR
+               do i_dir = 1_SP, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1
                   neighbor = s%neighbors(i_dim,j_dir)
                   if ( neighbor .eq. MPI_PROC_NULL ) then
                      call write_string_table_entry( f, "-", &
                         RANK_COLUMN_WIDTH, &
-                        end_row=( face_count .eq. s%n_dim*N_DIR ) )
+                        end_row=( face_count .eq. s%n_dim*int(N_DIR,MP) ) )
                   else
                      call write_integer_table_entry( f, int(neighbor,int64), &
                         RANK_COLUMN_WIDTH, &
-                        end_row=( face_count .eq. s%n_dim*N_DIR ) )
+                        end_row=( face_count .eq. s%n_dim*int(N_DIR,MP) ) )
                   end if
                end do
             end do
