@@ -576,6 +576,13 @@ contains
             ", case `", s%case_name, "`"
          write (f,"(A)") ""
 
+         if ( ARCH_IS_BIG_ENDIAN ) then
+            write (f,"(A)") "- Architecture is big-endian."
+         else
+            write (f,"(A)") "- Architecture is little-endian."
+         end if
+         write (f,"(A)") ""
+
          if ( FP .eq. real64 ) then
             write (f,"(A)") "- Floating point numbers are double precision."
          else if (FP .eq. real32 ) then
@@ -586,11 +593,14 @@ contains
          end if
          write (f,"(A)") ""
 
-         if ( ARCH_IS_BIG_ENDIAN ) then
-            write (f,"(A)") "- Architecture is big-endian."
+         if ( SP .eq. int64 ) then
+            write (f,"(A)") "- Signed integers are 64-bit."
+         else if (SP .eq. int32 ) then
+            write (f,"(A)") "- Signed integers are 32-bit."
          else
-            write (f,"(A)") "- Architecture is little-endian."
+            write (f,"(A)") "- Signed integers are of unknown precision."
          end if
+         write (f,"(A)") ""
 
          call mpi_get_version( mpi_major_version_number, &
             mpi_minor_version_number, ierr )
