@@ -536,18 +536,18 @@ contains
          end do
 
          do ib = 1, s%nb
-            call write_integer_table_entry( f, int(ib,int64), IB_COLUMN_WIDTH )
+            call write_integer_table_entry( f, int(ib,SP), IB_COLUMN_WIDTH )
             call write_integer_table_entry( f, &
-               int(s%blocks(ib)%block_size,int64), SIZE_COLUMN_WIDTH )
+               int(s%blocks(ib)%block_size,SP), SIZE_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                call write_integer_table_entry( f, &
-               int(s%blocks(ib)%np(i_dim),int64), NP_COLUMN_WIDTH )
+               int(s%blocks(ib)%np(i_dim),SP), NP_COLUMN_WIDTH )
             end do
             call write_integer_table_entry( f, &
-               int(product(s%blocks(ib)%nx),int64), POINTS_COLUMN_WIDTH )
+               int(product(s%blocks(ib)%nx),SP), POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                call write_integer_table_entry( f, &
-               int(s%blocks(ib)%nx(i_dim),int64), NX_COLUMN_WIDTH, &
+               int(s%blocks(ib)%nx(i_dim),SP), NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
             end do
          end do
@@ -722,22 +722,22 @@ contains
       do world_rank = 0, s%world_size-1
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
-            call write_integer_table_entry( f, int(s%world_rank,int64), &
+            call write_integer_table_entry( f, int(s%world_rank,SP), &
                RANK_COLUMN_WIDTH )
             call write_string_table_entry(  f, trim(processor_name), &
                HOSTNAME_COLUMN_WIDTH )
-            call write_integer_table_entry( f, int(s%ib,int64), &
+            call write_integer_table_entry( f, int(s%ib,SP), &
                IB_COLUMN_WIDTH )
-            call write_integer_table_entry( f, int(s%block_rank,int64), &
+            call write_integer_table_entry( f, int(s%block_rank,SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                call write_integer_table_entry( f, &
-               int(s%block_coords(i_dim),int64), COORDS_COLUMN_WIDTH )
+               int(s%block_coords(i_dim),SP), COORDS_COLUMN_WIDTH )
             end do
-            call write_integer_table_entry( f, int(product(s%nx),int64), &
+            call write_integer_table_entry( f, int(product(s%nx),SP), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_integer_table_entry( f, int(s%nx(i_dim),int64), &
+               call write_integer_table_entry( f, int(s%nx(i_dim),SP), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
             end do
          end if
@@ -794,7 +794,7 @@ contains
          face_count = 0
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
-            call write_integer_table_entry( f, int(s%world_rank,int64), &
+            call write_integer_table_entry( f, int(s%world_rank,SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                do i_dir = 1_SP, N_DIR
@@ -806,7 +806,7 @@ contains
                         RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
                   else
-                     call write_integer_table_entry( f, int(neighbor,int64), &
+                     call write_integer_table_entry( f, int(neighbor,SP), &
                         RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
                   end if
