@@ -114,7 +114,7 @@ contains
                      call wb_abort( "lower face of block N1 does not neighbor &
                                     &upper face of block N2 in direction N3", &
                                      MPI_ERR_TOPOLOGY, &
-                                     (/ ib, neighbor_l, i_dim /) )
+                                     int( (/ ib, neighbor_l, i_dim /), SP ) )
                   else
                      do j_dim = 1, s%n_dim
                         if ( j_dim .ne. i_dim .and. &
@@ -124,7 +124,7 @@ contains
                                           &blocks N2 and N3 does not match &
                                           &processes in direction N4", &
                               MPI_ERR_TOPOLOGY, &
-                              (/ i_dim, ib, neighbor_l, j_dim /) )
+                              int( (/ i_dim, ib, neighbor_l, j_dim /), SP ) )
                         end if
                         if ( j_dim .ne. i_dim .and. &
                            s%blocks(ib)%nx(j_dim) .ne. &
@@ -133,7 +133,7 @@ contains
                                           &blocks N2 and N3 does not match &
                                           &points in direction N4", &
                               MPI_ERR_TOPOLOGY, &
-                              (/ i_dim, ib, neighbor_l, j_dim /) )
+                              int( (/ i_dim, ib, neighbor_l, j_dim /), SP ) )
                         end if
                      end do
                   end if
@@ -357,7 +357,7 @@ contains
 
             if ( ib .gt. s%nb .or. ib .lt. 1 ) then
                call wb_abort( "block N1 is out of acceptable range", &
-                  MPI_ERR_RANK, (/ ib /) )
+                  MPI_ERR_RANK, int( (/ ib /), SP ) )
             end if
 
             s%blocks(ib)%block_size = product(np)
@@ -370,19 +370,21 @@ contains
                if ( s%blocks(ib)%np(i_dim) .lt. 1 ) then
                   call wb_abort( "number of processes in direction N1 of &
                                  &block N2 is less than 1", &
-                                 MPI_ERR_COUNT, (/ i_dim, ib /) )
+                                 MPI_ERR_COUNT, int( (/ i_dim, ib /), SP ) )
                end if
                if ( s%blocks(ib)%nx(i_dim) .lt. s%ng ) then
                   call wb_abort( "number of points in direction N1 of block &
                                  &N2 is less than number of ghost points N3", &
-                                 MPI_ERR_COUNT, (/ i_dim, ib, s%ng /) )
+                                 MPI_ERR_COUNT, &
+                                 int( (/ i_dim, ib, s%ng /), SP ) )
                end if
                do i_dir = 1, N_DIR
                   if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
                      NO_BLOCK_NEIGHBOR ) then
                      call wb_abort( "neighbor to block N1 in direction N2 and &
                                     &dimension N3 is negative", &
-                                    MPI_ERR_COUNT, (/ ib, i_dir, i_dim /) )
+                                    MPI_ERR_COUNT, &
+                                    int( (/ ib, i_dir, i_dim /), SP ) )
                   end if
                end do
                if ( neighbors_l(i_dim) .eq. ib .and. &
@@ -485,8 +487,7 @@ contains
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
          call wb_abort( "total points in block N1 does not match sum of &
                         &points in individual processes", &
-            MPI_ERR_SIZE, &
-            (/ s%ib /) )
+            MPI_ERR_SIZE, int( (/ s%ib /), SP ) )
       end if
 
       call identify_process_neighbors( s )
@@ -496,7 +497,7 @@ contains
       character(len=*), intent(in) :: message
       integer, intent(in) :: errno
       integer :: i, ierr
-      integer, dimension(:), optional, intent(in) :: ints
+      integer(SP), dimension(:), optional, intent(in) :: ints
       real(FP), dimension(:), optional, intent(in) :: floats
 
       write (error_unit, "(A, A, A)") PROGRAM_NAME, ": ", message
