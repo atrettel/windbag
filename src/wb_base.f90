@@ -37,13 +37,13 @@ module wb_base
    integer, public, parameter :: LOWER_DIR = 1
    integer, public, parameter :: UPPER_DIR = 2
 
-   integer, public, parameter :: DEFAULT_IB       = 1
-   integer, public, parameter :: DEFAULT_N_DIM    = 3
-   integer, public, parameter :: DEFAULT_NB       = 1
-   integer, public, parameter :: DEFAULT_NG       = 3
-   integer, public, parameter :: DEFAULT_NP       = 0
-   integer, public, parameter :: DEFAULT_NX       = 0
-   integer, public, parameter :: DEFAULT_NEIGHBOR = 1
+   integer, public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1
+   integer, public, parameter :: DEFAULT_IB             = 1
+   integer, public, parameter :: DEFAULT_N_DIM          = 3
+   integer, public, parameter :: DEFAULT_NB             = 1
+   integer, public, parameter :: DEFAULT_NG             = 3
+   integer, public, parameter :: DEFAULT_NP             = 0
+   integer, public, parameter :: DEFAULT_NX             = 0
 
    integer, public, parameter :: STRING_LENGTH = 64
 
@@ -337,8 +337,8 @@ contains
       do i_dim = 1, s%n_dim
          np(i_dim)          = DEFAULT_NP
          nx(i_dim)          = DEFAULT_NX
-         neighbors_l(i_dim) = DEFAULT_NEIGHBOR
-         neighbors_u(i_dim) = DEFAULT_NEIGHBOR
+         neighbors_l(i_dim) = DEFAULT_BLOCK_NEIGHBOR
+         neighbors_u(i_dim) = DEFAULT_BLOCK_NEIGHBOR
       end do
 
       allocate( s%blocks(s%nb) )
