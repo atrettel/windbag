@@ -12,6 +12,7 @@
 ! You should have received a copy of the GNU General Public License along with
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wb_text
+   use iso_fortran_env, only : int64
    implicit none
 
    integer, public, parameter ::      UNALIGNED = 0
@@ -42,7 +43,8 @@ contains
    end subroutine write_string_table_entry
 
    subroutine write_integer_table_entry( f, entry, width, end_row )
-      integer, intent(in) :: f, entry, width
+      integer(int64) :: entry
+      integer, intent(in) :: f, width
       logical, optional, intent(in) :: end_row
       character(len=64) :: write_fmt
 
