@@ -604,44 +604,74 @@ contains
          end if
          write (f,"(A)") ""
 
+         write (f,"(A)", advance="no") "- Floating point precision `FP = "
          if ( FP .eq. real64 ) then
-            write (f,"(A)") "- Floating point numbers are double precision."
+            write (f,"(A)") "real64`."
          else if ( FP .eq. real32 ) then
-            write (f,"(A)") "- Floating point numbers are single precision."
+            write (f,"(A)") "real32`."
          else
-            write (f,"(A)") "- Floating point numbers are an unknown &
-                             &precision."
+            write (f,"(A)") "?`."
          end if
          write (f,"(A)") ""
 
+         write (f,"(A)", advance="no") &
+            "    - MPI floating point precision `MPI_FP = "
          if ( MPI_FP .eq. MPI_REAL8 ) then
-            write (f,"(A)") "- MPI floating point precision is `MPI_REAL8`."
+            write (f,"(A)") "MPI_REAL8`."
          else if ( MPI_FP .eq. MPI_REAL4 ) then
-            write (f,"(A)") "- MPI floating point precision is `MPI_REAL4`."
+            write (f,"(A)") "MPI_REAL4`."
          else if ( MPI_FP .eq. MPI_REAL ) then
-            write (f,"(A)") "- MPI floating point precision is `MPI_REAL`."
+            write (f,"(A)") "MPI_REAL`."
          else
-            write (f,"(A)") "- MPI floating point precision is unknown."
+            write (f,"(A)") "?`."
          end if
          write (f,"(A)") ""
 
+         write (f,"(A)", advance="no") "- Signed integer precision `SP = "
          if ( SP .eq. int64 ) then
-            write (f,"(A)") "- Signed integers are 64-bit precision."
+            write (f,"(A)") "int64`."
          else if ( SP .eq. int32 ) then
-            write (f,"(A)") "- Signed integers are 32-bit precision."
+            write (f,"(A)") "int32`."
          else
-            write (f,"(A)") "- Signed integers are of unknown precision."
+            write (f,"(A)") "?`."
          end if
          write (f,"(A)") ""
 
+         write (f,"(A)", advance="no") &
+            "    - MPI signed integer precision `MPI_SP = "
          if ( MPI_SP .eq. MPI_INTEGER8 ) then
-            write (f,"(A)") "- MPI integer precision is `MPI_INTEGER8`."
+            write (f,"(A)") "MPI_INTEGER8`."
          else if ( MPI_SP .eq. MPI_INTEGER4 ) then
-            write (f,"(A)") "- MPI integer precision is `MPI_INTEGER4`."
+            write (f,"(A)") "MPI_INTEGER4`."
          else if ( MPI_SP .eq. MPI_INTEGER ) then
-            write (f,"(A)") "- MPI integer precision is `MPI_INTEGER`."
+            write (f,"(A)") "MPI_INTEGER`."
          else
-            write (f,"(A)") "- MPI integer precision is unknown."
+            write (f,"(A)") "?`."
+         end if
+         write (f,"(A)") ""
+
+         write (f,"(A)", advance="no") "- Signed integer precision `MP = "
+         if ( MP .eq. int64 ) then
+            write (f,"(A)") "int64`."
+         else if ( MP .eq. int32 ) then
+            write (f,"(A)") "int32`."
+         else
+            write (f,"(A)") "?`."
+         end if
+         write (f,"(A)") ""
+         write (f,"(A)") "    - (for integers only used as MPI variables)"
+         write (f,"(A)") ""
+
+         write (f,"(A)", advance="no") &
+            "    - MPI signed integer precision `MPI_MP = "
+         if ( MPI_MP .eq. MPI_INTEGER8 ) then
+            write (f,"(A)") "MPI_INTEGER8`."
+         else if ( MPI_MP .eq. MPI_INTEGER4 ) then
+            write (f,"(A)") "MPI_INTEGER4`."
+         else if ( MPI_MP .eq. MPI_INTEGER ) then
+            write (f,"(A)") "MPI_INTEGER`."
+         else
+            write (f,"(A)") "?`."
          end if
          write (f,"(A)") ""
 
