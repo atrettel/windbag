@@ -51,7 +51,6 @@ contains
       logical, dimension(2) :: aligned = (/ .false., .false. /)
       integer :: n_dash, i_dash
 
-      n_dash = width
       if ( present(alignment) ) then
          if      ( alignment .eq.   LEFT_ALIGNED ) then
             aligned = (/ .true., .false. /)
@@ -61,7 +60,7 @@ contains
             aligned = (/ .true., .true. /)
          end if
       end if
-      n_dash = n_dash - count(aligned)
+      n_dash = width - count(aligned)
 
       write (f, "(A)", advance="no") "| "
       if ( aligned(1) ) then
