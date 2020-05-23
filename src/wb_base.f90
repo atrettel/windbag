@@ -597,6 +597,8 @@ contains
             write (f,"(A)") "- MPI floating point precision is `MPI_REAL8`."
          else if ( MPI_FP .eq. MPI_REAL4 ) then
             write (f,"(A)") "- MPI floating point precision is `MPI_REAL4`."
+         else if ( MPI_FP .eq. MPI_REAL ) then
+            write (f,"(A)") "- MPI floating point precision is `MPI_REAL`."
          else
             write (f,"(A)") "- MPI floating point precision is unknown."
          end if
@@ -615,6 +617,8 @@ contains
             write (f,"(A)") "- MPI integer precision is `MPI_INTEGER8`."
          else if ( MPI_SP .eq. MPI_INTEGER4 ) then
             write (f,"(A)") "- MPI integer precision is `MPI_INTEGER4`."
+         else if ( MPI_SP .eq. MPI_INTEGER ) then
+            write (f,"(A)") "- MPI integer precision is `MPI_INTEGER`."
          else
             write (f,"(A)") "- MPI integer precision is unknown."
          end if
