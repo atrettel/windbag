@@ -599,7 +599,7 @@ contains
 
          if ( FP .eq. real64 ) then
             write (f,"(A)") "- Floating point numbers are double precision."
-         else if (FP .eq. real32 ) then
+         else if ( FP .eq. real32 ) then
             write (f,"(A)") "- Floating point numbers are single precision."
          else
             write (f,"(A)") "- Floating point numbers are an unknown &
@@ -620,7 +620,7 @@ contains
 
          if ( SP .eq. int64 ) then
             write (f,"(A)") "- Signed integers are 64-bit precision."
-         else if (SP .eq. int32 ) then
+         else if ( SP .eq. int32 ) then
             write (f,"(A)") "- Signed integers are 32-bit precision."
          else
             write (f,"(A)") "- Signed integers are of unknown precision."
