@@ -37,13 +37,13 @@ module wb_base
    integer, public, parameter :: LOWER_DIR = 1
    integer, public, parameter :: UPPER_DIR = 2
 
-   integer, public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1
-   integer, public, parameter :: DEFAULT_IB             = 1
-   integer, public, parameter :: DEFAULT_N_DIM          = 3
-   integer, public, parameter :: DEFAULT_NB             = 1
-   integer, public, parameter :: DEFAULT_NG             = 3
-   integer, public, parameter :: DEFAULT_NP             = 0
-   integer, public, parameter :: DEFAULT_NX             = 0
+   integer,     public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1
+   integer,     public, parameter :: DEFAULT_IB             = 1
+   integer,     public, parameter :: DEFAULT_N_DIM          = 3
+   integer,     public, parameter :: DEFAULT_NB             = 1
+   integer(SP), public, parameter :: DEFAULT_NG             = 3_SP
+   integer,     public, parameter :: DEFAULT_NP             = 0
+   integer(SP), public, parameter :: DEFAULT_NX             = 0_SP
 
    integer, public, parameter :: STRING_LENGTH = 64
 
@@ -66,7 +66,8 @@ module wb_base
    type WB_Block
       private
       integer :: block_size
-      integer, dimension(:), allocatable :: np, nx
+      integer, dimension(:), allocatable :: np
+      integer(SP), dimension(:), allocatable :: nx
       integer, dimension(:,:), allocatable :: neighbors
       logical, dimension(:), allocatable :: periods
       logical :: reorder = .false.
@@ -75,7 +76,8 @@ module wb_base
    type WB_Process
       private
       integer :: block_rank
-      integer, dimension(:), allocatable :: block_coords, nx
+      integer, dimension(:), allocatable :: block_coords
+      integer(SP), dimension(:), allocatable :: nx
       integer :: ib
    end type WB_Process
 
@@ -86,9 +88,9 @@ module wb_base
       integer, public :: ib, nb
       integer, public :: n_dim
       integer, public :: nf
-      integer, public :: ng
+      integer(SP), public :: ng
       integer, public :: nv = 5
-      integer, dimension(:), allocatable, public :: nx
+      integer(SP), dimension(:), allocatable, public :: nx
       integer, dimension(:), allocatable, private :: block_coords
       integer, dimension(:,:), allocatable, public :: neighbors
       real(FP), public :: t = 0.0_FP
@@ -276,8 +278,8 @@ contains
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name=DEFAULT_CASE_NAME
-      integer :: ierr, file_unit, n_dim=DEFAULT_N_DIM, nb=DEFAULT_NB, &
-         ng=DEFAULT_NG
+      integer :: ierr, file_unit, n_dim=DEFAULT_N_DIM, nb=DEFAULT_NB
+      integer :: ng=DEFAULT_NG
       type(WB_State), intent(inout) :: s
       namelist /general/ case_name, nb, ng, n_dim
 
@@ -299,7 +301,7 @@ contains
             call wb_abort( "number of blocks is greater than world size", &
                MPI_ERR_COUNT )
          end if
-         if ( s%ng .lt. 1 ) then
+         if ( s%ng .lt. 1_SP ) then
             call wb_abort( "number of ghost points is less than 1", &
                MPI_ERR_COUNT )
          end if
@@ -316,7 +318,7 @@ contains
 
       call mpi_bcast( s%nb, 1, MPI_INTEGER, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
-      call mpi_bcast( s%ng, 1, MPI_INTEGER, WORLD_MASTER, &
+      call mpi_bcast( s%ng, 1, MPI_SP, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
       call mpi_bcast( s%n_dim, 1, MPI_INTEGER, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
@@ -326,7 +328,8 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: ierr, file_unit, ib=DEFAULT_IB, ib_loop, i_dim, i_dir
       type(WB_State), intent(inout) :: s
-      integer, dimension(:), allocatable :: np, nx, neighbors_l, neighbors_u
+      integer, dimension(:), allocatable :: np, neighbors_l, neighbors_u
+      integer(SP), dimension(:), allocatable :: nx
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
 
       allocate( np(s%n_dim) )
@@ -376,7 +379,7 @@ contains
                   call wb_abort( "number of points in direction N1 of block &
                                  &N2 is less than number of ghost points N3", &
                                  MPI_ERR_COUNT, &
-                                 int( (/ i_dim, ib, s%ng /), SP ) )
+                                 (/ int(i_dim,SP), int(ib,SP), s%ng /) )
                end if
                do i_dir = 1, N_DIR
                   if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
@@ -411,7 +414,7 @@ contains
             MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%neighbors, s%n_dim*N_DIR, MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%nx, s%n_dim, MPI_INTEGER, WORLD_MASTER, &
+         call mpi_bcast( s%blocks(ib)%nx, s%n_dim, MPI_SP, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
          call mpi_bcast( s%blocks(ib)%periods, s%n_dim, MPI_LOGICAL, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
@@ -424,7 +427,8 @@ contains
    end subroutine read_block_namelists
 
    subroutine setup_processes( s )
-      integer :: assigned_processes, ib, i_dim, ierr, total_points, world_rank
+      integer :: assigned_processes, ib, i_dim, ierr, world_rank
+      integer(SP) :: total_points = 0_SP
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
@@ -460,10 +464,11 @@ contains
          s%block_coords, ierr )
 
       do i_dim = 1, s%n_dim
-         s%nx(i_dim) = s%blocks(s%ib)%nx(i_dim) / s%blocks(s%ib)%np(i_dim)
+         s%nx(i_dim) = s%blocks(s%ib)%nx(i_dim) / &
+            int(s%blocks(s%ib)%np(i_dim),SP)
          if ( s%block_coords(i_dim) .eq. s%blocks(s%ib)%np(i_dim)-1 ) then
             s%nx(i_dim) = s%nx(i_dim) + modulo( s%blocks(s%ib)%nx(i_dim), &
-               s%blocks(s%ib)%np(i_dim) )
+               int(s%blocks(s%ib)%np(i_dim),SP) )
          end if
       end do
 
@@ -473,15 +478,15 @@ contains
       do world_rank = 0, s%world_size-1
          call mpi_bcast( s%processes(world_rank)%block_rank, 1, &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%processes(world_rank)%block_coords, 3, &
+         call mpi_bcast( s%processes(world_rank)%block_coords, s%n_dim, &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%processes(world_rank)%nx, 3, &
-            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( s%processes(world_rank)%nx, s%n_dim, &
+            MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
 
       ! Check if the sum of the points in a block's processes equals the total
       ! number of points.
-      call mpi_reduce( product(s%nx), total_points, s%n_dim, MPI_INTEGER, &
+      call mpi_reduce( product(s%nx), total_points, s%n_dim, MPI_SP, &
          MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
