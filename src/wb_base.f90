@@ -70,9 +70,9 @@ module wb_base
       integer, public :: world_rank, world_size
       integer, public :: ib, nb
       integer(SP), public :: n_dim
-      integer, public :: nf
+      integer(SP), public :: nf
       integer(SP), public :: ng
-      integer, public :: nv = 5
+      integer(SP), public :: nv = 5_SP
       integer(SP), dimension(:), allocatable, public :: nx
       integer, dimension(:), allocatable, private :: block_coords
       integer, dimension(:,:), allocatable, public :: neighbors
