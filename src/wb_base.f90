@@ -14,6 +14,7 @@
 module wb_base
    use iso_fortran_env
    use mpi_f08
+   use wb_representation
    use wb_text
    implicit none
 
@@ -21,15 +22,6 @@ module wb_base
 
    public WB_State, check_input_file, deallocate_state, initialize_state, &
       print_initial_information, wb_abort
-
-   integer, public, parameter       ::     FP = real64
-   type(MPI_Datatype), public, save :: MPI_FP
-
-   integer, public, parameter       ::     SP = int64
-   type(MPI_Datatype), public, save :: MPI_SP
-
-   integer, public, parameter       ::     MP = int32
-   type(MPI_Datatype), public, save :: MPI_MP
 
    integer, public, parameter :: BLOCK_MASTER = 0
    integer, public, parameter :: WORLD_MASTER = 0
@@ -53,18 +45,6 @@ module wb_base
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
-
-   ! Big-endian architectures put the most significant byte first, and
-   ! little-endian architectures put the least significant byte first.  Binary
-   ! output requires knowing the architecture's endianness.  This statement
-   ! casts an integer for 1 as a single character (the X is arbitrary) and then
-   ! gets the ASCII code for the first character (the result only contains the
-   ! leading bits of the integer).  If the result is 1, then the architecture
-   ! is little-endian, since the least significant byte came first.  If the
-   ! result is 0, then the architecture is big-endian.  Little-endian
-   ! architectures are more common nowadays.
-   logical, public, parameter :: ARCH_IS_BIG_ENDIAN = &
-      ichar( transfer( 1_SP, "X" ) ) .eq. 0
 
    type WB_Block
       private
@@ -195,22 +175,6 @@ contains
       end do
       deallocate( s%processes )
    end subroutine deallocate_state
-
-   subroutine find_mpi_precisions
-      integer :: mpi_size, ierr
-
-      call mpi_sizeof( 1.0_FP, mpi_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_size, MPI_FP, &
-         ierr )
-
-      call mpi_sizeof( 1_SP, mpi_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_SP, &
-         ierr )
-
-      call mpi_sizeof( 1_MP, mpi_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_MP, &
-         ierr )
-   end subroutine find_mpi_precisions
 
    subroutine identify_process_neighbors( s )
       integer :: ierr, block_neighbor, world_rank
