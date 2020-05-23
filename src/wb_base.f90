@@ -593,12 +593,30 @@ contains
          end if
          write (f,"(A)") ""
 
+         if ( MPI_FP .eq. MPI_REAL8 ) then
+            write (f,"(A)") "- MPI floating point precision is `MPI_REAL8`."
+         else if ( MPI_FP .eq. MPI_REAL4 ) then
+            write (f,"(A)") "- MPI floating point precision is `MPI_REAL4`."
+         else
+            write (f,"(A)") "- MPI floating point precision is unknown."
+         end if
+         write (f,"(A)") ""
+
          if ( SP .eq. int64 ) then
-            write (f,"(A)") "- Signed integers are 64-bit."
+            write (f,"(A)") "- Signed integers are 64-bit precision."
          else if (SP .eq. int32 ) then
-            write (f,"(A)") "- Signed integers are 32-bit."
+            write (f,"(A)") "- Signed integers are 32-bit precision."
          else
             write (f,"(A)") "- Signed integers are of unknown precision."
+         end if
+         write (f,"(A)") ""
+
+         if ( MPI_SP .eq. MPI_INTEGER8 ) then
+            write (f,"(A)") "- MPI integer precision is `MPI_INTEGER8`."
+         else if ( MPI_SP .eq. MPI_INTEGER4 ) then
+            write (f,"(A)") "- MPI integer precision is `MPI_INTEGER4`."
+         else
+            write (f,"(A)") "- MPI integer precision is unknown."
          end if
          write (f,"(A)") ""
 
