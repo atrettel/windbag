@@ -28,6 +28,9 @@ module wb_base
    integer, public, parameter       ::     SP = int64
    type(MPI_Datatype), public, save :: MPI_SP
 
+   integer, public, parameter       ::     MP = int32
+   type(MPI_Datatype), public, save :: MPI_MP
+
    integer, public, parameter :: BLOCK_MASTER = 0
    integer, public, parameter :: WORLD_MASTER = 0
 
@@ -191,14 +194,18 @@ contains
    end subroutine deallocate_state
 
    subroutine find_mpi_precisions
-      integer :: mpi_float_size, mpi_int_size, ierr
+      integer :: mpi_size, ierr
 
-      call mpi_sizeof( 1.0_FP, mpi_float_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_float_size, MPI_FP, &
+      call mpi_sizeof( 1.0_FP, mpi_size, ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_size, MPI_FP, &
          ierr )
 
-      call mpi_sizeof( 1_SP, mpi_int_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_int_size, MPI_SP, &
+      call mpi_sizeof( 1_SP, mpi_size, ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_SP, &
+         ierr )
+
+      call mpi_sizeof( 1_MP, mpi_size, ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_MP, &
          ierr )
    end subroutine find_mpi_precisions
 
