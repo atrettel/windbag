@@ -40,7 +40,7 @@ module wb_base
    integer,     public, parameter :: DEFAULT_NP             = 0
    integer(SP), public, parameter :: DEFAULT_NX             = 0_SP
 
-   integer(MP), public, parameter :: STRING_LENGTH = 64_MP
+   integer(SP), public, parameter :: STRING_LENGTH = 64_SP
 
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
@@ -287,7 +287,7 @@ contains
          end if
       end if
 
-      call mpi_bcast( case_name, STRING_LENGTH, MPI_CHARACTER, &
+      call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
          WORLD_MASTER, MPI_COMM_WORLD, ierr )
 
       s%case_name = trim(case_name)
