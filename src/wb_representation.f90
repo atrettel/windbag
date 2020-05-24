@@ -43,7 +43,7 @@ module wb_representation
       ichar( transfer( 1_SP, "X" ) ) .eq. 0
 contains
    subroutine find_mpi_precisions
-      integer :: mpi_size, ierr
+      integer(MP) :: mpi_size, ierr
 
       call mpi_sizeof( 1.0_FP, mpi_size, ierr )
       call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_size, MPI_FP, &
