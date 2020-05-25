@@ -312,7 +312,7 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: file_unit
       integer(MP) :: ierr
-      integer(SP) :: ib=DEFAULT_IB, ib_loop, i_dim, i_dir
+      integer(SP) :: ib=DEFAULT_IB, jb, i_dim, i_dir
       type(WB_State), intent(inout) :: s
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx, neighbors_l, neighbors_u
@@ -329,17 +329,17 @@ contains
       neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
 
       allocate( s%blocks(s%nb) )
-      do ib_loop = 1_SP, s%nb
-         allocate( s%blocks(ib_loop)%np(s%n_dim) )
-         allocate( s%blocks(ib_loop)%nx(s%n_dim) )
-         allocate( s%blocks(ib_loop)%neighbors(s%n_dim,N_DIR) )
-         allocate( s%blocks(ib_loop)%periods(s%n_dim) )
+      do jb = 1_SP, s%nb
+         allocate( s%blocks(jb)%np(s%n_dim) )
+         allocate( s%blocks(jb)%nx(s%n_dim) )
+         allocate( s%blocks(jb)%neighbors(s%n_dim,N_DIR) )
+         allocate( s%blocks(jb)%periods(s%n_dim) )
       end do
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
-         do ib_loop = 1_SP, s%nb
+         do jb = 1_SP, s%nb
             read( unit=file_unit, nml=block )
 
             if ( ib .gt. s%nb .or. ib .lt. 1_SP ) then
