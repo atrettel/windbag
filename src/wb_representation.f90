@@ -46,15 +46,12 @@ contains
       integer(MP) :: mpi_size, ierr
 
       call mpi_sizeof( 1.0_FP, mpi_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_size, MPI_FP, &
-         ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_REAL, mpi_size, MPI_FP, ierr )
 
       call mpi_sizeof( 1_SP, mpi_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_SP, &
-         ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_SP, ierr )
 
       call mpi_sizeof( 1_MP, mpi_size, ierr )
-      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_MP, &
-         ierr )
+      call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_MP, ierr )
    end subroutine find_mpi_precisions
 end module wb_representation
