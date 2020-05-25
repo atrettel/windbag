@@ -172,7 +172,7 @@ contains
       end do
       deallocate( s%blocks )
 
-      do world_rank = 0_MP, s%world_size-1
+      do world_rank = 0_MP, s%world_size-1_MP
          deallocate( s%processes(world_rank)%block_coords )
          deallocate( s%processes(world_rank)%nx )
       end do
