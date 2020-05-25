@@ -323,12 +323,10 @@ contains
       allocate( neighbors_l(s%n_dim) )
       allocate( neighbors_u(s%n_dim) )
 
-      do i_dim = 1_SP, s%n_dim
-         np(i_dim)          = DEFAULT_NP
-         nx(i_dim)          = DEFAULT_NX
-         neighbors_l(i_dim) = DEFAULT_BLOCK_NEIGHBOR
-         neighbors_u(i_dim) = DEFAULT_BLOCK_NEIGHBOR
-      end do
+      np(:)          = DEFAULT_NP
+      nx(:)          = DEFAULT_NX
+      neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
+      neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
 
       allocate( s%blocks(s%nb) )
       do ib_loop = 1_SP, s%nb
