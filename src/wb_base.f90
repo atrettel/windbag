@@ -278,6 +278,10 @@ contains
                MPI_ERR_COUNT )
          end if
          if ( s%nb .gt. int(s%world_size,SP) ) then
+            ! This is a feature of the code and not a bug.  It allows the code
+            ! to treat communication between blocks as the same as
+            ! communication between processes, but that plan only works if each
+            ! block uses at least one process.
             call wb_abort( "number of blocks is greater than world size", &
                MPI_ERR_COUNT )
          end if
