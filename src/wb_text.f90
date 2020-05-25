@@ -15,24 +15,25 @@ module wb_text
    use wb_representation
    implicit none
 
-   integer, public, parameter ::      UNALIGNED = 0
-   integer, public, parameter ::   LEFT_ALIGNED = 1
-   integer, public, parameter ::  RIGHT_ALIGNED = 2
-   integer, public, parameter :: CENTER_ALIGNED = 3
+   integer(SP), public, parameter ::      UNALIGNED = 0_SP
+   integer(SP), public, parameter ::   LEFT_ALIGNED = 1_SP
+   integer(SP), public, parameter ::  RIGHT_ALIGNED = 2_SP
+   integer(SP), public, parameter :: CENTER_ALIGNED = 3_SP
 
-   integer, public, parameter ::   COORDS_COLUMN_WIDTH =  6
-   integer, public, parameter :: HOSTNAME_COLUMN_WIDTH = 16
-   integer, public, parameter ::       IB_COLUMN_WIDTH =  4
-   integer, public, parameter ::   POINTS_COLUMN_WIDTH = 16
-   integer, public, parameter ::     RANK_COLUMN_WIDTH = 12
-   integer, public, parameter ::     SIZE_COLUMN_WIDTH = 12
-   integer, public, parameter ::       NP_COLUMN_WIDTH =  7
-   integer, public, parameter ::       NX_COLUMN_WIDTH =  7
+   integer(SP), public, parameter ::   COORDS_COLUMN_WIDTH =  6_SP
+   integer(SP), public, parameter :: HOSTNAME_COLUMN_WIDTH = 16_SP
+   integer(SP), public, parameter ::       IB_COLUMN_WIDTH =  4_SP
+   integer(SP), public, parameter ::   POINTS_COLUMN_WIDTH = 16_SP
+   integer(SP), public, parameter ::     RANK_COLUMN_WIDTH = 12_SP
+   integer(SP), public, parameter ::     SIZE_COLUMN_WIDTH = 12_SP
+   integer(SP), public, parameter ::       NP_COLUMN_WIDTH =  7_SP
+   integer(SP), public, parameter ::       NX_COLUMN_WIDTH =  7_SP
 
    integer(SP), public, parameter :: STRING_LENGTH = 64_SP
 contains
    subroutine write_string_table_entry( f, entry, width, end_row )
-      integer, intent(in) :: f, width
+      integer, intent(in) :: f
+      integer(SP), intent(in) :: width
       character(len=*), intent(in) :: entry
       logical, optional, intent(in) :: end_row
       character(len=STRING_LENGTH) :: write_fmt
@@ -45,8 +46,8 @@ contains
    end subroutine write_string_table_entry
 
    subroutine write_integer_table_entry( f, entry, width, end_row )
-      integer(SP) :: entry
-      integer, intent(in) :: f, width
+      integer, intent(in) :: f
+      integer(SP), intent(in) :: entry, width
       logical, optional, intent(in) :: end_row
       character(len=STRING_LENGTH) :: write_fmt
 
@@ -58,11 +59,12 @@ contains
    end subroutine write_integer_table_entry
 
    subroutine write_rule_table_entry( f, width, alignment, end_row )
-      integer, intent(in) :: f, width
-      integer, optional, intent(in) :: alignment
+      integer, intent(in) :: f
+      integer(SP), intent(in) :: width
+      integer(SP), optional, intent(in) :: alignment
       logical, optional, intent(in) :: end_row
+      integer(SP) :: n_dash, i_dash
       logical, dimension(2) :: aligned = (/ .false., .false. /)
-      integer :: n_dash, i_dash
 
       if ( present(alignment) ) then
          if      ( alignment .eq.   LEFT_ALIGNED ) then
@@ -73,16 +75,16 @@ contains
             aligned = (/ .true., .true. /)
          end if
       end if
-      n_dash = width - count(aligned)
+      n_dash = width - int(count(aligned),SP)
 
       write (f, "(A)", advance="no") "| "
-      if ( aligned(1) ) then
+      if ( aligned(1_SP) ) then
          write (f, "(A)", advance="no") ":"
       end if
-      do i_dash = 1, n_dash
+      do i_dash = 1_SP, n_dash
          write (f, "(A)", advance="no") "-"
       end do
-      if ( aligned(2) ) then
+      if ( aligned(2_SP) ) then
          write (f, "(A)", advance="no") ":"
       end if
       write (f, "(A)", advance="no") " "
