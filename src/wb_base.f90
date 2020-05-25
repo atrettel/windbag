@@ -86,9 +86,13 @@ contains
       type(WB_State), intent(in) :: s
       integer(SP) :: ib, i_dim, j_dim, neighbor_l, neighbor_u
 
+      ! Ensure that lower and upper pairs exist, and that their number of
+      ! points and processes match.  Since this is just checking and not
+      ! calculation, it must occur on the world master.  It is impossible to
+      ! have each block master check this for their own blocks since the block
+      ! communicators do not exist yet.  If that were possible, it would
+      ! eliminate the loop over all blocks.
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         ! Ensure that lower and upper pairs exist, and that their number of
-         ! points and processes match.
          do ib = 1_SP, s%nb
             do i_dim = 1_SP, s%n_dim
                neighbor_l = s%blocks(ib)%neighbors(i_dim,LOWER_DIR)
