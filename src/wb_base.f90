@@ -243,6 +243,7 @@ contains
       call read_block_namelists( s, filename )
       call check_block_neighbors( s )
       call setup_processes( s )
+      call identify_process_neighbors( s )
    end subroutine initialize_state
 
    subroutine print_initial_information( s )
@@ -478,8 +479,6 @@ contains
                         &points in individual processes", &
             MPI_ERR_SIZE, (/ s%ib /) )
       end if
-
-      call identify_process_neighbors( s )
    end subroutine setup_processes
 
    subroutine wb_abort( message, errno, ints, floats )
