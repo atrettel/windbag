@@ -248,10 +248,10 @@ contains
    subroutine print_initial_information( s )
       type(WB_State), intent(in) :: s
 
-      call write_global_information( output_unit, s )
-      call write_block_information( output_unit, s )
+      call write_global_information(  output_unit, s )
+      call write_block_information(   output_unit, s )
       call write_process_information( output_unit, s )
-      call write_process_neighbors( output_unit, s )
+      call write_process_neighbors(   output_unit, s )
    end subroutine print_initial_information
 
    subroutine read_general_namelist( s, filename )
