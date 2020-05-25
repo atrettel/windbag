@@ -420,8 +420,8 @@ contains
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
 
-      allocate( s%processes(0:s%world_size-1) )
-      do world_rank = 0, s%world_size-1
+      allocate( s%processes(0_MP:s%world_size-1_MP) )
+      do world_rank = 0_MP, s%world_size-1_MP
          allocate( s%processes(world_rank)%block_coords(s%n_dim) )
          allocate( s%processes(world_rank)%nx(s%n_dim) )
       end do
