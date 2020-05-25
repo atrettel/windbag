@@ -133,10 +133,11 @@ contains
 
    subroutine check_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
-      integer :: argc, filename_length
-      integer(MP) :: ierr, world_rank
+      integer :: argc, filename_length, ierr
+      integer(MP) :: ierr_mpi, world_rank
       logical :: file_exists
-      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr_mpi )
       call find_mpi_precisions
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
