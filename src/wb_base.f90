@@ -41,8 +41,6 @@ module wb_base
 
    integer(MP), public, parameter :: DEFAULT_NP             = 0_MP
 
-   integer(SP), public, parameter :: STRING_LENGTH = 64_SP
-
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"

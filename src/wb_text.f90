@@ -28,12 +28,14 @@ module wb_text
    integer, public, parameter ::     SIZE_COLUMN_WIDTH = 12
    integer, public, parameter ::       NP_COLUMN_WIDTH =  7
    integer, public, parameter ::       NX_COLUMN_WIDTH =  7
+
+   integer(SP), public, parameter :: STRING_LENGTH = 64_SP
 contains
    subroutine write_string_table_entry( f, entry, width, end_row )
       integer, intent(in) :: f, width
       character(len=*), intent(in) :: entry
       logical, optional, intent(in) :: end_row
-      character(len=64) :: write_fmt
+      character(len=STRING_LENGTH) :: write_fmt
 
       write (write_fmt,"(A, I2.1, A)") "(A, A", width, ", A)"
       write (f, write_fmt, advance="no") "| ", entry, " "
@@ -46,7 +48,7 @@ contains
       integer(SP) :: entry
       integer, intent(in) :: f, width
       logical, optional, intent(in) :: end_row
-      character(len=64) :: write_fmt
+      character(len=STRING_LENGTH) :: write_fmt
 
       write (write_fmt,"(A, I2.1, A)") "(A, I", width, ", A)"
       write (f, write_fmt, advance="no") "| ", entry, " "

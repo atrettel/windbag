@@ -13,6 +13,7 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 program windbag
    use mpi_f08
+   use wb_text, only : STRING_LENGTH
    use wb_base
 
    implicit none
@@ -23,9 +24,7 @@ program windbag
    call mpi_init( ierr )
    call check_input_file( filename )
    call initialize_state( s, filename )
-
    call print_initial_information( s )
-
    call deallocate_state( s )
    call mpi_finalize( ierr )
 end program windbag
