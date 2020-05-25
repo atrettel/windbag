@@ -448,9 +448,8 @@ contains
       call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
          s%block_coords, ierr )
 
+      s%nx = s%blocks(s%ib)%nx / int(s%blocks(s%ib)%np,SP)
       do i_dim = 1_SP, s%n_dim
-         s%nx(i_dim) = s%blocks(s%ib)%nx(i_dim) / &
-            int(s%blocks(s%ib)%np(i_dim),SP)
          if ( s%block_coords(i_dim) .eq. s%blocks(s%ib)%np(i_dim)-1_MP ) then
             s%nx(i_dim) = s%nx(i_dim) + modulo( s%blocks(s%ib)%nx(i_dim), &
                int(s%blocks(s%ib)%np(i_dim),SP) )
