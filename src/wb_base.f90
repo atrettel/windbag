@@ -758,7 +758,7 @@ contains
       integer, intent(in) :: f
       type(WB_State), intent(in) :: s
       integer(MP) :: ierr, world_rank, neighbor
-      integer(SP) :: i_dim, i_dir, j_dir, face_count=0
+      integer(SP) :: i_dim, i_dir, j_dir, face_count=0_SP
       integer(SP), dimension(N_DIR) :: dirs = (/ LOWER_DIR, UPPER_DIR /)
       character(len=STRING_LENGTH) :: label
 
@@ -770,7 +770,7 @@ contains
          do i_dim = 1_SP, s%n_dim
             do i_dir = 1_SP, N_DIR
                j_dir = dirs(i_dir)
-               face_count = face_count + 1
+               face_count = face_count + 1_SP
                if ( j_dir .eq. LOWER_DIR ) then
                   write (label,"(I1, A)") i_dim, "L"
                else
