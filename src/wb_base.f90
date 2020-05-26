@@ -508,18 +508,18 @@ contains
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
-         call write_rule_table_entry( f, IB_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, IB_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         call write_rule_table_entry( f, SIZE_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, SIZE_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1_SP, s%n_dim
-            call write_rule_table_entry( f, NP_COLUMN_WIDTH, &
+            call write_table_rule_entry( f, NP_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
-         call write_rule_table_entry( f, POINTS_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1_SP, s%n_dim
-            call write_rule_table_entry( f, NX_COLUMN_WIDTH, &
+            call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
          end do
 
@@ -684,22 +684,22 @@ contains
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
-         call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         call write_rule_table_entry( f, HOSTNAME_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, HOSTNAME_COLUMN_WIDTH, &
             alignment=LEFT_ALIGNED  )
-         call write_rule_table_entry( f, IB_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, IB_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1_SP, s%n_dim
-            call write_rule_table_entry( f, COORDS_COLUMN_WIDTH, &
+            call write_table_rule_entry( f, COORDS_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
-         call write_rule_table_entry( f, POINTS_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1_SP, s%n_dim
-            call write_rule_table_entry( f, NX_COLUMN_WIDTH, &
+            call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
          end do
       end if
@@ -763,12 +763,12 @@ contains
          end do
 
          face_count = 0_SP
-         call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1_SP, s%n_dim
             do i_dir = 1_SP, N_DIR
                face_count = face_count + 1_SP
-               call write_rule_table_entry( f, RANK_COLUMN_WIDTH, &
+               call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
                   alignment=RIGHT_ALIGNED, &
                   end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
             end do
