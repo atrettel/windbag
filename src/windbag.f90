@@ -13,7 +13,7 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 program windbag
    use mpi_f08
-   use wb_text, only : STRING_LENGTH
+   use wb_representation, only : STRING_LENGTH
    use wb_base
 
    implicit none
