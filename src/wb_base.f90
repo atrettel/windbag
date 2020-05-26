@@ -578,19 +578,19 @@ contains
          call write_table_rule_entry( f, 15_SP, end_row=.true. )
          call write_table_entry( f, "Floating point", 20_SP )
          call write_table_entry( f, "`FP`", 10_SP )
-         call write_table_entry( f, fortran_real_precision(FP), 15_SP )
-         call write_table_entry( f, mpi_real_precision(MPI_FP), 15_SP, &
+         call write_table_entry( f, identify_real_precision(FP), 15_SP )
+         call write_table_entry( f, identify_real_precision(MPI_FP), 15_SP, &
             end_row=.true. )
          call write_table_entry( f, "Integer", 20_SP )
          call write_table_entry( f, "`SP`", 10_SP )
-         call write_table_entry( f, fortran_integer_precision(SP), 15_SP )
-         call write_table_entry( f, mpi_integer_precision(MPI_SP), 15_SP, &
-            end_row=.true. )
+         call write_table_entry( f, identify_integer_precision(SP), 15_SP )
+         call write_table_entry( f, identify_integer_precision(MPI_SP), &
+            15_SP, end_row=.true. )
          call write_table_entry( f, "Integer (MPI only)", 20_SP )
          call write_table_entry( f, "`MP`", 10_SP )
-         call write_table_entry( f, fortran_integer_precision(MP), 15_SP )
-         call write_table_entry( f, mpi_integer_precision(MPI_MP), 15_SP, &
-            end_row=.true. )
+         call write_table_entry( f, identify_integer_precision(MP), 15_SP )
+         call write_table_entry( f, identify_integer_precision(MPI_MP), &
+            15_SP, end_row=.true. )
          write (f,"(A)") ""
 
          call mpi_get_version( mpi_major_version_number, &
