@@ -568,75 +568,29 @@ contains
             end_row=.true. )
          write (f,"(A)") ""
 
-         write (f,"(A)", advance="no") "- Floating point precision `FP = "
-         if ( FP .eq. real64 ) then
-            write (f,"(A)") "real64`."
-         else if ( FP .eq. real32 ) then
-            write (f,"(A)") "real32`."
-         else
-            write (f,"(A)") "?`."
-         end if
-         write (f,"(A)") ""
-
-         write (f,"(A)", advance="no") &
-            "    - MPI floating point precision `MPI_FP = "
-         if ( MPI_FP .eq. MPI_REAL8 ) then
-            write (f,"(A)") "MPI_REAL8`."
-         else if ( MPI_FP .eq. MPI_REAL4 ) then
-            write (f,"(A)") "MPI_REAL4`."
-         else if ( MPI_FP .eq. MPI_REAL ) then
-            write (f,"(A)") "MPI_REAL`."
-         else
-            write (f,"(A)") "?`."
-         end if
-         write (f,"(A)") ""
-
-         write (f,"(A)", advance="no") "- Signed integer precision `SP = "
-         if ( SP .eq. int64 ) then
-            write (f,"(A)") "int64`."
-         else if ( SP .eq. int32 ) then
-            write (f,"(A)") "int32`."
-         else
-            write (f,"(A)") "?`."
-         end if
-         write (f,"(A)") ""
-
-         write (f,"(A)", advance="no") &
-            "    - MPI signed integer precision `MPI_SP = "
-         if ( MPI_SP .eq. MPI_INTEGER8 ) then
-            write (f,"(A)") "MPI_INTEGER8`."
-         else if ( MPI_SP .eq. MPI_INTEGER4 ) then
-            write (f,"(A)") "MPI_INTEGER4`."
-         else if ( MPI_SP .eq. MPI_INTEGER ) then
-            write (f,"(A)") "MPI_INTEGER`."
-         else
-            write (f,"(A)") "?`."
-         end if
-         write (f,"(A)") ""
-
-         write (f,"(A)", advance="no") "- Signed integer precision `MP = "
-         if ( MP .eq. int64 ) then
-            write (f,"(A)") "int64`."
-         else if ( MP .eq. int32 ) then
-            write (f,"(A)") "int32`."
-         else
-            write (f,"(A)") "?`."
-         end if
-         write (f,"(A)") ""
-         write (f,"(A)") "    - (for integers only used as MPI variables)"
-         write (f,"(A)") ""
-
-         write (f,"(A)", advance="no") &
-            "    - MPI signed integer precision `MPI_MP = "
-         if ( MPI_MP .eq. MPI_INTEGER8 ) then
-            write (f,"(A)") "MPI_INTEGER8`."
-         else if ( MPI_MP .eq. MPI_INTEGER4 ) then
-            write (f,"(A)") "MPI_INTEGER4`."
-         else if ( MPI_MP .eq. MPI_INTEGER ) then
-            write (f,"(A)") "MPI_INTEGER`."
-         else
-            write (f,"(A)") "?`."
-         end if
+         call write_table_entry( f, "Data type", 20_SP )
+         call write_table_entry( f, "Variable", 10_SP )
+         call write_table_entry( f, "Fortran", 15_SP )
+         call write_table_entry( f, "MPI", 15_SP, end_row=.true. )
+         call write_table_rule_entry( f, 20_SP )
+         call write_table_rule_entry( f, 10_SP )
+         call write_table_rule_entry( f, 15_SP )
+         call write_table_rule_entry( f, 15_SP, end_row=.true. )
+         call write_table_entry( f, "Floating point", 20_SP )
+         call write_table_entry( f, "`FP`", 10_SP )
+         call write_table_entry( f, fortran_real_precision(FP), 15_SP )
+         call write_table_entry( f, mpi_real_precision(MPI_FP), 15_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Integer", 20_SP )
+         call write_table_entry( f, "`SP`", 10_SP )
+         call write_table_entry( f, fortran_integer_precision(SP), 15_SP )
+         call write_table_entry( f, mpi_integer_precision(MPI_SP), 15_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Integer (MPI only)", 20_SP )
+         call write_table_entry( f, "`MP`", 10_SP )
+         call write_table_entry( f, fortran_integer_precision(MP), 15_SP )
+         call write_table_entry( f, mpi_integer_precision(MPI_MP), 15_SP, &
+            end_row=.true. )
          write (f,"(A)") ""
 
          call mpi_get_version( mpi_major_version_number, &
