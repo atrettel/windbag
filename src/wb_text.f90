@@ -30,10 +30,10 @@ module wb_text
    integer(SP), public, parameter ::       NX_COLUMN_WIDTH =  7_SP
 
    interface write_table_entry
-      module procedure write_integer_table_entry, write_string_table_entry
+      module procedure write_table_entry_integer, write_table_entry_character
    end interface write_table_entry
 contains
-   subroutine write_string_table_entry( f, entry, width, end_row )
+   subroutine write_table_entry_character( f, entry, width, end_row )
       integer, intent(in) :: f
       integer(SP), intent(in) :: width
       character(len=*), intent(in) :: entry
@@ -45,9 +45,9 @@ contains
       if ( present(end_row) .and. end_row .eqv. .true. ) then
          write (f, "(A)", advance="yes") "|"
       end if
-   end subroutine write_string_table_entry
+   end subroutine write_table_entry_character
 
-   subroutine write_integer_table_entry( f, entry, width, end_row )
+   subroutine write_table_entry_integer( f, entry, width, end_row )
       integer, intent(in) :: f
       integer(SP), intent(in) :: entry, width
       logical, optional, intent(in) :: end_row
@@ -58,7 +58,7 @@ contains
       if ( present(end_row) .and. end_row .eqv. .true. ) then
          write (f, "(A)", advance="yes") "|"
       end if
-   end subroutine write_integer_table_entry
+   end subroutine write_table_entry_integer
 
    subroutine write_rule_table_entry( f, width, alignment, end_row )
       integer, intent(in) :: f
