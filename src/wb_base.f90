@@ -15,13 +15,14 @@ module wb_base
    use iso_fortran_env
    use mpi_f08
    use wb_representation
+   use wb_exit
    use wb_text
    implicit none
 
    private
 
    public WB_State, check_input_file, deallocate_state, initialize_state, &
-      print_initial_information, wb_abort
+      print_initial_information
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -49,12 +50,6 @@ module wb_base
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
-
-   integer(MP), public, parameter :: EXIT_SUCCESS =  0_MP
-   integer(MP), public, parameter :: EXIT_FAILURE =  1_MP
-   integer(MP), public, parameter :: EXIT_USAGE   = 64_MP
-   integer(MP), public, parameter :: EXIT_DATAERR = 65_MP
-   integer(MP), public, parameter :: EXIT_NOINPUT = 66_MP
 
    type WB_Block
       private
@@ -489,28 +484,6 @@ contains
             (/ s%ib, product(s%blocks(s%ib)%nx), total_points /) )
       end if
    end subroutine setup_processes
-
-   subroutine wb_abort( message, exit_code, ints, floats )
-      character(len=*), intent(in) :: message
-      integer(MP), intent(in) :: exit_code
-      integer(SP) :: i
-      integer(MP) :: ierr
-      integer(SP), dimension(:), optional, intent(in) :: ints
-      real(FP), dimension(:), optional, intent(in) :: floats
-
-      write (error_unit, "(A, A, A)") PROGRAM_NAME, ": ", message
-      if ( present(ints) ) then
-         do i = 1_SP, size(ints)
-            write (error_unit, "(A, I1, A, I8)") "N", i, " = ", ints(i)
-         end do
-      end if
-      if ( present(floats) ) then
-         do i = 1_SP, size(floats)
-            write (error_unit, "(A, I1, A, ES9.2)") "F", i, " = ", floats(i)
-         end do
-      end if
-      call mpi_abort( MPI_COMM_WORLD, exit_code, ierr )
-   end subroutine wb_abort
 
    subroutine write_block_information( f, s )
       integer, intent(in) :: f
