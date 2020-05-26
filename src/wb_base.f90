@@ -499,12 +499,12 @@ contains
          call write_string_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
-            call write_string_table_entry( f, trim(label), NP_COLUMN_WIDTH )
+            call write_string_table_entry( f, label, NP_COLUMN_WIDTH )
          end do
          call write_string_table_entry( f, "points", POINTS_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, trim(label), NX_COLUMN_WIDTH, &
+            call write_string_table_entry( f, label, NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
@@ -675,13 +675,12 @@ contains
          call write_string_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "(", i_dim, ")"
-            call write_string_table_entry( f, trim(label), &
-               COORDS_COLUMN_WIDTH )
+            call write_string_table_entry( f, label, COORDS_COLUMN_WIDTH )
          end do
          call write_string_table_entry( f, "points", POINTS_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, trim(label), NX_COLUMN_WIDTH, &
+            call write_string_table_entry( f, label, NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
@@ -711,7 +710,7 @@ contains
          if ( s%world_rank .eq. world_rank ) then
             call write_integer_table_entry( f, int(s%world_rank,SP), &
                RANK_COLUMN_WIDTH )
-            call write_string_table_entry(  f, trim(processor_name), &
+            call write_string_table_entry(  f, processor_name, &
                HOSTNAME_COLUMN_WIDTH )
             call write_integer_table_entry( f, s%ib, &
                IB_COLUMN_WIDTH )
@@ -758,8 +757,7 @@ contains
                else
                   write (label,"(I1, A)") i_dim, "U"
                end if
-               call write_string_table_entry( f, trim(label), &
-                  RANK_COLUMN_WIDTH, &
+               call write_string_table_entry( f, label, RANK_COLUMN_WIDTH, &
                   end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
             end do
          end do
