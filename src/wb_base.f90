@@ -41,6 +41,8 @@ module wb_base
 
    integer(MP), public, parameter :: DEFAULT_NP             = 0_MP
 
+   logical, public, parameter :: DEFAULT_REORDER = .false.
+
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
@@ -52,7 +54,7 @@ module wb_base
       integer(SP), dimension(:), allocatable :: nx
       integer(SP), dimension(:,:), allocatable :: neighbors
       logical, dimension(:), allocatable :: periods
-      logical :: reorder = .false.
+      logical :: reorder = DEFAULT_REORDER
    end type WB_Block
 
    type WB_Process
