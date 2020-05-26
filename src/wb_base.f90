@@ -487,9 +487,9 @@ contains
       end if
    end subroutine setup_processes
 
-   subroutine wb_abort( message, errno, ints, floats )
+   subroutine wb_abort( message, exit_code, ints, floats )
       character(len=*), intent(in) :: message
-      integer(MP), intent(in) :: errno
+      integer(MP), intent(in) :: exit_code
       integer(SP) :: i
       integer(MP) :: ierr
       integer(SP), dimension(:), optional, intent(in) :: ints
@@ -506,7 +506,7 @@ contains
             write (error_unit, "(A, I1, A, ES9.2)") "F", i, " = ", floats(i)
          end do
       end if
-      call mpi_abort( MPI_COMM_WORLD, errno, ierr )
+      call mpi_abort( MPI_COMM_WORLD, exit_code, ierr )
    end subroutine wb_abort
 
    subroutine write_block_information( f, s )
