@@ -18,8 +18,8 @@ module wb_representation
 
    private
 
-   public find_mpi_precisions, mpi_integer_precision, mpi_real_precision, &
-      fortran_integer_precision, fortran_real_precision
+   public find_mpi_precisions, identify_integer_precision, &
+      identify_real_precision
 
    integer, public, parameter       ::     FP = real64
    type(MPI_Datatype), public, save :: MPI_FP
@@ -43,6 +43,16 @@ module wb_representation
    ! architectures are more common nowadays.
    logical, public, parameter :: ARCH_IS_BIG_ENDIAN = &
       ichar( transfer( 1_SP, "X" ) ) .eq. 0
+
+   interface identify_integer_precision
+      module procedure identify_integer_precision_fortran, &
+         identify_integer_precision_mpi
+   end interface identify_integer_precision
+
+   interface identify_real_precision
+      module procedure identify_real_precision_fortran, &
+         identify_real_precision_mpi
+   end interface identify_real_precision
 contains
    subroutine find_mpi_precisions
       integer(MP) :: mpi_size, ierr
@@ -57,7 +67,7 @@ contains
       call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_MP, ierr )
    end subroutine find_mpi_precisions
 
-   function fortran_integer_precision( vp ) result( string )
+   function identify_integer_precision_fortran( vp ) result( string )
       integer, intent(in) :: vp
       character(len=STRING_LENGTH) :: string
 
@@ -68,22 +78,9 @@ contains
       else
          write (string,"(A)") "(unknown)"
       end if
-   end function fortran_integer_precision
+   end function identify_integer_precision_fortran
 
-   function fortran_real_precision( vp ) result( string )
-      integer, intent(in) :: vp
-      character(len=STRING_LENGTH) :: string
-
-      if ( vp .eq. real64 ) then
-         write (string,"(A)") "`real64`"
-      else if ( vp .eq. real32 ) then
-         write (string,"(A)") "`real32`"
-      else
-         write (string,"(A)") "(unknown)"
-      end if
-   end function fortran_real_precision
-
-   function mpi_integer_precision( datatype ) result( string )
+   function identify_integer_precision_mpi( datatype ) result( string )
       type(MPI_Datatype), intent(in) :: datatype
       character(len=STRING_LENGTH) :: string
 
@@ -96,9 +93,22 @@ contains
       else
          write (string,"(A)") "(unknown)"
       end if
-   end function mpi_integer_precision
+   end function identify_integer_precision_mpi
 
-   function mpi_real_precision( datatype ) result( string )
+   function identify_real_precision_fortran( vp ) result( string )
+      integer, intent(in) :: vp
+      character(len=STRING_LENGTH) :: string
+
+      if ( vp .eq. real64 ) then
+         write (string,"(A)") "`real64`"
+      else if ( vp .eq. real32 ) then
+         write (string,"(A)") "`real32`"
+      else
+         write (string,"(A)") "(unknown)"
+      end if
+   end function identify_real_precision_fortran
+
+   function identify_real_precision_mpi( datatype ) result( string )
       type(MPI_Datatype), intent(in) :: datatype
       character(len=STRING_LENGTH) :: string
 
@@ -111,5 +121,5 @@ contains
       else
          write (string,"(A)") "(unknown)"
       end if
-   end function mpi_real_precision
+   end function identify_real_precision_mpi
 end module wb_representation
