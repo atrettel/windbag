@@ -495,16 +495,16 @@ contains
          write (f,"(A)") "## Block information"
          write (f,"(A)") ""
 
-         call write_string_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
-         call write_string_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
+         call write_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
+         call write_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
-            call write_string_table_entry( f, label, NP_COLUMN_WIDTH )
+            call write_table_entry( f, label, NP_COLUMN_WIDTH )
          end do
-         call write_string_table_entry( f, "points", POINTS_COLUMN_WIDTH )
+         call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, label, NX_COLUMN_WIDTH, &
+            call write_table_entry( f, label, NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
@@ -524,17 +524,17 @@ contains
          end do
 
          do ib = 1_SP, s%nb
-            call write_integer_table_entry( f, ib, IB_COLUMN_WIDTH )
-            call write_integer_table_entry( f, &
+            call write_table_entry( f, ib, IB_COLUMN_WIDTH )
+            call write_table_entry( f, &
                int(s%blocks(ib)%block_size,SP), SIZE_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_integer_table_entry( f, &
+               call write_table_entry( f, &
                int(s%blocks(ib)%np(i_dim),SP), NP_COLUMN_WIDTH )
             end do
-            call write_integer_table_entry( f, &
+            call write_table_entry( f, &
                product(s%blocks(ib)%nx), POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_integer_table_entry( f, &
+               call write_table_entry( f, &
                s%blocks(ib)%nx(i_dim), NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
             end do
@@ -669,18 +669,18 @@ contains
          write (*,"(A)") "## Process information"
          write (*,"(A)") ""
 
-         call write_string_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
-         call write_string_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
-         call write_string_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
-         call write_string_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
+         call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
+         call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
+         call write_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
+         call write_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "(", i_dim, ")"
-            call write_string_table_entry( f, label, COORDS_COLUMN_WIDTH )
+            call write_table_entry( f, label, COORDS_COLUMN_WIDTH )
          end do
-         call write_string_table_entry( f, "points", POINTS_COLUMN_WIDTH )
+         call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
-            call write_string_table_entry( f, label, NX_COLUMN_WIDTH, &
+            call write_table_entry( f, label, NX_COLUMN_WIDTH, &
                end_row=(i_dim .eq. s%n_dim) )
          end do
 
@@ -708,22 +708,22 @@ contains
       do world_rank = 0_MP, s%world_size-1_MP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
-            call write_integer_table_entry( f, int(s%world_rank,SP), &
+            call write_table_entry( f, int(s%world_rank,SP), &
                RANK_COLUMN_WIDTH )
-            call write_string_table_entry(  f, processor_name, &
+            call write_table_entry(  f, processor_name, &
                HOSTNAME_COLUMN_WIDTH )
-            call write_integer_table_entry( f, s%ib, &
+            call write_table_entry( f, s%ib, &
                IB_COLUMN_WIDTH )
-            call write_integer_table_entry( f, int(s%block_rank,SP), &
+            call write_table_entry( f, int(s%block_rank,SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_integer_table_entry( f, &
+               call write_table_entry( f, &
                int(s%block_coords(i_dim),SP), COORDS_COLUMN_WIDTH )
             end do
-            call write_integer_table_entry( f, product(s%nx), &
+            call write_table_entry( f, product(s%nx), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_integer_table_entry( f, s%nx(i_dim), &
+               call write_table_entry( f, s%nx(i_dim), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
             end do
          end if
@@ -747,7 +747,7 @@ contains
          write (*,"(A)") "## Process neighbors"
          write (*,"(A)") ""
 
-         call write_string_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
+         call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
             do i_dir = 1_SP, N_DIR
                j_dir = dirs(i_dir)
@@ -757,7 +757,7 @@ contains
                else
                   write (label,"(I1, A)") i_dim, "U"
                end if
-               call write_string_table_entry( f, label, RANK_COLUMN_WIDTH, &
+               call write_table_entry( f, label, RANK_COLUMN_WIDTH, &
                   end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
             end do
          end do
@@ -779,7 +779,7 @@ contains
          face_count = 0_SP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
-            call write_integer_table_entry( f, int(s%world_rank,SP), &
+            call write_table_entry( f, int(s%world_rank,SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                do i_dir = 1_SP, N_DIR
@@ -787,11 +787,11 @@ contains
                   face_count = face_count + 1_SP
                   neighbor = s%neighbors(i_dim,j_dir)
                   if ( neighbor .eq. MPI_PROC_NULL ) then
-                     call write_string_table_entry( f, "-", &
+                     call write_table_entry( f, "-", &
                         RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
                   else
-                     call write_integer_table_entry( f, int(neighbor,SP), &
+                     call write_table_entry( f, int(neighbor,SP), &
                         RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
                   end if
