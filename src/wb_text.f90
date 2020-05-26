@@ -34,7 +34,8 @@ module wb_text
    integer(SP), public, parameter ::       NX_COLUMN_WIDTH =  7_SP
 
    interface write_table_entry
-      module procedure write_table_entry_integer, write_table_entry_character
+      module procedure write_table_entry_character, &
+         write_table_entry_integer, write_table_entry_logical
    end interface write_table_entry
 contains
    subroutine write_table_entry_character( f, entry, width, end_row )
@@ -63,6 +64,20 @@ contains
          write (f, "(A)", advance="yes") "|"
       end if
    end subroutine write_table_entry_integer
+
+   subroutine write_table_entry_logical( f, entry, width, end_row )
+      integer, intent(in) :: f
+      integer(SP), intent(in) :: width
+      logical, intent(in) :: entry
+      logical, optional, intent(in) :: end_row
+      character(len=STRING_LENGTH) :: write_fmt
+
+      write (write_fmt,"(A, I2.1, A)") "(A, L", width, ", A)"
+      write (f, write_fmt, advance="no") "| ", entry, " "
+      if ( present(end_row) .and. end_row .eqv. .true. ) then
+         write (f, "(A)", advance="yes") "|"
+      end if
+   end subroutine write_table_entry_logical
 
    subroutine write_table_rule_entry( f, width, alignment, end_row )
       integer, intent(in) :: f
