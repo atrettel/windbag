@@ -30,6 +30,8 @@ module wb_representation
    integer, public, parameter       ::     MP = int32
    type(MPI_Datatype), public, save :: MPI_MP
 
+   integer(SP), public, parameter :: STRING_LENGTH = 64_SP
+
    ! Big-endian architectures put the most significant byte first, and
    ! little-endian architectures put the least significant byte first.  Binary
    ! output requires knowing the architecture's endianness.  This statement

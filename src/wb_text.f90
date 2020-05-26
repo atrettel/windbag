@@ -28,8 +28,6 @@ module wb_text
    integer(SP), public, parameter ::     SIZE_COLUMN_WIDTH = 12_SP
    integer(SP), public, parameter ::       NP_COLUMN_WIDTH =  7_SP
    integer(SP), public, parameter ::       NX_COLUMN_WIDTH =  7_SP
-
-   integer(SP), public, parameter :: STRING_LENGTH = 64_SP
 contains
    subroutine write_string_table_entry( f, entry, width, end_row )
       integer, intent(in) :: f
