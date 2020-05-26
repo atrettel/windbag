@@ -50,6 +50,12 @@ module wb_base
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
 
+   integer(MP), public, parameter :: EXIT_SUCCESS =  0_MP
+   integer(MP), public, parameter :: EXIT_FAILURE =  1_MP
+   integer(MP), public, parameter :: EXIT_USAGE   = 64_MP
+   integer(MP), public, parameter :: EXIT_DATAERR = 65_MP
+   integer(MP), public, parameter :: EXIT_NOINPUT = 66_MP
+
    type WB_Block
       private
       integer(MP) :: block_size
@@ -106,7 +112,7 @@ contains
                   if ( ib .ne. neighbor_u ) then
                      call wb_abort( "lower face of block N1 does not neighbor &
                                     &upper face of block N2 in direction N3", &
-                        MPI_ERR_TOPOLOGY, &
+                        EXIT_DATAERR, &
                         (/ ib, neighbor_l, i_dim /) )
                   else
                      do j_dim = 1_SP, s%n_dim
@@ -116,7 +122,7 @@ contains
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
                                           &processes in direction N4", &
-                              MPI_ERR_TOPOLOGY, &
+                              EXIT_DATAERR, &
                               (/ i_dim, ib, neighbor_l, j_dim /) )
                         end if
                         if ( j_dim .ne. i_dim .and. &
@@ -125,7 +131,7 @@ contains
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
                                           &points in direction N4", &
-                              MPI_ERR_TOPOLOGY, &
+                              EXIT_DATAERR, &
                               (/ i_dim, ib, neighbor_l, j_dim /) )
                         end if
                      end do
