@@ -15,6 +15,10 @@ module wb_text
    use wb_representation
    implicit none
 
+   private
+
+   public write_table_entry, write_table_rule_entry
+
    integer(SP), public, parameter ::      UNALIGNED = 0_SP
    integer(SP), public, parameter ::   LEFT_ALIGNED = 1_SP
    integer(SP), public, parameter ::  RIGHT_ALIGNED = 2_SP
@@ -60,7 +64,7 @@ contains
       end if
    end subroutine write_table_entry_integer
 
-   subroutine write_rule_table_entry( f, width, alignment, end_row )
+   subroutine write_table_rule_entry( f, width, alignment, end_row )
       integer, intent(in) :: f
       integer(SP), intent(in) :: width
       integer(SP), optional, intent(in) :: alignment
@@ -93,5 +97,5 @@ contains
       if ( present(end_row) .and. end_row .eqv. .true. ) then
          write (f, "(A)", advance="yes") "|"
       end if
-   end subroutine write_rule_table_entry
+   end subroutine write_table_rule_entry
 end module wb_text
