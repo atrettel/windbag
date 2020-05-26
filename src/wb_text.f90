@@ -28,6 +28,10 @@ module wb_text
    integer(SP), public, parameter ::     SIZE_COLUMN_WIDTH = 12_SP
    integer(SP), public, parameter ::       NP_COLUMN_WIDTH =  7_SP
    integer(SP), public, parameter ::       NX_COLUMN_WIDTH =  7_SP
+
+   interface write_table_entry
+      module procedure write_integer_table_entry, write_string_table_entry
+   end interface write_table_entry
 contains
    subroutine write_string_table_entry( f, entry, width, end_row )
       integer, intent(in) :: f
