@@ -483,9 +483,10 @@ contains
          MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          product(s%blocks(s%ib)%nx) .ne. total_points ) then
-         call wb_abort( "total points in block N1 does not match sum of &
-                        &points in individual processes", &
-            MPI_ERR_SIZE, (/ s%ib /) )
+         call wb_abort( "total points in block N1 (N2) does not match sum of &
+                        &points in individual processes (N3)", &
+            EXIT_FAILURE, &
+            (/ s%ib, product(s%blocks(s%ib)%nx), total_points /) )
       end if
    end subroutine setup_processes
 
