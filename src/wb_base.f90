@@ -683,8 +683,6 @@ contains
       character(len=STRING_LENGTH) :: label
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
 
-      call mpi_get_processor_name( processor_name, processor_length, ierr )
-
       if ( s%world_rank .eq. WORLD_MASTER ) then
          write (*,"(A)") "## Process information"
          write (*,"(A)") ""
@@ -725,6 +723,7 @@ contains
          end do
       end if
 
+      call mpi_get_processor_name( processor_name, processor_length, ierr )
       do world_rank = 0_MP, s%world_size-1_MP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( s%world_rank .eq. world_rank ) then
