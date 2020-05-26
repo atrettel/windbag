@@ -153,12 +153,12 @@ contains
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
-            call wb_abort( "no input file given", MPI_ERR_BAD_FILE )
+            call wb_abort( "no input file given", EXIT_USAGE )
          end if
          call get_command_argument( 1, filename, filename_length, ierr )
          inquire( file=filename, exist=file_exists, iostat=ierr )
          if ( file_exists .eqv. .false. ) then
-            call wb_abort( "input file does not exist", MPI_ERR_NO_SUCH_FILE )
+            call wb_abort( "input file does not exist", EXIT_NOINPUT )
          end if
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
