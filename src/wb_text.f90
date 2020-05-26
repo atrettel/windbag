@@ -37,7 +37,7 @@ contains
       character(len=STRING_LENGTH) :: write_fmt
 
       write (write_fmt,"(A, I2.1, A)") "(A, A", width, ", A)"
-      write (f, write_fmt, advance="no") "| ", entry, " "
+      write (f, write_fmt, advance="no") "| ", trim(entry), " "
       if ( present(end_row) .and. end_row .eqv. .true. ) then
          write (f, "(A)", advance="yes") "|"
       end if
