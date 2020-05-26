@@ -28,6 +28,9 @@ module wb_base
 
    integer(SP), public, parameter :: NO_BLOCK_NEIGHBOR = 0_SP
 
+   integer(SP), public, parameter :: MIN_N_DIM = 1_SP
+   integer(SP), public, parameter :: MAX_N_DIM = 3_SP
+
    integer(SP), public, parameter ::     N_DIR = 2_SP
    integer(SP), public, parameter :: LOWER_DIR = 1_SP
    integer(SP), public, parameter :: UPPER_DIR = 2_SP
@@ -292,9 +295,10 @@ contains
             call wb_abort( "number of ghost points is less than 1", &
                MPI_ERR_COUNT )
          end if
-         if ( s%n_dim .lt. 1_SP .or. s%n_dim .gt. 3_SP ) then
-            call wb_abort( "number of dimensions must be 1, 2, or 3", &
-               MPI_ERR_COUNT )
+         if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
+            call wb_abort( &
+               "number of dimensions must be in interval [N1, N2]", &
+               MPI_ERR_COUNT, (/ MIN_N_DIM, MAX_N_DIM /) )
          end if
       end if
 
