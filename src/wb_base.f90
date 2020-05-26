@@ -556,11 +556,16 @@ contains
             ", case `", s%case_name, "`"
          write (f,"(A)") ""
 
-         if ( ARCH_IS_BIG_ENDIAN ) then
-            write (f,"(A)") "- Architecture is big-endian."
-         else
-            write (f,"(A)") "- Architecture is little-endian."
-         end if
+         call write_table_entry( f, "Question", 30_SP )
+         call write_table_entry( f, "Answer", 10_SP, end_row=.true. )
+         call write_table_rule_entry( f, 30_SP )
+         call write_table_rule_entry( f, 10_SP, end_row=.true. )
+         call write_table_entry( f, "Are MPI subarrays supported?", 30_SP )
+         call write_table_entry( f, MPI_SUBARRAYS_SUPPORTED, 10_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Is it big-endian?", 30_SP )
+         call write_table_entry( f, ARCH_IS_BIG_ENDIAN, 10_SP, &
+            end_row=.true. )
          write (f,"(A)") ""
 
          write (f,"(A)", advance="no") "- Floating point precision `FP = "
@@ -648,12 +653,6 @@ contains
             " using the following options: `", compiler_options(), "`"
          write (f,"(A)") ""
 
-         if ( MPI_SUBARRAYS_SUPPORTED ) then
-            write (f,"(A)") "- MPI subarrays are supported."
-         else
-            write (f,"(A)") "- MPI subarrays are not supported."
-         end if
-         write (f,"(A)") ""
       end if
    end subroutine write_global_information
 
