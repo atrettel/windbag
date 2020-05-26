@@ -285,26 +285,23 @@ contains
          s%ng    = ng
          s%n_dim = n_dim
 
-         if ( s%nb .lt. 1_SP ) then
-            call wb_abort( "number of blocks is less than 1", &
-               MPI_ERR_COUNT )
-         end if
-         if ( s%nb .gt. int(s%world_size,SP) ) then
-            ! This is a feature of the code and not a bug.  It allows the code
-            ! to treat communication between blocks as the same as
-            ! communication between processes, but that plan only works if each
-            ! block uses at least one process.
-            call wb_abort( "number of blocks is greater than world size", &
-               MPI_ERR_COUNT )
+         if ( s%nb .lt. 1_SP  .or. s%nb .gt. int(s%world_size,SP) ) then
+            ! The second condition is a feature of the code and not a bug.  It
+            ! allows the code to treat communication between blocks as the same
+            ! as communication between processes, but that plan only works if
+            ! each block uses at least one process.
+            call wb_abort( &
+               "number of blocks must be in interval [N1, N2]", &
+               EXIT_DATAERR, (/ 1_SP, int(s%world_size,SP) /) )
          end if
          if ( s%ng .lt. 1_SP ) then
             call wb_abort( "number of ghost points is less than 1", &
-               MPI_ERR_COUNT )
+               EXIT_DATAERR )
          end if
          if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
             call wb_abort( &
                "number of dimensions must be in interval [N1, N2]", &
-               MPI_ERR_COUNT, (/ MIN_N_DIM, MAX_N_DIM /) )
+               EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
          end if
       end if
 
