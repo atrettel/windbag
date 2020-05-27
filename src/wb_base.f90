@@ -89,6 +89,11 @@ module wb_base
       type(WB_Block), dimension(:), allocatable :: blocks
       type(WB_Process), dimension(:), allocatable :: processes
    end type WB_State
+
+   interface wb_state_construct
+      module procedure wb_state_construct_namelist, &
+         wb_state_construct_variables
+   end interface wb_state_construct
 contains
    subroutine check_block_dimension_arrays( s, ib, i_dim )
       integer(SP), intent(in) :: ib, i_dim
@@ -171,7 +176,6 @@ contains
       logical :: file_exists
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr_mpi )
-      call find_mpi_precisions
       if ( world_rank .eq. WORLD_MASTER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
@@ -258,12 +262,12 @@ contains
 
    subroutine initialize_state( s, filename )
       character(len=STRING_LENGTH) :: filename
-      integer(MP) :: ierr
+      !integer(MP) :: ierr
       type(WB_State), intent(out) :: s
 
-      call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
-      call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
-      call read_general_namelist( s, filename )
+      !call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
+      !call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
+      !call read_general_namelist( s, filename )
       call read_block_namelists( s, filename )
       call check_block_neighbors( s )
       call setup_processes( s )
@@ -366,13 +370,12 @@ contains
       deallocate( neighbors_u )
    end subroutine read_block_namelists
 
-   subroutine read_general_namelist( s, filename )
+   subroutine read_general_namelist( filename, case_name, nb, n_dim, ng )
       character(len=STRING_LENGTH), intent(in) :: filename
-      character(len=STRING_LENGTH) :: case_name
+      character(len=STRING_LENGTH), intent(out) :: case_name
+      integer(SP), intent(out) :: nb, n_dim, ng
       integer :: file_unit
-      integer(MP) :: ierr
-      integer(SP) :: nb, n_dim, ng
-      type(WB_State), intent(inout) :: s
+      integer(MP) :: ierr, world_rank
       namelist /general/ case_name, nb, ng, n_dim
 
       case_name = DEFAULT_CASE_NAME
@@ -380,46 +383,22 @@ contains
       n_dim     = DEFAULT_N_DIM
       ng        = DEFAULT_NG
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+      if ( world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
          read( unit=file_unit, nml=general )
          close( unit=file_unit )
 
-         s%nb    = nb
-         s%ng    = ng
-         s%n_dim = n_dim
-
-         if ( s%nb .lt. 1_SP  .or. s%nb .gt. int(s%world_size,SP) ) then
-            ! The second condition is a feature of the code and not a bug.  It
-            ! allows the code to treat communication between blocks as the same
-            ! as communication between processes, but that plan only works if
-            ! each block uses at least one process.
-            call wb_abort( &
-               "number of blocks must be in interval [N1, N2]", &
-               EXIT_DATAERR, (/ 1_SP, int(s%world_size,SP) /) )
-         end if
-         if ( s%ng .lt. 1_SP ) then
-            call wb_abort( "number of ghost points is less than 1", &
-               EXIT_DATAERR )
-         end if
-         if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
-            call wb_abort( &
-               "number of dimensions must be in interval [N1, N2]", &
-               EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
-         end if
       end if
 
       call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
          WORLD_MASTER, MPI_COMM_WORLD, ierr )
-
-      s%case_name = trim(case_name)
-
-      call mpi_bcast( s%nb, 1_MP, MPI_SP, WORLD_MASTER, &
+      call mpi_bcast( nb, 1_MP, MPI_SP, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
-      call mpi_bcast( s%ng, 1_MP, MPI_SP, WORLD_MASTER, &
+      call mpi_bcast( n_dim, 1_MP, MPI_SP, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
-      call mpi_bcast( s%n_dim, 1_MP, MPI_SP, WORLD_MASTER, &
+      call mpi_bcast( ng, 1_MP, MPI_SP, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
@@ -482,7 +461,17 @@ contains
       end do
    end subroutine setup_processes
 
-   subroutine wb_state_construct( s, case_name, nb, n_dim, ng )
+   subroutine wb_state_construct_namelist( s, filename )
+      type(WB_State), intent(inout) :: s
+      character(len=STRING_LENGTH), intent(in) :: filename
+      character(len=STRING_LENGTH) :: case_name
+      integer(SP) :: nb, n_dim, ng
+
+      call read_general_namelist( filename, case_name, nb, n_dim, ng )
+      call wb_state_construct_variables( s, nb, n_dim, ng, case_name )
+   end subroutine wb_state_construct_namelist
+
+   subroutine wb_state_construct_variables( s, nb, n_dim, ng, case_name )
       type(WB_State), intent(inout) :: s
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
       integer(SP), optional, intent(in) :: nb, n_dim, ng
@@ -516,6 +505,25 @@ contains
       call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
 
+      if ( s%nb .lt. 1_SP  .or. s%nb .gt. int(s%world_size,SP) ) then
+         ! The second condition is a feature of the code and not a bug.  It
+         ! allows the code to treat communication between blocks as the same
+         ! as communication between processes, but that plan only works if
+         ! each block uses at least one process.
+         call wb_abort( &
+            "number of blocks must be in interval [N1, N2]", &
+            EXIT_DATAERR, (/ 1_SP, int(s%world_size,SP) /) )
+      end if
+      if ( s%ng .lt. 1_SP ) then
+         call wb_abort( "number of ghost points is less than 1", &
+            EXIT_DATAERR )
+      end if
+      if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
+         call wb_abort( &
+            "number of dimensions must be in interval [N1, N2]", &
+            EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
+      end if
+
       allocate( s%nx(s%n_dim) )
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
@@ -533,7 +541,7 @@ contains
          allocate( s%processes(world_rank)%block_coords(s%n_dim) )
          allocate( s%processes(world_rank)%nx(s%n_dim) )
       end do
-   end subroutine wb_state_construct
+   end subroutine wb_state_construct_variables
 
    subroutine wb_state_destroy( s )
       integer(SP) :: ib
