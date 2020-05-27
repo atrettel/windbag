@@ -13,18 +13,21 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 program windbag
    use mpi_f08
-   use wb_representation, only : STRING_LENGTH
+   use wb_representation
    use wb_base
 
    implicit none
-   character(len=STRING_LENGTH) :: filename
+   !character(len=STRING_LENGTH) :: filename
    integer :: ierr
    type(WB_State) :: s
 
    call mpi_init( ierr )
-   call check_input_file( filename )
-   call initialize_state( s, filename )
+   !call check_input_file( filename )
+   !call initialize_state( s, filename )
+   call find_mpi_precisions
+   call wb_state_construct( s )
    call print_initial_information( s )
-   call deallocate_state( s )
+   call wb_state_destroy( s )
+   !call deallocate_state( s )
    call mpi_finalize( ierr )
 end program windbag
