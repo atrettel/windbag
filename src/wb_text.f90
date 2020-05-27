@@ -17,7 +17,7 @@ module wb_text
 
    private
 
-   public write_table_entry, write_table_rule_entry
+   public write_log_heading, write_table_entry, write_table_rule_entry
 
    integer(SP), public, parameter ::      UNALIGNED = 0_SP
    integer(SP), public, parameter ::   LEFT_ALIGNED = 1_SP
@@ -38,6 +38,25 @@ module wb_text
          write_table_entry_integer, write_table_entry_logical
    end interface write_table_entry
 contains
+   subroutine write_log_heading( f, title, level )
+      integer, intent(in) :: f
+      character(len=*), intent(in) :: title
+      integer(SP), optional, intent(in) :: level
+      integer(SP) :: i_hash, n_hash
+
+      if ( present(level) ) then
+         n_hash = level
+      else
+         n_hash = 1_SP
+      end if
+
+      do i_hash = 1_SP, n_hash
+         write (f, "(A)", advance="no") "#"
+      end do
+      write (f, "(A, A)") " ", trim(title)
+      write (f, "(A)" ) ""
+   end subroutine write_log_heading
+
    subroutine write_table_entry_character( f, entry, width, end_row )
       integer, intent(in) :: f
       integer(SP), intent(in) :: width
