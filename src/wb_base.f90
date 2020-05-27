@@ -300,10 +300,11 @@ contains
    subroutine print_initial_information( s )
       type(WB_State), intent(in) :: s
 
-      call write_environment_information(  output_unit, s )
-      call write_block_information(   output_unit, s )
-      call write_process_information( output_unit, s )
-      call write_process_neighbors(   output_unit, s )
+      call write_environment_information( output_unit, s )
+      call write_global_information(      output_unit, s )
+      call write_block_information(       output_unit, s )
+      call write_process_information(     output_unit, s )
+      call write_process_neighbors(       output_unit, s )
    end subroutine print_initial_information
 
    subroutine read_block_namelists( s, filename )
@@ -573,9 +574,7 @@ contains
       character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (f,"(A, A, A, A, A, A, A)") "# ", PROGRAM_NAME, " ", VERSION, &
-            ", case `", s%case_name, "`"
-         write (f,"(A)") ""
+         call write_log_heading( f, PROGRAM_NAME )
 
          call write_log_heading( f, "Environment parameters", level=2_SP )
          call write_table_entry( f, "Question", 30_SP )
@@ -616,6 +615,9 @@ contains
             15_SP, end_row=.true. )
          call write_blank_line( f )
 
+         write (f,"(A, A)") "- Program version: ", VERSION
+         call write_blank_line( f )
+
          call mpi_get_version( mpi_major_version_number, &
             mpi_minor_version_number, ierr )
          write (f,"(A, I1, A, I1)") "- MPI version: ", &
@@ -629,9 +631,35 @@ contains
          write (f,"(A, A, A, A, A)") "- Compiled using ", compiler_version(), &
             " using the following options: `", compiler_options(), "`"
          call write_blank_line( f )
-
       end if
    end subroutine write_environment_information
+
+   subroutine write_global_information( f, s )
+      integer, intent(in) :: f
+      type(WB_State), intent(in) :: s
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         call write_log_heading( f, "State global variables", level=2_SP )
+         call write_table_entry( f, "Variable", 30_SP )
+         call write_table_entry( f, "Value", 20_SP, end_row=.true. )
+         call write_table_rule_entry( f, 30_SP, alignment=LEFT_ALIGNED )
+         call write_table_rule_entry( f, 20_SP, alignment=RIGHT_ALIGNED, &
+            end_row=.true. )
+         call write_table_entry( f, "Case name", 30_SP )
+         call write_table_entry( f, s%case_name, 20_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Number of dimensions", 30_SP )
+         call write_table_entry( f, s%n_dim, 20_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Number of blocks", 30_SP )
+         call write_table_entry( f, s%nb, 20_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Number of ghost points", 30_SP )
+         call write_table_entry( f, s%ng, 20_SP, &
+            end_row=.true. )
+         call write_blank_line( f )
+      end if
+   end subroutine write_global_information
 
    subroutine write_process_information( f, s )
       integer, intent(in) :: f
