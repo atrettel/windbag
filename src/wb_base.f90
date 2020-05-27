@@ -300,7 +300,7 @@ contains
    subroutine print_initial_information( s )
       type(WB_State), intent(in) :: s
 
-      call write_global_information(  output_unit, s )
+      call write_environment_information(  output_unit, s )
       call write_block_information(   output_unit, s )
       call write_process_information( output_unit, s )
       call write_process_neighbors(   output_unit, s )
@@ -514,8 +514,7 @@ contains
       character(len=STRING_LENGTH) :: label
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (f,"(A)") "## Block information"
-         write (f,"(A)") ""
+         call write_log_heading( f, "Block information", level=2_SP )
 
          call write_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
          call write_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
@@ -562,11 +561,11 @@ contains
             end do
          end do
 
-         write (f,"(A)") ""
+         call write_blank_line( f )
       end if
    end subroutine write_block_information
 
-   subroutine write_global_information( f, s )
+   subroutine write_environment_information( f, s )
       integer, intent(in) :: f
       type(WB_State), intent(in) :: s
       integer(MP) :: ierr, mpi_major_version_number, &
@@ -578,6 +577,7 @@ contains
             ", case `", s%case_name, "`"
          write (f,"(A)") ""
 
+         call write_log_heading( f, "Environment parameters", level=2_SP )
          call write_table_entry( f, "Question", 30_SP )
          call write_table_entry( f, "Answer", 10_SP, end_row=.true. )
          call write_table_rule_entry( f, 30_SP )
@@ -588,8 +588,9 @@ contains
          call write_table_entry( f, "Is it big-endian?", 30_SP )
          call write_table_entry( f, ARCH_IS_BIG_ENDIAN, 10_SP, &
             end_row=.true. )
-         write (f,"(A)") ""
+         call write_blank_line( f )
 
+         call write_log_heading( f, "Data precision", level=2_SP )
          call write_table_entry( f, "Data type", 20_SP )
          call write_table_entry( f, "Variable", 10_SP )
          call write_table_entry( f, "Fortran", 15_SP )
@@ -613,24 +614,24 @@ contains
          call write_table_entry( f, identify_integer_precision(MP), 15_SP )
          call write_table_entry( f, identify_integer_precision(MPI_MP), &
             15_SP, end_row=.true. )
-         write (f,"(A)") ""
+         call write_blank_line( f )
 
          call mpi_get_version( mpi_major_version_number, &
             mpi_minor_version_number, ierr )
          write (f,"(A, I1, A, I1)") "- MPI version: ", &
             mpi_major_version_number, ".", mpi_minor_version_number
-         write (f,"(A)") ""
+         call write_blank_line( f )
 
          call mpi_get_library_version( lib_version, version_length, ierr )
          write (f,"(A, A)") "- MPI library version: ", trim(lib_version)
-         write (f,"(A)") ""
+         call write_blank_line( f )
 
          write (f,"(A, A, A, A, A)") "- Compiled using ", compiler_version(), &
             " using the following options: `", compiler_options(), "`"
-         write (f,"(A)") ""
+         call write_blank_line( f )
 
       end if
-   end subroutine write_global_information
+   end subroutine write_environment_information
 
    subroutine write_process_information( f, s )
       integer, intent(in) :: f
@@ -641,8 +642,7 @@ contains
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") "## Process information"
-         write (*,"(A)") ""
+         call write_log_heading( f, "Process information", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
@@ -706,7 +706,7 @@ contains
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") ""
+         call write_blank_line( f )
       end if
    end subroutine write_process_information
 
@@ -722,8 +722,7 @@ contains
       dirs = (/ LOWER_DIR, UPPER_DIR /)
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") "## Process neighbors"
-         write (*,"(A)") ""
+         call write_log_heading( f, "Process neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, s%n_dim
@@ -780,7 +779,7 @@ contains
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
       if ( s%world_rank .eq. WORLD_MASTER ) then
-         write (*,"(A)") ""
+         call write_blank_line( f )
       end if
    end subroutine write_process_neighbors
 end module wb_base
