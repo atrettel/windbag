@@ -17,7 +17,8 @@ module wb_text
 
    private
 
-   public write_log_heading, write_table_entry, write_table_rule_entry
+   public write_blank_line, write_log_heading, write_table_entry, &
+      write_table_rule_entry
 
    integer(SP), public, parameter ::      UNALIGNED = 0_SP
    integer(SP), public, parameter ::   LEFT_ALIGNED = 1_SP
@@ -56,6 +57,22 @@ contains
       write (f, "(A, A)") " ", trim(title)
       write (f, "(A)" ) ""
    end subroutine write_log_heading
+
+   subroutine write_blank_line( f, n )
+      integer, intent(in) :: f
+      integer(SP), optional, intent(in) :: n
+      integer(SP) :: i_line, total_lines
+
+      if ( present(n) ) then
+         total_lines = n
+      else
+         total_lines = 1_SP
+      end if
+
+      do i_line = 1_SP, total_lines
+         write (f, "(A)" ) ""
+      end do
+   end subroutine write_blank_line
 
    subroutine write_table_entry_character( f, entry, width, end_row )
       integer, intent(in) :: f
