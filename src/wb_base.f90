@@ -70,22 +70,24 @@ module wb_base
    end type WB_Process
 
    type WB_State
-      character(len=:), allocatable, public :: case_name
-      integer(MP), private :: block_rank, block_size
-      integer(MP), public :: world_rank, world_size
-      integer(SP), public :: ib, nb
-      integer(SP), public :: n_dim
-      integer(SP), public :: nf
-      integer(SP), public :: ng
-      integer(SP), public :: nv = 5_SP
-      integer(SP), dimension(:), allocatable, public :: nx
-      integer(MP), dimension(:), allocatable, private :: block_coords
-      integer(MP), dimension(:,:), allocatable, public :: neighbors
-      real(FP), public :: t = 0.0_FP
-      real(FP), dimension(:,:,:,:), allocatable, public :: f
-      type(MPI_Comm), private :: comm_block
-      type(WB_Block), dimension(:), allocatable, private :: blocks
-      type(WB_Process), dimension(:), allocatable, private :: processes
+      private
+      character(len=:), allocatable :: case_name
+      integer(MP) :: block_rank, block_size
+      integer(MP) :: world_rank, world_size
+      integer(SP) :: ib, nb
+      integer(SP) :: n_dim
+      integer(SP) :: nf
+      integer(SP) :: ng
+      integer(SP) :: nv
+      integer(SP) :: i_iter
+      integer(SP), dimension(:), allocatable :: nx
+      integer(MP), dimension(:), allocatable :: block_coords
+      integer(MP), dimension(:,:), allocatable :: neighbors
+      real(FP) :: t
+      real(FP), dimension(:,:,:,:), allocatable :: f
+      type(MPI_Comm) :: comm_block
+      type(WB_Block), dimension(:), allocatable :: blocks
+      type(WB_Process), dimension(:), allocatable :: processes
    end type WB_State
 contains
    subroutine check_block_dimension_arrays( s, ib, i_dim )
