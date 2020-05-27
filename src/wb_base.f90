@@ -301,7 +301,7 @@ contains
       type(WB_State), intent(in) :: s
 
       call write_environment_information( output_unit, s )
-      call write_global_information(      output_unit, s )
+      call write_scalar_variables(        output_unit, s )
       call write_block_information(       output_unit, s )
       call write_process_information(     output_unit, s )
       call write_process_neighbors(       output_unit, s )
@@ -634,33 +634,6 @@ contains
       end if
    end subroutine write_environment_information
 
-   subroutine write_global_information( f, s )
-      integer, intent(in) :: f
-      type(WB_State), intent(in) :: s
-
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         call write_log_heading( f, "State global variables", level=2_SP )
-         call write_table_entry( f, "Variable", 30_SP )
-         call write_table_entry( f, "Value", 20_SP, end_row=.true. )
-         call write_table_rule_entry( f, 30_SP, alignment=LEFT_ALIGNED )
-         call write_table_rule_entry( f, 20_SP, alignment=RIGHT_ALIGNED, &
-            end_row=.true. )
-         call write_table_entry( f, "Case name", 30_SP )
-         call write_table_entry( f, s%case_name, 20_SP, &
-            end_row=.true. )
-         call write_table_entry( f, "Number of dimensions", 30_SP )
-         call write_table_entry( f, s%n_dim, 20_SP, &
-            end_row=.true. )
-         call write_table_entry( f, "Number of blocks", 30_SP )
-         call write_table_entry( f, s%nb, 20_SP, &
-            end_row=.true. )
-         call write_table_entry( f, "Number of ghost points", 30_SP )
-         call write_table_entry( f, s%ng, 20_SP, &
-            end_row=.true. )
-         call write_blank_line( f )
-      end if
-   end subroutine write_global_information
-
    subroutine write_process_information( f, s )
       integer, intent(in) :: f
       type(WB_State), intent(in) :: s
@@ -810,4 +783,31 @@ contains
          call write_blank_line( f )
       end if
    end subroutine write_process_neighbors
+
+   subroutine write_scalar_variables( f, s )
+      integer, intent(in) :: f
+      type(WB_State), intent(in) :: s
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         call write_log_heading( f, "State scalar variables", level=2_SP )
+         call write_table_entry( f, "Variable", 30_SP )
+         call write_table_entry( f, "Value", 20_SP, end_row=.true. )
+         call write_table_rule_entry( f, 30_SP, alignment=LEFT_ALIGNED )
+         call write_table_rule_entry( f, 20_SP, alignment=RIGHT_ALIGNED, &
+            end_row=.true. )
+         call write_table_entry( f, "Case name", 30_SP )
+         call write_table_entry( f, s%case_name, 20_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Number of dimensions", 30_SP )
+         call write_table_entry( f, s%n_dim, 20_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Number of blocks", 30_SP )
+         call write_table_entry( f, s%nb, 20_SP, &
+            end_row=.true. )
+         call write_table_entry( f, "Number of ghost points", 30_SP )
+         call write_table_entry( f, s%ng, 20_SP, &
+            end_row=.true. )
+         call write_blank_line( f )
+      end if
+   end subroutine write_scalar_variables
 end module wb_base
