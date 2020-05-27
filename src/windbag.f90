@@ -17,17 +17,15 @@ program windbag
    use wb_base
 
    implicit none
-   !character(len=STRING_LENGTH) :: filename
+   character(len=STRING_LENGTH) :: filename
    integer :: ierr
    type(WB_State) :: s
 
    call mpi_init( ierr )
-   !call check_input_file( filename )
-   !call initialize_state( s, filename )
    call find_mpi_precisions
-   call wb_state_construct( s )
+   call check_input_file( filename )
+   call wb_state_construct( s, filename )
    call print_initial_information( s )
    call wb_state_destroy( s )
-   !call deallocate_state( s )
    call mpi_finalize( ierr )
 end program windbag
