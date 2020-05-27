@@ -263,12 +263,17 @@ contains
 
    subroutine read_general_namelist( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
-      character(len=STRING_LENGTH) :: case_name=DEFAULT_CASE_NAME
+      character(len=STRING_LENGTH) :: case_name
       integer :: file_unit
       integer(MP) :: ierr
-      integer(SP) :: nb=DEFAULT_NB, n_dim=DEFAULT_N_DIM, ng=DEFAULT_NG
+      integer(SP) :: nb, n_dim, ng
       type(WB_State), intent(inout) :: s
       namelist /general/ case_name, nb, ng, n_dim
+
+      case_name = DEFAULT_CASE_NAME
+      nb        = DEFAULT_NB
+      n_dim     = DEFAULT_N_DIM
+      ng        = DEFAULT_NG
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
@@ -317,7 +322,7 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: file_unit
       integer(MP) :: ierr
-      integer(SP) :: ib=DEFAULT_IB, jb, i_dim, i_dir
+      integer(SP) :: ib, jb, i_dim, i_dir
       type(WB_State), intent(inout) :: s
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx, neighbors_l, neighbors_u
@@ -328,6 +333,7 @@ contains
       allocate( neighbors_l(s%n_dim) )
       allocate( neighbors_u(s%n_dim) )
 
+      ib             = DEFAULT_IB
       np(:)          = DEFAULT_NP
       nx(:)          = DEFAULT_NX
       neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
@@ -416,7 +422,7 @@ contains
 
    subroutine setup_processes( s )
       integer(MP) :: assigned_processes, ierr, world_rank
-      integer(SP) :: ib, i_dim, total_points = 0_SP
+      integer(SP) :: ib, i_dim, total_points
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
@@ -474,6 +480,7 @@ contains
 
       ! Check if the sum of the points in a block's processes equals the total
       ! number of points.
+      total_points = 0_SP
       call mpi_reduce( product(s%nx), total_points, int(s%n_dim,MP), MPI_SP, &
          MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
@@ -692,9 +699,12 @@ contains
       integer, intent(in) :: f
       type(WB_State), intent(in) :: s
       integer(MP) :: ierr, world_rank, neighbor
-      integer(SP) :: i_dim, i_dir, j_dir, face_count=0_SP
-      integer(SP), dimension(N_DIR) :: dirs = (/ LOWER_DIR, UPPER_DIR /)
+      integer(SP) :: i_dim, i_dir, j_dir, face_count
+      integer(SP), dimension(N_DIR) :: dirs
       character(len=STRING_LENGTH) :: label
+
+      face_count = 0_SP
+      dirs = (/ LOWER_DIR, UPPER_DIR /)
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          write (*,"(A)") "## Process neighbors"

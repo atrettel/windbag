@@ -85,8 +85,9 @@ contains
       integer(SP), optional, intent(in) :: alignment
       logical, optional, intent(in) :: end_row
       integer(SP) :: n_dash, i_dash
-      logical, dimension(2) :: aligned = (/ .false., .false. /)
+      logical, dimension(2) :: aligned
 
+      aligned = (/ .false., .false. /)
       if ( present(alignment) ) then
          if      ( alignment .eq.   LEFT_ALIGNED ) then
             aligned = (/ .true., .false. /)
