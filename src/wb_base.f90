@@ -304,63 +304,6 @@ contains
       call write_process_neighbors(   output_unit, s )
    end subroutine print_initial_information
 
-   subroutine read_general_namelist( s, filename )
-      character(len=STRING_LENGTH), intent(in) :: filename
-      character(len=STRING_LENGTH) :: case_name
-      integer :: file_unit
-      integer(MP) :: ierr
-      integer(SP) :: nb, n_dim, ng
-      type(WB_State), intent(inout) :: s
-      namelist /general/ case_name, nb, ng, n_dim
-
-      case_name = DEFAULT_CASE_NAME
-      nb        = DEFAULT_NB
-      n_dim     = DEFAULT_N_DIM
-      ng        = DEFAULT_NG
-
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         open( newunit=file_unit, file=filename, form="formatted", &
-            action="read" )
-         read( unit=file_unit, nml=general )
-         close( unit=file_unit )
-
-         s%nb    = nb
-         s%ng    = ng
-         s%n_dim = n_dim
-
-         if ( s%nb .lt. 1_SP  .or. s%nb .gt. int(s%world_size,SP) ) then
-            ! The second condition is a feature of the code and not a bug.  It
-            ! allows the code to treat communication between blocks as the same
-            ! as communication between processes, but that plan only works if
-            ! each block uses at least one process.
-            call wb_abort( &
-               "number of blocks must be in interval [N1, N2]", &
-               EXIT_DATAERR, (/ 1_SP, int(s%world_size,SP) /) )
-         end if
-         if ( s%ng .lt. 1_SP ) then
-            call wb_abort( "number of ghost points is less than 1", &
-               EXIT_DATAERR )
-         end if
-         if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
-            call wb_abort( &
-               "number of dimensions must be in interval [N1, N2]", &
-               EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
-         end if
-      end if
-
-      call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
-         WORLD_MASTER, MPI_COMM_WORLD, ierr )
-
-      s%case_name = trim(case_name)
-
-      call mpi_bcast( s%nb, 1_MP, MPI_SP, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-      call mpi_bcast( s%ng, 1_MP, MPI_SP, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-      call mpi_bcast( s%n_dim, 1_MP, MPI_SP, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-   end subroutine read_general_namelist
-
    subroutine read_block_namelists( s, filename )
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: file_unit
@@ -445,6 +388,63 @@ contains
       deallocate( neighbors_l )
       deallocate( neighbors_u )
    end subroutine read_block_namelists
+
+   subroutine read_general_namelist( s, filename )
+      character(len=STRING_LENGTH), intent(in) :: filename
+      character(len=STRING_LENGTH) :: case_name
+      integer :: file_unit
+      integer(MP) :: ierr
+      integer(SP) :: nb, n_dim, ng
+      type(WB_State), intent(inout) :: s
+      namelist /general/ case_name, nb, ng, n_dim
+
+      case_name = DEFAULT_CASE_NAME
+      nb        = DEFAULT_NB
+      n_dim     = DEFAULT_N_DIM
+      ng        = DEFAULT_NG
+
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         open( newunit=file_unit, file=filename, form="formatted", &
+            action="read" )
+         read( unit=file_unit, nml=general )
+         close( unit=file_unit )
+
+         s%nb    = nb
+         s%ng    = ng
+         s%n_dim = n_dim
+
+         if ( s%nb .lt. 1_SP  .or. s%nb .gt. int(s%world_size,SP) ) then
+            ! The second condition is a feature of the code and not a bug.  It
+            ! allows the code to treat communication between blocks as the same
+            ! as communication between processes, but that plan only works if
+            ! each block uses at least one process.
+            call wb_abort( &
+               "number of blocks must be in interval [N1, N2]", &
+               EXIT_DATAERR, (/ 1_SP, int(s%world_size,SP) /) )
+         end if
+         if ( s%ng .lt. 1_SP ) then
+            call wb_abort( "number of ghost points is less than 1", &
+               EXIT_DATAERR )
+         end if
+         if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
+            call wb_abort( &
+               "number of dimensions must be in interval [N1, N2]", &
+               EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
+         end if
+      end if
+
+      call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
+         WORLD_MASTER, MPI_COMM_WORLD, ierr )
+
+      s%case_name = trim(case_name)
+
+      call mpi_bcast( s%nb, 1_MP, MPI_SP, WORLD_MASTER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( s%ng, 1_MP, MPI_SP, WORLD_MASTER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( s%n_dim, 1_MP, MPI_SP, WORLD_MASTER, &
+         MPI_COMM_WORLD, ierr )
+   end subroutine read_general_namelist
 
    subroutine setup_processes( s )
       integer(MP) :: assigned_processes, ierr, world_rank
