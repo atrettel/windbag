@@ -461,6 +461,25 @@ contains
       end do
    end subroutine setup_processes
 
+   subroutine wb_block_construct( blk, n_dim )
+      type(WB_Block), intent(inout) :: blk
+      integer(SP), intent(in) :: n_dim
+
+      allocate( blk%np(n_dim) )
+      allocate( blk%nx(n_dim) )
+      allocate( blk%neighbors(n_dim,N_DIR) )
+      allocate( blk%periods(n_dim) )
+   end subroutine wb_block_construct
+
+   subroutine wb_block_destroy( blk )
+      type(WB_Block), intent(inout) :: blk
+
+      deallocate( blk%np )
+      deallocate( blk%nx )
+      deallocate( blk%neighbors )
+      deallocate( blk%periods )
+   end subroutine wb_block_destroy
+
    subroutine wb_state_construct_namelist( s, filename )
       type(WB_State), intent(inout) :: s
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -530,10 +549,7 @@ contains
 
       allocate( s%blocks(s%nb) )
       do ib = 1_SP, s%nb
-         allocate( s%blocks(ib)%np(s%n_dim) )
-         allocate( s%blocks(ib)%nx(s%n_dim) )
-         allocate( s%blocks(ib)%neighbors(s%n_dim,N_DIR) )
-         allocate( s%blocks(ib)%periods(s%n_dim) )
+         call wb_block_construct( s%blocks(ib), s%n_dim )
       end do
 
       allocate( s%processes(0_MP:s%world_size-1_MP) )
@@ -555,10 +571,7 @@ contains
       !call mpi_comm_free( s%comm_block, ierr )
 
       do ib = 1_SP, s%nb
-         deallocate( s%blocks(ib)%np )
-         deallocate( s%blocks(ib)%nx )
-         deallocate( s%blocks(ib)%neighbors )
-         deallocate( s%blocks(ib)%periods )
+         call wb_block_destroy( s%blocks(ib) )
       end do
       deallocate( s%blocks )
 
