@@ -169,6 +169,30 @@ contains
       end if
    end subroutine check_block_neighbors
 
+   subroutine check_general_variables( nb, n_dim, ng, world_size )
+      integer(SP), intent(in) :: nb, n_dim, ng
+      integer(MP), intent(in) :: world_size
+
+      if ( nb .lt. 1_SP  .or. nb .gt. int(world_size,SP) ) then
+         ! The second condition is a feature of the code and not a bug.  It
+         ! allows the code to treat communication between blocks as the same
+         ! as communication between processes, but that plan only works if
+         ! each block uses at least one process.
+         call wb_abort( &
+            "number of blocks must be in interval [N1, N2]", &
+            EXIT_DATAERR, (/ 1_SP, int(world_size,SP) /) )
+      end if
+      if ( ng .lt. 1_SP ) then
+         call wb_abort( "number of ghost points is less than 1", &
+            EXIT_DATAERR )
+      end if
+      if ( n_dim .lt. MIN_N_DIM .or. n_dim .gt. MAX_N_DIM ) then
+         call wb_abort( &
+            "number of dimensions must be in interval [N1, N2]", &
+            EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
+      end if
+   end subroutine check_general_variables
+
    subroutine check_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
       integer :: argc, filename_length, ierr
@@ -523,25 +547,7 @@ contains
 
       call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
-
-      if ( s%nb .lt. 1_SP  .or. s%nb .gt. int(s%world_size,SP) ) then
-         ! The second condition is a feature of the code and not a bug.  It
-         ! allows the code to treat communication between blocks as the same
-         ! as communication between processes, but that plan only works if
-         ! each block uses at least one process.
-         call wb_abort( &
-            "number of blocks must be in interval [N1, N2]", &
-            EXIT_DATAERR, (/ 1_SP, int(s%world_size,SP) /) )
-      end if
-      if ( s%ng .lt. 1_SP ) then
-         call wb_abort( "number of ghost points is less than 1", &
-            EXIT_DATAERR )
-      end if
-      if ( s%n_dim .lt. MIN_N_DIM .or. s%n_dim .gt. MAX_N_DIM ) then
-         call wb_abort( &
-            "number of dimensions must be in interval [N1, N2]", &
-            EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
-      end if
+      call check_general_variables( s%nb, s%n_dim, s%ng, s%world_size )
 
       allocate( s%nx(s%n_dim) )
       allocate( s%block_coords(s%n_dim) )
