@@ -21,8 +21,8 @@ module wb_base
 
    private
 
-   public WB_State, check_input_file, deallocate_state, initialize_state, &
-      print_initial_information
+   public WB_State, check_input_file, initialize_state, &
+      print_initial_information, wb_state_construct, wb_state_destroy
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -202,32 +202,6 @@ contains
             (/ s%ib, product(s%blocks(s%ib)%nx), total_points /) )
       end if
    end subroutine check_total_points
-
-   subroutine deallocate_state( s )
-      integer(SP) :: ib
-      integer(MP) :: ierr, world_rank
-      type(WB_State), intent(inout) :: s
-
-      deallocate( s%case_name )
-      deallocate( s%nx )
-      deallocate( s%block_coords )
-      deallocate( s%neighbors )
-      call mpi_comm_free( s%comm_block, ierr )
-
-      do ib = 1_SP, s%nb
-         deallocate( s%blocks(ib)%np )
-         deallocate( s%blocks(ib)%nx )
-         deallocate( s%blocks(ib)%neighbors )
-         deallocate( s%blocks(ib)%periods )
-      end do
-      deallocate( s%blocks )
-
-      do world_rank = 0_MP, s%world_size-1_MP
-         deallocate( s%processes(world_rank)%block_coords )
-         deallocate( s%processes(world_rank)%nx )
-      end do
-      deallocate( s%processes )
-   end subroutine deallocate_state
 
    subroutine identify_process_neighbors( s )
       integer(MP) :: ierr, world_rank
@@ -507,6 +481,85 @@ contains
             MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
    end subroutine setup_processes
+
+   subroutine wb_state_construct( s, case_name, nb, n_dim, ng )
+      type(WB_State), intent(inout) :: s
+      character(len=STRING_LENGTH), optional, intent(in) :: case_name
+      integer(SP), optional, intent(in) :: nb, n_dim, ng
+      integer(SP) :: ib, world_rank
+      integer(MP) :: ierr
+
+      if ( present(case_name) ) then
+         s%case_name = trim(case_name)
+      else
+         s%case_name = trim(DEFAULT_CASE_NAME)
+      end if
+
+      if ( present(nb) ) then
+         s%nb = nb
+      else
+         s%nb = DEFAULT_NB
+      end if
+
+      if ( present(n_dim) ) then
+         s%n_dim = n_dim
+      else
+         s%n_dim = DEFAULT_N_DIM
+      end if
+
+      if ( present(ng) ) then
+         s%ng = ng
+      else
+         s%ng = DEFAULT_NG
+      end if
+
+      call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
+      call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
+
+      allocate( s%nx(s%n_dim) )
+      allocate( s%block_coords(s%n_dim) )
+      allocate( s%neighbors(s%n_dim,N_DIR) )
+
+      allocate( s%blocks(s%nb) )
+      do ib = 1_SP, s%nb
+         allocate( s%blocks(ib)%np(s%n_dim) )
+         allocate( s%blocks(ib)%nx(s%n_dim) )
+         allocate( s%blocks(ib)%neighbors(s%n_dim,N_DIR) )
+         allocate( s%blocks(ib)%periods(s%n_dim) )
+      end do
+
+      allocate( s%processes(0_MP:s%world_size-1_MP) )
+      do world_rank = 0_MP, s%world_size-1_MP
+         allocate( s%processes(world_rank)%block_coords(s%n_dim) )
+         allocate( s%processes(world_rank)%nx(s%n_dim) )
+      end do
+   end subroutine wb_state_construct
+
+   subroutine wb_state_destroy( s )
+      integer(SP) :: ib
+      integer(MP) :: world_rank
+      type(WB_State), intent(inout) :: s
+
+      deallocate( s%case_name )
+      deallocate( s%nx )
+      deallocate( s%block_coords )
+      deallocate( s%neighbors )
+      !call mpi_comm_free( s%comm_block, ierr )
+
+      do ib = 1_SP, s%nb
+         deallocate( s%blocks(ib)%np )
+         deallocate( s%blocks(ib)%nx )
+         deallocate( s%blocks(ib)%neighbors )
+         deallocate( s%blocks(ib)%periods )
+      end do
+      deallocate( s%blocks )
+
+      do world_rank = 0_MP, s%world_size-1_MP
+         deallocate( s%processes(world_rank)%block_coords )
+         deallocate( s%processes(world_rank)%nx )
+      end do
+      deallocate( s%processes )
+   end subroutine wb_state_destroy
 
    subroutine write_block_information( f, s )
       integer, intent(in) :: f
