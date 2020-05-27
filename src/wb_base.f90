@@ -88,6 +88,31 @@ module wb_base
       type(WB_Process), dimension(:), allocatable, private :: processes
    end type WB_State
 contains
+   subroutine check_block_dimension_arrays( s, ib, i_dim )
+      integer(SP), intent(in) :: ib, i_dim
+      type(WB_State), intent(in) :: s
+      integer(SP) :: i_dir
+
+      if ( s%blocks(ib)%np(i_dim) .lt. 1_MP ) then
+         call wb_abort( "number of processes in direction N1 of &
+                        &block N2 is less than 1", &
+                        EXIT_DATAERR, (/ i_dim, ib /) )
+      end if
+      if ( s%blocks(ib)%nx(i_dim) .lt. s%ng ) then
+         call wb_abort( "number of points in direction N1 of block &
+                        &N2 is less than number of ghost points N3", &
+                        EXIT_DATAERR, (/ i_dim, ib, s%ng /) )
+      end if
+      do i_dir = 1_SP, N_DIR
+         if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
+            NO_BLOCK_NEIGHBOR ) then
+            call wb_abort( "neighbor to block N1 in direction N2 and &
+                           &dimension N3 is negative", &
+                           EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
+         end if
+      end do
+   end subroutine check_block_dimension_arrays
+
    subroutine check_block_neighbors( s )
       type(WB_State), intent(in) :: s
       integer(SP) :: ib, i_dim, j_dim, neighbor_l, neighbor_u
@@ -340,7 +365,7 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       integer :: file_unit
       integer(MP) :: ierr
-      integer(SP) :: ib, jb, i_dim, i_dir
+      integer(SP) :: ib, jb, i_dim
       type(WB_State), intent(inout) :: s
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx, neighbors_l, neighbors_u
@@ -383,24 +408,7 @@ contains
             s%blocks(ib)%nx = nx
 
             do i_dim = 1_SP, s%n_dim
-               if ( s%blocks(ib)%np(i_dim) .lt. 1_MP ) then
-                  call wb_abort( "number of processes in direction N1 of &
-                                 &block N2 is less than 1", &
-                                 EXIT_DATAERR, (/ i_dim, ib /) )
-               end if
-               if ( s%blocks(ib)%nx(i_dim) .lt. s%ng ) then
-                  call wb_abort( "number of points in direction N1 of block &
-                                 &N2 is less than number of ghost points N3", &
-                                 EXIT_DATAERR, (/ i_dim, ib, s%ng /) )
-               end if
-               do i_dir = 1_SP, N_DIR
-                  if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
-                     NO_BLOCK_NEIGHBOR ) then
-                     call wb_abort( "neighbor to block N1 in direction N2 and &
-                                    &dimension N3 is negative", &
-                                    EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
-                  end if
-               end do
+               call check_block_dimension_arrays( s, ib, i_dim )
                if ( neighbors_l(i_dim) .eq. ib .and. &
                   neighbors_u(i_dim) .eq. ib ) then
                   s%blocks(ib)%periods(i_dim) = .true.
