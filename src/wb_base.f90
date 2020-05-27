@@ -159,6 +159,23 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine check_input_file
 
+   subroutine check_total_points( s )
+      integer(SP) :: total_points
+      integer(MP) :: ierr
+      type(WB_State), intent(inout) :: s
+
+      total_points = 0_SP
+      call mpi_reduce( product(s%nx), total_points, int(s%n_dim,MP), MPI_SP, &
+         MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
+      if ( s%block_rank .eq. BLOCK_MASTER .and. &
+         product(s%blocks(s%ib)%nx) .ne. total_points ) then
+         call wb_abort( "total points in block N1 (N2) does not match sum of &
+                        &points in individual processes (N3)", &
+            EXIT_FAILURE, &
+            (/ s%ib, product(s%blocks(s%ib)%nx), total_points /) )
+      end if
+   end subroutine check_total_points
+
    subroutine deallocate_state( s )
       integer(SP) :: ib
       integer(MP) :: ierr, world_rank
@@ -249,6 +266,7 @@ contains
       call read_block_namelists( s, filename )
       call check_block_neighbors( s )
       call setup_processes( s )
+      call check_total_points( s )
       call identify_process_neighbors( s )
    end subroutine initialize_state
 
@@ -422,7 +440,7 @@ contains
 
    subroutine setup_processes( s )
       integer(MP) :: assigned_processes, ierr, world_rank
-      integer(SP) :: ib, i_dim, total_points
+      integer(SP) :: ib, i_dim
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
 
@@ -477,19 +495,6 @@ contains
          call mpi_bcast( s%processes(world_rank)%nx, int(s%n_dim,MP), &
             MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
-
-      ! Check if the sum of the points in a block's processes equals the total
-      ! number of points.
-      total_points = 0_SP
-      call mpi_reduce( product(s%nx), total_points, int(s%n_dim,MP), MPI_SP, &
-         MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
-      if ( s%block_rank .eq. BLOCK_MASTER .and. &
-         product(s%blocks(s%ib)%nx) .ne. total_points ) then
-         call wb_abort( "total points in block N1 (N2) does not match sum of &
-                        &points in individual processes (N3)", &
-            EXIT_FAILURE, &
-            (/ s%ib, product(s%blocks(s%ib)%nx), total_points /) )
-      end if
    end subroutine setup_processes
 
    subroutine write_block_information( f, s )
