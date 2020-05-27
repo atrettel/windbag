@@ -504,6 +504,21 @@ contains
       deallocate( blk%periods )
    end subroutine wb_block_destroy
 
+   subroutine wb_process_construct( process, n_dim )
+      type(WB_Process), intent(inout) :: process
+      integer(SP), intent(in) :: n_dim
+
+      allocate( process%block_coords(n_dim) )
+      allocate( process%nx(n_dim) )
+   end subroutine wb_process_construct
+
+   subroutine wb_process_destroy( process )
+      type(WB_Process), intent(inout) :: process
+
+      deallocate( process%block_coords )
+      deallocate( process%nx )
+   end subroutine wb_process_destroy
+
    subroutine wb_state_construct_namelist( s, filename )
       type(WB_State), intent(inout) :: s
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -560,8 +575,7 @@ contains
 
       allocate( s%processes(0_MP:s%world_size-1_MP) )
       do world_rank = 0_MP, s%world_size-1_MP
-         allocate( s%processes(world_rank)%block_coords(s%n_dim) )
-         allocate( s%processes(world_rank)%nx(s%n_dim) )
+         call wb_process_construct( s%processes(world_rank), n_dim )
       end do
    end subroutine wb_state_construct_variables
 
@@ -582,8 +596,7 @@ contains
       deallocate( s%blocks )
 
       do world_rank = 0_MP, s%world_size-1_MP
-         deallocate( s%processes(world_rank)%block_coords )
-         deallocate( s%processes(world_rank)%nx )
+         call wb_process_destroy( s%processes(world_rank) )
       end do
       deallocate( s%processes )
    end subroutine wb_state_destroy
