@@ -21,7 +21,7 @@ module wb_base
 
    private
 
-   public WB_State, check_input_file, print_initial_information, &
+   public WB_State, find_input_file, print_initial_information, &
       wb_state_construct, wb_state_destroy
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
@@ -195,27 +195,6 @@ contains
       end if
    end subroutine check_general_variables
 
-   subroutine check_input_file( filename )
-      character(len=STRING_LENGTH), intent(out)  :: filename
-      integer :: argc, filename_length, ierr
-      integer(MP) :: ierr_mpi, world_rank
-      logical :: file_exists
-
-      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr_mpi )
-      if ( world_rank .eq. WORLD_MASTER ) then
-         argc = command_argument_count()
-         if ( argc .eq. 0 ) then
-            call wb_abort( "no input file given", EXIT_USAGE )
-         end if
-         call get_command_argument( 1, filename, filename_length, ierr )
-         inquire( file=filename, exist=file_exists, iostat=ierr )
-         if ( file_exists .eqv. .false. ) then
-            call wb_abort( "input file does not exist", EXIT_NOINPUT )
-         end if
-      end if
-      call mpi_barrier( MPI_COMM_WORLD, ierr )
-   end subroutine check_input_file
-
    subroutine check_total_points( s, blocks )
       integer(SP) :: total_points
       integer(MP) :: ierr
@@ -289,6 +268,27 @@ contains
             MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
    end subroutine decompose_blocks
+
+   subroutine find_input_file( filename )
+      character(len=STRING_LENGTH), intent(out)  :: filename
+      integer :: argc, filename_length, ierr
+      integer(MP) :: ierr_mpi, world_rank
+      logical :: file_exists
+
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr_mpi )
+      if ( world_rank .eq. WORLD_MASTER ) then
+         argc = command_argument_count()
+         if ( argc .eq. 0 ) then
+            call wb_abort( "no input file given", EXIT_USAGE )
+         end if
+         call get_command_argument( 1, filename, filename_length, ierr )
+         inquire( file=filename, exist=file_exists, iostat=ierr )
+         if ( file_exists .eqv. .false. ) then
+            call wb_abort( "input file does not exist", EXIT_NOINPUT )
+         end if
+      end if
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+   end subroutine find_input_file
 
    subroutine identify_process_neighbors( s, blocks, processes )
       integer(MP) :: ierr, world_rank
