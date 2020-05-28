@@ -297,7 +297,7 @@ contains
       !call read_general_namelist( s, filename )
       !call read_block_namelists( s, filename )
       !call check_block_neighbors( s )
-      call setup_processes( s )
+      !call setup_processes( s )
       call check_total_points( s )
       call identify_process_neighbors( s )
    end subroutine initialize_state
@@ -308,7 +308,7 @@ contains
       call write_environment_information( output_unit, s )
       call write_scalar_variables(        output_unit, s )
       call write_block_information(       output_unit, s )
-      !call write_process_information(     output_unit, s )
+      call write_process_information(     output_unit, s )
       !call write_process_neighbors(       output_unit, s )
    end subroutine print_initial_information
 
@@ -429,64 +429,61 @@ contains
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
-   subroutine setup_processes( s )
+   subroutine decompose_blocks( s, blocks, processes )
       integer(MP) :: assigned_processes, ierr, world_rank
       integer(SP) :: ib, i_dim
       type(MPI_Comm) :: comm_split
       type(WB_State), intent(inout) :: s
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      type(WB_Process), dimension(:), allocatable, intent(out) :: processes
 
-      allocate( s%nx(s%n_dim) )
-      allocate( s%block_coords(s%n_dim) )
-      allocate( s%neighbors(s%n_dim,N_DIR) )
-
-      allocate( s%processes(0_MP:s%world_size-1_MP) )
+      allocate( processes(0_MP:s%world_size-1_MP) )
       do world_rank = 0_MP, s%world_size-1_MP
-         allocate( s%processes(world_rank)%block_coords(s%n_dim) )
-         allocate( s%processes(world_rank)%nx(s%n_dim) )
+         call wb_process_construct( processes(world_rank), s%n_dim )
       end do
 
       ib = 1_SP
       assigned_processes = 0_MP
       do world_rank = 0_MP, s%world_size-1_MP
-         s%processes(world_rank)%ib = ib
+         processes(world_rank)%ib = ib
          assigned_processes = assigned_processes + 1_MP
-         if ( assigned_processes .eq. s%blocks(ib)%block_size ) then
+         if ( assigned_processes .eq. blocks(ib)%block_size ) then
             assigned_processes = 0_MP
             ib = ib + 1_SP
          end if
       end do
 
-      s%ib = s%processes(s%world_rank)%ib
+      s%ib = processes(s%world_rank)%ib
       call mpi_comm_split( MPI_COMM_WORLD, int(s%ib,MP), 0_MP, comm_split, &
          ierr )
-      call mpi_cart_create( comm_split, int(s%n_dim,MP), s%blocks(s%ib)%np, &
-         s%blocks(s%ib)%periods, s%blocks(s%ib)%reorder, s%comm_block, ierr )
+      call mpi_cart_create( comm_split, int(s%n_dim,MP), blocks(s%ib)%np, &
+         blocks(s%ib)%periods, blocks(s%ib)%reorder, s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
       call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
          s%block_coords, ierr )
 
-      s%nx = s%blocks(s%ib)%nx / int(s%blocks(s%ib)%np,SP)
+      s%nx = blocks(s%ib)%nx / int(blocks(s%ib)%np,SP)
       do i_dim = 1_SP, s%n_dim
-         if ( s%block_coords(i_dim) .eq. s%blocks(s%ib)%np(i_dim)-1_MP ) then
-            s%nx(i_dim) = s%nx(i_dim) + modulo( s%blocks(s%ib)%nx(i_dim), &
-               int(s%blocks(s%ib)%np(i_dim),SP) )
+         if ( s%block_coords(i_dim) .eq. blocks(s%ib)%np(i_dim)-1_MP ) then
+            s%nx(i_dim) = s%nx(i_dim) + modulo( blocks(s%ib)%nx(i_dim), &
+               int(blocks(s%ib)%np(i_dim),SP) )
          end if
       end do
 
-      s%processes(s%world_rank)%block_rank = s%block_rank
-      s%processes(s%world_rank)%block_coords = s%block_coords
-      s%processes(s%world_rank)%nx = s%nx
+      processes(s%world_rank)%block_rank   = s%block_rank
+      processes(s%world_rank)%block_coords = s%block_coords
+      processes(s%world_rank)%nx           = s%nx
       do world_rank = 0_MP, s%world_size-1_MP
-         call mpi_bcast( s%processes(world_rank)%block_rank, 1_MP, &
+         call mpi_bcast( processes(world_rank)%block_rank, 1_MP, &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%processes(world_rank)%block_coords, int(s%n_dim,MP), &
+         call mpi_bcast( processes(world_rank)%block_coords, int(s%n_dim,MP), &
             MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%processes(world_rank)%nx, int(s%n_dim,MP), &
+         call mpi_bcast( processes(world_rank)%nx, int(s%n_dim,MP), &
             MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
-   end subroutine setup_processes
+   end subroutine decompose_blocks
 
    subroutine wb_block_construct( blk, n_dim )
       type(WB_Block), intent(inout) :: blk
@@ -529,18 +526,28 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
       integer(SP) :: ib, nb, n_dim, ng
+      integer(MP) :: world_rank
       type(WB_Block), dimension(:), allocatable :: blocks
+      type(WB_Process), dimension(:), allocatable :: processes
 
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
       call wb_state_construct_variables( s, nb, n_dim, ng, case_name )
       call read_block_namelists( filename, nb, n_dim, ng, blocks )
       call check_block_neighbors( blocks, nb, n_dim )
-      s%blocks = blocks
+      call decompose_blocks( s, blocks, processes )
+
+      s%blocks    = blocks
+      s%processes = processes
 
       do ib = 1_SP, nb
          call wb_block_destroy( blocks(ib) )
       end do
       deallocate( blocks )
+
+      do world_rank = 0_MP, s%world_size-1_MP
+         call wb_process_destroy( processes(world_rank) )
+      end do
+      deallocate( processes )
    end subroutine wb_state_construct_namelist
 
    subroutine wb_state_construct_variables( s, nb, n_dim, ng, case_name )
