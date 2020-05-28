@@ -58,7 +58,7 @@ module wb_base
       integer(SP), dimension(:), allocatable :: nx
       integer(SP), dimension(:,:), allocatable :: neighbors
       logical, dimension(:), allocatable :: periods
-      logical :: reorder = DEFAULT_REORDER
+      logical :: reorder
    end type WB_Block
 
    type WB_Process
@@ -493,6 +493,8 @@ contains
       allocate( blk%nx(n_dim) )
       allocate( blk%neighbors(n_dim,N_DIR) )
       allocate( blk%periods(n_dim) )
+
+      blk%reorder = DEFAULT_REORDER
    end subroutine wb_block_construct
 
    subroutine wb_block_destroy( blk )
