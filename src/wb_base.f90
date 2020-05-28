@@ -120,9 +120,11 @@ contains
       end do
    end subroutine check_block_dimension_arrays
 
-   subroutine check_block_neighbors( s )
-      type(WB_State), intent(in) :: s
+   subroutine check_block_neighbors( blocks, nb, n_dim )
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      integer(SP), intent(in) :: nb, n_dim
       integer(SP) :: ib, i_dim, j_dim, neighbor_l, neighbor_u
+      integer(MP) :: ierr, world_rank
 
       ! Ensure that lower and upper pairs exist, and that their number of
       ! points and processes match.  Since this is just checking and not
@@ -130,22 +132,23 @@ contains
       ! have each block master check this for their own blocks since the block
       ! communicators do not exist yet.  If that were possible, it would
       ! eliminate the loop over all blocks.
-      if ( s%world_rank .eq. WORLD_MASTER ) then
-         do ib = 1_SP, s%nb
-            do i_dim = 1_SP, s%n_dim
-               neighbor_l = s%blocks(ib)%neighbors(i_dim,LOWER_DIR)
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+      if ( world_rank .eq. WORLD_MASTER ) then
+         do ib = 1_SP, nb
+            do i_dim = 1_SP, n_dim
+               neighbor_l = blocks(ib)%neighbors(i_dim,LOWER_DIR)
                if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-                  neighbor_u = s%blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
+                  neighbor_u = blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
                   if ( ib .ne. neighbor_u ) then
                      call wb_abort( "lower face of block N1 does not neighbor &
                                     &upper face of block N2 in direction N3", &
                         EXIT_DATAERR, &
                         (/ ib, neighbor_l, i_dim /) )
                   else
-                     do j_dim = 1_SP, s%n_dim
+                     do j_dim = 1_SP, n_dim
                         if ( j_dim .ne. i_dim .and. &
-                           s%blocks(ib)%np(j_dim) .ne. &
-                           s%blocks(neighbor_l)%np(j_dim) ) then
+                           blocks(ib)%np(j_dim) .ne. &
+                           blocks(neighbor_l)%np(j_dim) ) then
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
                                           &processes in direction N4", &
@@ -153,8 +156,8 @@ contains
                               (/ i_dim, ib, neighbor_l, j_dim /) )
                         end if
                         if ( j_dim .ne. i_dim .and. &
-                           s%blocks(ib)%nx(j_dim) .ne. &
-                           s%blocks(neighbor_l)%nx(j_dim) ) then
+                           blocks(ib)%nx(j_dim) .ne. &
+                           blocks(neighbor_l)%nx(j_dim) ) then
                            call wb_abort( "face in direction N1 shared by &
                                           &blocks N2 and N3 does not match &
                                           &points in direction N4", &
@@ -293,7 +296,7 @@ contains
       !call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
       !call read_general_namelist( s, filename )
       !call read_block_namelists( s, filename )
-      call check_block_neighbors( s )
+      !call check_block_neighbors( s )
       call setup_processes( s )
       call check_total_points( s )
       call identify_process_neighbors( s )
@@ -531,6 +534,7 @@ contains
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
       call wb_state_construct_variables( s, nb, n_dim, ng, case_name )
       call read_block_namelists( filename, nb, n_dim, ng, blocks )
+      call check_block_neighbors( blocks, nb, n_dim )
       s%blocks = blocks
 
       do ib = 1_SP, nb
