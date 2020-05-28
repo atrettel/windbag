@@ -21,8 +21,8 @@ module wb_base
 
    private
 
-   public WB_State, check_input_file, initialize_state, &
-      print_initial_information, wb_state_construct, wb_state_destroy
+   public WB_State, check_input_file, print_initial_information, &
+      wb_state_construct, wb_state_destroy
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -235,12 +235,14 @@ contains
       end if
    end subroutine check_total_points
 
-   subroutine identify_process_neighbors( s )
+   subroutine identify_process_neighbors( s, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: block_neighbor, i_dir, i_dim
       integer(MP), dimension(N_DIR) :: block_ranks
       integer(MP), dimension(:), allocatable :: block_coords
       type(WB_State), intent(inout) :: s
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      type(WB_Process), dimension(:), allocatable, intent(in) :: processes
 
       allocate( block_coords(s%n_dim) )
       do i_dim = 1_SP, s%n_dim
@@ -249,15 +251,15 @@ contains
          do i_dir = 1_SP, N_DIR
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
                do world_rank = 0_MP, s%world_size-1_MP
-                  if ( s%processes(world_rank)%ib .eq. s%ib .and. &
-                     s%processes(world_rank)%block_rank .eq. &
+                  if ( processes(world_rank)%ib .eq. s%ib .and. &
+                     processes(world_rank)%block_rank .eq. &
                      block_ranks(i_dir) ) then
                      exit
                   end if
                end do
                s%neighbors(i_dim,i_dir) = world_rank
             else
-               block_neighbor = s%blocks(s%ib)%neighbors(i_dim,i_dir)
+               block_neighbor = blocks(s%ib)%neighbors(i_dim,i_dir)
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
                   s%neighbors(i_dim,i_dir) = MPI_PROC_NULL
                else
@@ -269,13 +271,13 @@ contains
                   block_coords = s%block_coords
                   if ( i_dir .eq. LOWER_DIR ) then
                      block_coords(i_dim) = &
-                        s%blocks(block_neighbor)%np(i_dim)-1_MP
+                        blocks(block_neighbor)%np(i_dim)-1_MP
                   else
                      block_coords(i_dim) = 0_MP
                   end if
                   do world_rank = 0_MP, s%world_size-1_MP
-                     if ( s%processes(world_rank)%ib .eq. block_neighbor &
-                        .and. all( s%processes(world_rank)%block_coords &
+                     if ( processes(world_rank)%ib .eq. block_neighbor &
+                        .and. all( processes(world_rank)%block_coords &
                         .eq. block_coords ) ) then
                         exit
                      end if
@@ -288,21 +290,6 @@ contains
       deallocate( block_coords )
    end subroutine identify_process_neighbors
 
-   subroutine initialize_state( s )
-      !character(len=STRING_LENGTH) :: filename
-      !integer(MP) :: ierr
-      type(WB_State), intent(out) :: s
-
-      !call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
-      !call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
-      !call read_general_namelist( s, filename )
-      !call read_block_namelists( s, filename )
-      !call check_block_neighbors( s )
-      !call setup_processes( s )
-      !call check_total_points( s )
-      call identify_process_neighbors( s )
-   end subroutine initialize_state
-
    subroutine print_initial_information( s )
       type(WB_State), intent(in) :: s
 
@@ -310,7 +297,7 @@ contains
       call write_scalar_variables(        output_unit, s )
       call write_block_information(       output_unit, s )
       call write_process_information(     output_unit, s )
-      !call write_process_neighbors(       output_unit, s )
+      call write_process_neighbors(       output_unit, s )
    end subroutine print_initial_information
 
    subroutine read_block_namelists( filename, nb, n_dim, ng, blocks )
@@ -537,6 +524,7 @@ contains
       call check_block_neighbors( blocks, nb, n_dim )
       call decompose_blocks( s, blocks, processes )
       call check_total_points( s, blocks )
+      call identify_process_neighbors( s, blocks, processes )
 
       s%blocks    = blocks
       s%processes = processes
