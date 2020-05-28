@@ -95,23 +95,23 @@ module wb_base
          wb_state_construct_variables
    end interface wb_state_construct
 contains
-   subroutine check_block_dimension_arrays( s, ib, i_dim )
-      integer(SP), intent(in) :: ib, i_dim
-      type(WB_State), intent(in) :: s
+   subroutine check_block_dimension_arrays( blk, ib, i_dim, ng )
+      integer(SP), intent(in) :: ib, i_dim, ng
+      type(WB_Block), intent(in) :: blk
       integer(SP) :: i_dir
 
-      if ( s%blocks(ib)%np(i_dim) .lt. 1_MP ) then
+      if ( blk%np(i_dim) .lt. 1_MP ) then
          call wb_abort( "number of processes in direction N1 of &
                         &block N2 is less than 1", &
                         EXIT_DATAERR, (/ i_dim, ib /) )
       end if
-      if ( s%blocks(ib)%nx(i_dim) .lt. s%ng ) then
+      if ( blk%nx(i_dim) .lt. ng ) then
          call wb_abort( "number of points in direction N1 of block &
                         &N2 is less than number of ghost points N3", &
-                        EXIT_DATAERR, (/ i_dim, ib, s%ng /) )
+                        EXIT_DATAERR, (/ i_dim, ib, ng /) )
       end if
       do i_dir = 1_SP, N_DIR
-         if ( s%blocks(ib)%neighbors(i_dim,i_dir) .lt. &
+         if ( blk%neighbors(i_dim,i_dir) .lt. &
             NO_BLOCK_NEIGHBOR ) then
             call wb_abort( "neighbor to block N1 in direction N2 and &
                            &dimension N3 is negative", &
@@ -284,15 +284,15 @@ contains
       deallocate( block_coords )
    end subroutine identify_process_neighbors
 
-   subroutine initialize_state( s, filename )
-      character(len=STRING_LENGTH) :: filename
+   subroutine initialize_state( s )
+      !character(len=STRING_LENGTH) :: filename
       !integer(MP) :: ierr
       type(WB_State), intent(out) :: s
 
       !call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       !call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
       !call read_general_namelist( s, filename )
-      call read_block_namelists( s, filename )
+      !call read_block_namelists( s, filename )
       call check_block_neighbors( s )
       call setup_processes( s )
       call check_total_points( s )
@@ -305,24 +305,25 @@ contains
       call write_environment_information( output_unit, s )
       call write_scalar_variables(        output_unit, s )
       call write_block_information(       output_unit, s )
-      call write_process_information(     output_unit, s )
-      call write_process_neighbors(       output_unit, s )
+      !call write_process_information(     output_unit, s )
+      !call write_process_neighbors(       output_unit, s )
    end subroutine print_initial_information
 
-   subroutine read_block_namelists( s, filename )
+   subroutine read_block_namelists( filename, nb, n_dim, ng, blocks )
       character(len=STRING_LENGTH), intent(in) :: filename
+      type(WB_Block), dimension(:), allocatable, intent(out) :: blocks
+      integer(SP), intent(in) :: nb, n_dim, ng
       integer :: file_unit
-      integer(MP) :: ierr
+      integer(MP) :: ierr, world_rank, world_size
       integer(SP) :: ib, jb, i_dim
-      type(WB_State), intent(inout) :: s
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
 
-      allocate( np(s%n_dim) )
-      allocate( nx(s%n_dim) )
-      allocate( neighbors_l(s%n_dim) )
-      allocate( neighbors_u(s%n_dim) )
+      allocate( np(n_dim) )
+      allocate( nx(n_dim) )
+      allocate( neighbors_l(n_dim) )
+      allocate( neighbors_u(n_dim) )
 
       ib             = DEFAULT_IB
       np(:)          = DEFAULT_NP
@@ -330,61 +331,60 @@ contains
       neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
       neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
 
-      allocate( s%blocks(s%nb) )
-      do jb = 1_SP, s%nb
-         allocate( s%blocks(jb)%np(s%n_dim) )
-         allocate( s%blocks(jb)%nx(s%n_dim) )
-         allocate( s%blocks(jb)%neighbors(s%n_dim,N_DIR) )
-         allocate( s%blocks(jb)%periods(s%n_dim) )
+      allocate( blocks(nb) )
+      do jb = 1_SP, nb
+         call wb_block_construct( blocks(jb), n_dim )
       end do
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+      call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
+      if ( world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
-         do jb = 1_SP, s%nb
+         do jb = 1_SP, nb
             read( unit=file_unit, nml=block )
 
-            if ( ib .gt. s%nb .or. ib .lt. 1_SP ) then
+            if ( ib .lt. 1_SP .or. ib .gt. nb ) then
                call wb_abort( "block N1 is out of acceptable range [N2, N3]", &
-                  EXIT_DATAERR, (/ ib, 1_SP, s%nb /) )
+                  EXIT_DATAERR, (/ ib, 1_SP, nb /) )
             end if
 
-            s%blocks(ib)%block_size = product(np)
-            s%blocks(ib)%np = np
-            s%blocks(ib)%neighbors(:,LOWER_DIR) = neighbors_l
-            s%blocks(ib)%neighbors(:,UPPER_DIR) = neighbors_u
-            s%blocks(ib)%nx = nx
+            blocks(ib)%block_size = product(np)
+            blocks(ib)%np = np
+            blocks(ib)%neighbors(:,LOWER_DIR) = neighbors_l
+            blocks(ib)%neighbors(:,UPPER_DIR) = neighbors_u
+            blocks(ib)%nx = nx
 
-            do i_dim = 1_SP, s%n_dim
-               call check_block_dimension_arrays( s, ib, i_dim )
+            do i_dim = 1_SP, n_dim
+               call check_block_dimension_arrays( blocks(ib), ib, i_dim, ng )
                if ( neighbors_l(i_dim) .eq. ib .and. &
                   neighbors_u(i_dim) .eq. ib ) then
-                  s%blocks(ib)%periods(i_dim) = .true.
+                  blocks(ib)%periods(i_dim) = .true.
                else
-                  s%blocks(ib)%periods(i_dim) = .false.
+                  blocks(ib)%periods(i_dim) = .false.
                end if
             end do
          end do
          close( unit=file_unit )
 
-         if ( sum( s%blocks(:)%block_size ) .ne. s%world_size ) then
+         if ( sum( blocks(:)%block_size ) .ne. world_size ) then
             call wb_abort( &
                "size of block domain decomposition (N1) does not match &
                &world size (N2)", EXIT_DATAERR, &
-               int( (/ sum( s%blocks(:)%block_size ), s%world_size /), SP ) )
+               int( (/ sum( blocks(:)%block_size ), world_size /), SP ) )
          end if
       end if
 
-      do ib = 1_SP, s%nb
-         call mpi_bcast( s%blocks(ib)%block_size, 1_MP, MPI_INTEGER, &
+      do ib = 1_SP, nb
+         call mpi_bcast( blocks(ib)%block_size, 1_MP, MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%np, int(s%n_dim,MP), MPI_INTEGER, &
+         call mpi_bcast( blocks(ib)%np, int(n_dim,MP), MPI_INTEGER, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%neighbors, int(s%n_dim*N_DIR,MP), &
+         call mpi_bcast( blocks(ib)%neighbors, int(n_dim*N_DIR,MP), &
             MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%nx, int(s%n_dim,MP), MPI_SP, &
+         call mpi_bcast( blocks(ib)%nx, int(n_dim,MP), MPI_SP, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( s%blocks(ib)%periods, int(s%n_dim,MP), MPI_LOGICAL, &
+         call mpi_bcast( blocks(ib)%periods, int(n_dim,MP), MPI_LOGICAL, &
             WORLD_MASTER, MPI_COMM_WORLD, ierr )
       end do
 
@@ -525,10 +525,18 @@ contains
       type(WB_State), intent(inout) :: s
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
-      integer(SP) :: nb, n_dim, ng
+      integer(SP) :: ib, nb, n_dim, ng
+      type(WB_Block), dimension(:), allocatable :: blocks
 
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
       call wb_state_construct_variables( s, nb, n_dim, ng, case_name )
+      call read_block_namelists( filename, nb, n_dim, ng, blocks )
+      s%blocks = blocks
+
+      do ib = 1_SP, nb
+         call wb_block_destroy( blocks(ib) )
+      end do
+      deallocate( blocks )
    end subroutine wb_state_construct_namelist
 
    subroutine wb_state_construct_variables( s, nb, n_dim, ng, case_name )
