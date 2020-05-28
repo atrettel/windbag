@@ -592,14 +592,14 @@ contains
 
    subroutine wb_state_destroy( s )
       integer(SP) :: ib
-      integer(MP) :: world_rank
+      integer(MP) :: ierr, world_rank
       type(WB_State), intent(inout) :: s
 
       deallocate( s%case_name )
       deallocate( s%nx )
       deallocate( s%block_coords )
       deallocate( s%neighbors )
-      !call mpi_comm_free( s%comm_block, ierr )
+      call mpi_comm_free( s%comm_block, ierr )
 
       do ib = 1_SP, s%nb
          call wb_block_destroy( s%blocks(ib) )
