@@ -235,6 +235,62 @@ contains
       end if
    end subroutine check_total_points
 
+   subroutine decompose_blocks( s, blocks, processes )
+      integer(MP) :: assigned_processes, ierr, world_rank
+      integer(SP) :: ib, i_dim
+      type(MPI_Comm) :: comm_split
+      type(WB_State), intent(inout) :: s
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      type(WB_Process), dimension(:), allocatable, intent(out) :: processes
+
+      allocate( processes(0_MP:s%world_size-1_MP) )
+      do world_rank = 0_MP, s%world_size-1_MP
+         call wb_process_construct( processes(world_rank), s%n_dim )
+      end do
+
+      ib = 1_SP
+      assigned_processes = 0_MP
+      do world_rank = 0_MP, s%world_size-1_MP
+         processes(world_rank)%ib = ib
+         assigned_processes = assigned_processes + 1_MP
+         if ( assigned_processes .eq. blocks(ib)%block_size ) then
+            assigned_processes = 0_MP
+            ib = ib + 1_SP
+         end if
+      end do
+
+      s%ib = processes(s%world_rank)%ib
+      call mpi_comm_split( MPI_COMM_WORLD, int(s%ib,MP), 0_MP, comm_split, &
+         ierr )
+      call mpi_cart_create( comm_split, int(s%n_dim,MP), blocks(s%ib)%np, &
+         blocks(s%ib)%periods, blocks(s%ib)%reorder, s%comm_block, ierr )
+      call mpi_comm_free( comm_split, ierr )
+      call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
+      call mpi_comm_size( s%comm_block, s%block_size, ierr )
+      call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
+         s%block_coords, ierr )
+
+      s%nx = blocks(s%ib)%nx / int(blocks(s%ib)%np,SP)
+      do i_dim = 1_SP, s%n_dim
+         if ( s%block_coords(i_dim) .eq. blocks(s%ib)%np(i_dim)-1_MP ) then
+            s%nx(i_dim) = s%nx(i_dim) + modulo( blocks(s%ib)%nx(i_dim), &
+               int(blocks(s%ib)%np(i_dim),SP) )
+         end if
+      end do
+
+      processes(s%world_rank)%block_rank   = s%block_rank
+      processes(s%world_rank)%block_coords = s%block_coords
+      processes(s%world_rank)%nx           = s%nx
+      do world_rank = 0_MP, s%world_size-1_MP
+         call mpi_bcast( processes(world_rank)%block_rank, 1_MP, &
+            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( processes(world_rank)%block_coords, int(s%n_dim,MP), &
+            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( processes(world_rank)%nx, int(s%n_dim,MP), &
+            MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
+      end do
+   end subroutine decompose_blocks
+
    subroutine identify_process_neighbors( s, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: block_neighbor, i_dir, i_dim
@@ -416,62 +472,6 @@ contains
       call mpi_bcast( ng, 1_MP, MPI_SP, WORLD_MASTER, &
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
-
-   subroutine decompose_blocks( s, blocks, processes )
-      integer(MP) :: assigned_processes, ierr, world_rank
-      integer(SP) :: ib, i_dim
-      type(MPI_Comm) :: comm_split
-      type(WB_State), intent(inout) :: s
-      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
-      type(WB_Process), dimension(:), allocatable, intent(out) :: processes
-
-      allocate( processes(0_MP:s%world_size-1_MP) )
-      do world_rank = 0_MP, s%world_size-1_MP
-         call wb_process_construct( processes(world_rank), s%n_dim )
-      end do
-
-      ib = 1_SP
-      assigned_processes = 0_MP
-      do world_rank = 0_MP, s%world_size-1_MP
-         processes(world_rank)%ib = ib
-         assigned_processes = assigned_processes + 1_MP
-         if ( assigned_processes .eq. blocks(ib)%block_size ) then
-            assigned_processes = 0_MP
-            ib = ib + 1_SP
-         end if
-      end do
-
-      s%ib = processes(s%world_rank)%ib
-      call mpi_comm_split( MPI_COMM_WORLD, int(s%ib,MP), 0_MP, comm_split, &
-         ierr )
-      call mpi_cart_create( comm_split, int(s%n_dim,MP), blocks(s%ib)%np, &
-         blocks(s%ib)%periods, blocks(s%ib)%reorder, s%comm_block, ierr )
-      call mpi_comm_free( comm_split, ierr )
-      call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
-      call mpi_comm_size( s%comm_block, s%block_size, ierr )
-      call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
-         s%block_coords, ierr )
-
-      s%nx = blocks(s%ib)%nx / int(blocks(s%ib)%np,SP)
-      do i_dim = 1_SP, s%n_dim
-         if ( s%block_coords(i_dim) .eq. blocks(s%ib)%np(i_dim)-1_MP ) then
-            s%nx(i_dim) = s%nx(i_dim) + modulo( blocks(s%ib)%nx(i_dim), &
-               int(blocks(s%ib)%np(i_dim),SP) )
-         end if
-      end do
-
-      processes(s%world_rank)%block_rank   = s%block_rank
-      processes(s%world_rank)%block_coords = s%block_coords
-      processes(s%world_rank)%nx           = s%nx
-      do world_rank = 0_MP, s%world_size-1_MP
-         call mpi_bcast( processes(world_rank)%block_rank, 1_MP, &
-            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( processes(world_rank)%block_coords, int(s%n_dim,MP), &
-            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( processes(world_rank)%nx, int(s%n_dim,MP), &
-            MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
-      end do
-   end subroutine decompose_blocks
 
    subroutine wb_block_construct( blk, n_dim )
       type(WB_Block), intent(inout) :: blk
