@@ -87,7 +87,6 @@ module wb_base
       real(FP), dimension(:,:,:,:), allocatable :: f
       type(MPI_Comm) :: comm_block
       type(WB_Block), dimension(:), allocatable :: blocks
-      type(WB_Process), dimension(:), allocatable :: processes
    end type WB_State
 
    interface wb_state_construct
@@ -527,7 +526,6 @@ contains
       call identify_process_neighbors( s, blocks, processes )
 
       s%blocks    = blocks
-      s%processes = processes
 
       do ib = 1_SP, nb
          call wb_block_destroy( blocks(ib) )
@@ -544,7 +542,7 @@ contains
       type(WB_State), intent(inout) :: s
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
       integer(SP), optional, intent(in) :: nb, n_dim, ng
-      integer(SP) :: ib, world_rank
+      integer(SP) :: ib
       integer(MP) :: ierr
 
       if ( present(case_name) ) then
@@ -583,16 +581,11 @@ contains
       do ib = 1_SP, s%nb
          call wb_block_construct( s%blocks(ib), s%n_dim )
       end do
-
-      allocate( s%processes(0_MP:s%world_size-1_MP) )
-      do world_rank = 0_MP, s%world_size-1_MP
-         call wb_process_construct( s%processes(world_rank), n_dim )
-      end do
    end subroutine wb_state_construct_variables
 
    subroutine wb_state_destroy( s )
       integer(SP) :: ib
-      integer(MP) :: ierr, world_rank
+      integer(MP) :: ierr
       type(WB_State), intent(inout) :: s
 
       deallocate( s%case_name )
@@ -605,11 +598,6 @@ contains
          call wb_block_destroy( s%blocks(ib) )
       end do
       deallocate( s%blocks )
-
-      do world_rank = 0_MP, s%world_size-1_MP
-         call wb_process_destroy( s%processes(world_rank) )
-      end do
-      deallocate( s%processes )
    end subroutine wb_state_destroy
 
    subroutine write_block_information( f, s )
