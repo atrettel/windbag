@@ -217,20 +217,21 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine check_input_file
 
-   subroutine check_total_points( s )
+   subroutine check_total_points( s, blocks )
       integer(SP) :: total_points
       integer(MP) :: ierr
-      type(WB_State), intent(inout) :: s
+      type(WB_State), intent(in) :: s
+      type(WB_Block), dimension(:), allocatable :: blocks
 
       total_points = 0_SP
       call mpi_reduce( product(s%nx), total_points, int(s%n_dim,MP), MPI_SP, &
          MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
-         product(s%blocks(s%ib)%nx) .ne. total_points ) then
+         product(blocks(s%ib)%nx) .ne. total_points ) then
          call wb_abort( "total points in block N1 (N2) does not match sum of &
                         &points in individual processes (N3)", &
             EXIT_FAILURE, &
-            (/ s%ib, product(s%blocks(s%ib)%nx), total_points /) )
+            (/ s%ib, product(blocks(s%ib)%nx), total_points /) )
       end if
    end subroutine check_total_points
 
@@ -298,7 +299,7 @@ contains
       !call read_block_namelists( s, filename )
       !call check_block_neighbors( s )
       !call setup_processes( s )
-      call check_total_points( s )
+      !call check_total_points( s )
       call identify_process_neighbors( s )
    end subroutine initialize_state
 
@@ -535,6 +536,7 @@ contains
       call read_block_namelists( filename, nb, n_dim, ng, blocks )
       call check_block_neighbors( blocks, nb, n_dim )
       call decompose_blocks( s, blocks, processes )
+      call check_total_points( s, blocks )
 
       s%blocks    = blocks
       s%processes = processes
