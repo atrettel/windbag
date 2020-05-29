@@ -89,6 +89,10 @@ module wb_base
       type(WB_Block) :: local_block
    end type WB_State
 
+   interface total_points
+      module procedure wb_block_total_points, wb_state_total_points
+   end interface total_points
+
    interface wb_state_construct
       module procedure wb_state_construct_namelist, &
          wb_state_construct_variables
@@ -179,9 +183,9 @@ contains
       type(WB_State), intent(in) :: s
       type(WB_Block), dimension(:), allocatable :: blocks
 
-      points_in_block = wb_block_total_points(blocks(s%ib))
+      points_in_block = total_points(blocks(s%ib))
       points_in_processes = 0_SP
-      call mpi_reduce( wb_state_total_points(s), points_in_processes, &
+      call mpi_reduce( total_points(s), points_in_processes, &
          int(s%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
       if ( s%block_rank .eq. BLOCK_MASTER .and. &
          points_in_block .ne. points_in_processes ) then
@@ -516,11 +520,11 @@ contains
       deallocate( blk%periods )
    end subroutine wb_block_destroy
 
-   function wb_block_total_points( blk ) result( total_points )
+   function wb_block_total_points( blk ) result( points_in_block )
       type(WB_Block), intent(in) :: blk
-      integer(SP) :: total_points
+      integer(SP) :: points_in_block
 
-      total_points = product(blk%nx)
+      points_in_block = product(blk%nx)
    end function wb_block_total_points
 
    subroutine wb_process_construct( process, n_dim, ib )
@@ -621,11 +625,11 @@ contains
       call wb_block_destroy( s%local_block )
    end subroutine wb_state_destroy
 
-   function wb_state_total_points( s ) result( total_points )
+   function wb_state_total_points( s ) result( points_in_state )
       type(WB_State), intent(in) :: s
-      integer(SP) :: total_points
+      integer(SP) :: points_in_state
 
-      total_points = product(s%nx)
+      points_in_state = product(s%nx)
    end function wb_state_total_points
 
    subroutine write_block_information( f, s )
@@ -677,7 +681,7 @@ contains
                call write_table_entry( f, int(s%local_block%np(i_dim),SP), &
                   NP_COLUMN_WIDTH )
             end do
-            call write_table_entry( f, wb_block_total_points(s%local_block), &
+            call write_table_entry( f, total_points(s%local_block), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                call write_table_entry( f, s%local_block%nx(i_dim), &
@@ -822,7 +826,7 @@ contains
                call write_table_entry( f, &
                int(s%block_coords(i_dim),SP), COORDS_COLUMN_WIDTH )
             end do
-            call write_table_entry( f, wb_state_total_points(s), &
+            call write_table_entry( f, total_points(s), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                call write_table_entry( f, s%nx(i_dim), &
