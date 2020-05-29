@@ -463,43 +463,51 @@ contains
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
-   subroutine wb_block_allocate( blk, n_dim )
+   subroutine wb_block_construct( blk, n_dim, np, nx, neighbors_l, &
+      neighbors_u, ib )
       type(WB_Block), intent(inout) :: blk
       integer(SP), intent(in) :: n_dim
+      integer(MP), dimension(:), allocatable, optional, intent(in) :: np
+      integer(SP), dimension(:), allocatable, optional, intent(in) :: nx, &
+         neighbors_l, neighbors_u
+      integer(SP), optional, intent(in) :: ib
+      integer(SP) :: i_dim
 
       allocate( blk%np(n_dim) )
       allocate( blk%nx(n_dim) )
       allocate( blk%neighbors(n_dim,N_DIR) )
       allocate( blk%periods(n_dim) )
-   end subroutine wb_block_allocate
 
-   subroutine wb_block_construct( blk, n_dim, np, nx, neighbors_l, &
-      neighbors_u, ib )
-      type(WB_Block), intent(inout) :: blk
-      integer(SP), intent(in) :: n_dim
-      integer(MP), dimension(:), allocatable, intent(in) :: np
-      integer(SP), dimension(:), allocatable, intent(in) :: nx, neighbors_l, &
-         neighbors_u
-      integer(SP), intent(in) :: ib
-      integer(SP) :: i_dim
+      blk%np(:)          = DEFAULT_NP
+      blk%nx(:)          = DEFAULT_NX
+      blk%neighbors(:,:) = DEFAULT_BLOCK_NEIGHBOR
+      blk%periods(:)     = .false.
 
-      call wb_block_allocate( blk, n_dim )
+      if ( present(np) ) then
+         blk%block_size = product(np)
+         blk%np         = np
+      end if
+      if ( present(nx) ) then
+         blk%nx = nx
+      end if
+      if ( present(neighbors_l) ) then
+         blk%neighbors(:,LOWER_DIR) = neighbors_l
+      end if
+      if ( present(neighbors_u) ) then
+         blk%neighbors(:,UPPER_DIR) = neighbors_u
+      end if
+      blk%reorder = DEFAULT_REORDER
 
-      blk%block_size             = product(np)
-      blk%np                     = np
-      blk%neighbors(:,LOWER_DIR) = neighbors_l
-      blk%neighbors(:,UPPER_DIR) = neighbors_u
-      blk%nx                     = nx
-      blk%reorder                = DEFAULT_REORDER
-
-      do i_dim = 1_SP, n_dim
-         if ( neighbors_l(i_dim) .eq. ib .and. &
-              neighbors_u(i_dim) .eq. ib ) then
-            blk%periods(i_dim) = .true.
-         else
-            blk%periods(i_dim) = .false.
-         end if
-      end do
+      if ( present(ib) ) then
+         do i_dim = 1_SP, n_dim
+            if ( blk%neighbors(i_dim,LOWER_DIR) .eq. ib .and. &
+                 blk%neighbors(i_dim,UPPER_DIR) .eq. ib ) then
+               blk%periods(i_dim) = .true.
+            else
+               blk%periods(i_dim) = .false.
+            end if
+         end do
+      end if
    end subroutine wb_block_construct
 
    subroutine wb_block_destroy( blk )
@@ -592,7 +600,7 @@ contains
       allocate( s%nx(s%n_dim) )
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
-      call wb_block_allocate( s%local_block, s%n_dim )
+      call wb_block_construct( s%local_block, s%n_dim )
    end subroutine wb_state_construct_variables
 
    subroutine wb_state_destroy( s )
