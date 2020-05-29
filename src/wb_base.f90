@@ -173,6 +173,25 @@ contains
       end if
    end subroutine check_block_neighbors
 
+   subroutine check_block_points( s, blocks )
+      integer(SP) :: points_in_block, points_in_processes
+      integer(MP) :: ierr
+      type(WB_State), intent(in) :: s
+      type(WB_Block), dimension(:), allocatable :: blocks
+
+      points_in_block = wb_block_total_points(blocks(s%ib))
+      points_in_processes = 0_SP
+      call mpi_reduce( wb_state_total_points(s), points_in_processes, &
+         int(s%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
+      if ( s%block_rank .eq. BLOCK_MASTER .and. &
+         points_in_block .ne. points_in_processes ) then
+         call wb_abort( "total points in block N1 (N2) does not match sum of &
+                        &points in individual processes (N3)", &
+            EXIT_FAILURE, &
+            (/ s%ib, points_in_block, points_in_processes /) )
+      end if
+   end subroutine check_block_points
+
    subroutine check_general_variables( nb, n_dim, ng, world_size )
       integer(SP), intent(in) :: nb, n_dim, ng
       integer(MP), intent(in) :: world_size
@@ -196,24 +215,6 @@ contains
             EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
       end if
    end subroutine check_general_variables
-
-   subroutine check_total_points( s, blocks )
-      integer(SP) :: total_points
-      integer(MP) :: ierr
-      type(WB_State), intent(in) :: s
-      type(WB_Block), dimension(:), allocatable :: blocks
-
-      total_points = 0_SP
-      call mpi_reduce( wb_state_total_points(s), total_points, &
-         int(s%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
-      if ( s%block_rank .eq. BLOCK_MASTER .and. &
-         wb_block_total_points(blocks(s%ib)) .ne. total_points ) then
-         call wb_abort( "total points in block N1 (N2) does not match sum of &
-                        &points in individual processes (N3)", &
-            EXIT_FAILURE, &
-            (/ s%ib, wb_block_total_points(blocks(s%ib)), total_points /) )
-      end if
-   end subroutine check_total_points
 
    subroutine decompose_blocks( s, blocks, processes )
       integer(MP) :: assigned_processes, ierr, world_rank
@@ -553,7 +554,7 @@ contains
       call read_block_namelists( filename, nb, n_dim, ng, blocks )
       call check_block_neighbors( blocks, nb, n_dim )
       call decompose_blocks( s, blocks, processes )
-      call check_total_points( s, blocks )
+      call check_block_points( s, blocks )
       call identify_process_neighbors( s, blocks, processes )
       s%local_block = blocks(s%ib)
 
