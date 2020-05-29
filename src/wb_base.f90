@@ -94,28 +94,30 @@ module wb_base
          wb_state_construct_variables
    end interface wb_state_construct
 contains
-   subroutine check_block_dimension_arrays( blk, ib, i_dim, ng )
-      integer(SP), intent(in) :: ib, i_dim, ng
+   subroutine check_block_dimension_arrays( blk, ib, n_dim, ng )
+      integer(SP), intent(in) :: ib, n_dim, ng
       type(WB_Block), intent(in) :: blk
-      integer(SP) :: i_dir
+      integer(SP) :: i_dir, i_dim
 
-      if ( blk%np(i_dim) .lt. 1_MP ) then
-         call wb_abort( "number of processes in direction N1 of &
-                        &block N2 is less than 1", &
-                        EXIT_DATAERR, (/ i_dim, ib /) )
-      end if
-      if ( blk%nx(i_dim) .lt. ng ) then
-         call wb_abort( "number of points in direction N1 of block &
-                        &N2 is less than number of ghost points N3", &
-                        EXIT_DATAERR, (/ i_dim, ib, ng /) )
-      end if
-      do i_dir = 1_SP, N_DIR
-         if ( blk%neighbors(i_dim,i_dir) .lt. &
-            NO_BLOCK_NEIGHBOR ) then
-            call wb_abort( "neighbor to block N1 in direction N2 and &
-                           &dimension N3 is negative", &
-                           EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
+      do i_dim = 1_SP, n_dim
+         if ( blk%np(i_dim) .lt. 1_MP ) then
+            call wb_abort( "number of processes in direction N1 of &
+                           &block N2 is less than 1", &
+                           EXIT_DATAERR, (/ i_dim, ib /) )
          end if
+         if ( blk%nx(i_dim) .lt. ng ) then
+            call wb_abort( "number of points in direction N1 of block &
+                           &N2 is less than number of ghost points N3", &
+                           EXIT_DATAERR, (/ i_dim, ib, ng /) )
+         end if
+         do i_dir = 1_SP, N_DIR
+            if ( blk%neighbors(i_dim,i_dir) .lt. &
+               NO_BLOCK_NEIGHBOR ) then
+               call wb_abort( "neighbor to block N1 in direction N2 and &
+                              &dimension N3 is negative", &
+                              EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
+            end if
+         end do
       end do
    end subroutine check_block_dimension_arrays
 
@@ -361,7 +363,7 @@ contains
       integer(SP), intent(in) :: nb, n_dim, ng
       integer :: file_unit
       integer(MP) :: ierr, world_rank, world_size
-      integer(SP) :: ib, jb, i_dim
+      integer(SP) :: ib, jb
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx, neighbors_l, neighbors_u
       namelist /block/ ib, np, nx, neighbors_l, neighbors_u
@@ -409,9 +411,7 @@ contains
             neighbors_u, ib )
 
          if ( world_rank .eq. WORLD_MASTER ) then
-            do i_dim = 1_SP, n_dim
-               call check_block_dimension_arrays( blocks(ib), ib, i_dim, ng )
-            end do
+            call check_block_dimension_arrays( blocks(ib), ib, n_dim, ng )
          end if
       end do
       if ( world_rank .eq. WORLD_MASTER ) then
