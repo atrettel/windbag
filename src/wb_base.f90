@@ -223,15 +223,11 @@ contains
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
 
-      allocate( processes(0_MP:s%world_size-1_MP) )
-      do world_rank = 0_MP, s%world_size-1_MP
-         call wb_process_construct( processes(world_rank), s%n_dim )
-      end do
-
       ib = 1_SP
       assigned_processes = 0_MP
+      allocate( processes(0_MP:s%world_size-1_MP) )
       do world_rank = 0_MP, s%world_size-1_MP
-         processes(world_rank)%ib = ib
+         call wb_process_construct( processes(world_rank), s%n_dim, ib )
          assigned_processes = assigned_processes + 1_MP
          if ( assigned_processes .eq. blocks(ib)%block_size ) then
             assigned_processes = 0_MP
@@ -519,12 +515,14 @@ contains
       deallocate( blk%periods )
    end subroutine wb_block_destroy
 
-   subroutine wb_process_construct( process, n_dim )
+   subroutine wb_process_construct( process, n_dim, ib )
       type(WB_Process), intent(inout) :: process
-      integer(SP), intent(in) :: n_dim
+      integer(SP), intent(in) :: n_dim, ib
 
       allocate( process%block_coords(n_dim) )
       allocate( process%nx(n_dim) )
+
+      process%ib = ib
    end subroutine wb_process_construct
 
    subroutine wb_process_destroy( process )
