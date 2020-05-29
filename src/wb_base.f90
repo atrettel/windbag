@@ -379,7 +379,7 @@ contains
 
       allocate( blocks(nb) )
       do jb = 1_SP, nb
-         call wb_block_construct( blocks(jb), n_dim )
+         call wb_block_allocate( blocks(jb), n_dim )
       end do
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
@@ -400,6 +400,7 @@ contains
             blocks(ib)%neighbors(:,LOWER_DIR) = neighbors_l
             blocks(ib)%neighbors(:,UPPER_DIR) = neighbors_u
             blocks(ib)%nx = nx
+            blocks(ib)%reorder = DEFAULT_REORDER
 
             do i_dim = 1_SP, n_dim
                call check_block_dimension_arrays( blocks(ib), ib, i_dim, ng )
@@ -472,7 +473,7 @@ contains
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
-   subroutine wb_block_construct( blk, n_dim )
+   subroutine wb_block_allocate( blk, n_dim )
       type(WB_Block), intent(inout) :: blk
       integer(SP), intent(in) :: n_dim
 
@@ -480,9 +481,7 @@ contains
       allocate( blk%nx(n_dim) )
       allocate( blk%neighbors(n_dim,N_DIR) )
       allocate( blk%periods(n_dim) )
-
-      blk%reorder = DEFAULT_REORDER
-   end subroutine wb_block_construct
+   end subroutine wb_block_allocate
 
    subroutine wb_block_destroy( blk )
       type(WB_Block), intent(inout) :: blk
@@ -574,7 +573,7 @@ contains
       allocate( s%nx(s%n_dim) )
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
-      call wb_block_construct( s%local_block, s%n_dim )
+      call wb_block_allocate( s%local_block, s%n_dim )
    end subroutine wb_state_construct_variables
 
    subroutine wb_state_destroy( s )
