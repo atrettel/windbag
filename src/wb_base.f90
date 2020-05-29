@@ -378,40 +378,43 @@ contains
       neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
 
       allocate( blocks(nb) )
-      do jb = 1_SP, nb
-         call wb_block_allocate( blocks(jb), n_dim )
-      end do
-
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
       if ( world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
-         do jb = 1_SP, nb
+      end if
+      do jb = 1_SP, nb
+         if ( world_rank .eq. WORLD_MASTER ) then
             read( unit=file_unit, nml=block )
 
             if ( ib .lt. 1_SP .or. ib .gt. nb ) then
                call wb_abort( "block N1 is out of acceptable range [N2, N3]", &
                   EXIT_DATAERR, (/ ib, 1_SP, nb /) )
             end if
+         end if
 
-            blocks(ib)%block_size = product(np)
-            blocks(ib)%np = np
-            blocks(ib)%neighbors(:,LOWER_DIR) = neighbors_l
-            blocks(ib)%neighbors(:,UPPER_DIR) = neighbors_u
-            blocks(ib)%nx = nx
-            blocks(ib)%reorder = DEFAULT_REORDER
+         call mpi_bcast( ib, 1_MP, MPI_INTEGER, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( np, int(n_dim,MP), MPI_INTEGER, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( nx, int(n_dim,MP), MPI_SP, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( neighbors_l, int(n_dim,MP), MPI_SP, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( neighbors_u, int(n_dim,MP), MPI_SP, WORLD_MASTER, &
+            MPI_COMM_WORLD, ierr )
 
+         call wb_block_construct( blocks(ib), n_dim, np, nx, neighbors_l, &
+            neighbors_u, ib )
+
+         if ( world_rank .eq. WORLD_MASTER ) then
             do i_dim = 1_SP, n_dim
                call check_block_dimension_arrays( blocks(ib), ib, i_dim, ng )
-               if ( neighbors_l(i_dim) .eq. ib .and. &
-                  neighbors_u(i_dim) .eq. ib ) then
-                  blocks(ib)%periods(i_dim) = .true.
-               else
-                  blocks(ib)%periods(i_dim) = .false.
-               end if
             end do
-         end do
+         end if
+      end do
+      if ( world_rank .eq. WORLD_MASTER ) then
          close( unit=file_unit )
 
          if ( sum( blocks(:)%block_size ) .ne. world_size ) then
@@ -421,19 +424,6 @@ contains
                int( (/ sum( blocks(:)%block_size ), world_size /), SP ) )
          end if
       end if
-
-      do ib = 1_SP, nb
-         call mpi_bcast( blocks(ib)%block_size, 1_MP, MPI_INTEGER, &
-            WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( blocks(ib)%np, int(n_dim,MP), MPI_INTEGER, &
-            WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( blocks(ib)%neighbors, int(n_dim*N_DIR,MP), &
-            MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( blocks(ib)%nx, int(n_dim,MP), MPI_SP, &
-            WORLD_MASTER, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( blocks(ib)%periods, int(n_dim,MP), MPI_LOGICAL, &
-            WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      end do
 
       deallocate( np )
       deallocate( nx )
@@ -482,6 +472,35 @@ contains
       allocate( blk%neighbors(n_dim,N_DIR) )
       allocate( blk%periods(n_dim) )
    end subroutine wb_block_allocate
+
+   subroutine wb_block_construct( blk, n_dim, np, nx, neighbors_l, &
+      neighbors_u, ib )
+      type(WB_Block), intent(inout) :: blk
+      integer(SP), intent(in) :: n_dim
+      integer(MP), dimension(:), allocatable, intent(in) :: np
+      integer(SP), dimension(:), allocatable, intent(in) :: nx, neighbors_l, &
+         neighbors_u
+      integer(SP), intent(in) :: ib
+      integer(SP) :: i_dim
+
+      call wb_block_allocate( blk, n_dim )
+
+      blk%block_size             = product(np)
+      blk%np                     = np
+      blk%neighbors(:,LOWER_DIR) = neighbors_l
+      blk%neighbors(:,UPPER_DIR) = neighbors_u
+      blk%nx                     = nx
+      blk%reorder                = DEFAULT_REORDER
+
+      do i_dim = 1_SP, n_dim
+         if ( neighbors_l(i_dim) .eq. ib .and. &
+              neighbors_u(i_dim) .eq. ib ) then
+            blk%periods(i_dim) = .true.
+         else
+            blk%periods(i_dim) = .false.
+         end if
+      end do
+   end subroutine wb_block_construct
 
    subroutine wb_block_destroy( blk )
       type(WB_Block), intent(inout) :: blk
