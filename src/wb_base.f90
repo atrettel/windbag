@@ -86,7 +86,7 @@ module wb_base
       real(FP) :: t
       real(FP), dimension(:,:,:,:), allocatable :: f
       type(MPI_Comm) :: comm_block
-      type(WB_Block), dimension(:), allocatable :: blocks
+      type(WB_Block) :: local_block
    end type WB_State
 
    interface wb_state_construct
@@ -524,8 +524,7 @@ contains
       call decompose_blocks( s, blocks, processes )
       call check_total_points( s, blocks )
       call identify_process_neighbors( s, blocks, processes )
-
-      s%blocks    = blocks
+      s%local_block = blocks(s%ib)
 
       do ib = 1_SP, nb
          call wb_block_destroy( blocks(ib) )
@@ -542,7 +541,6 @@ contains
       type(WB_State), intent(inout) :: s
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
       integer(SP), optional, intent(in) :: nb, n_dim, ng
-      integer(SP) :: ib
       integer(MP) :: ierr
 
       if ( present(case_name) ) then
@@ -576,15 +574,10 @@ contains
       allocate( s%nx(s%n_dim) )
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
-
-      allocate( s%blocks(s%nb) )
-      do ib = 1_SP, s%nb
-         call wb_block_construct( s%blocks(ib), s%n_dim )
-      end do
+      call wb_block_construct( s%local_block, s%n_dim )
    end subroutine wb_state_construct_variables
 
    subroutine wb_state_destroy( s )
-      integer(SP) :: ib
       integer(MP) :: ierr
       type(WB_State), intent(inout) :: s
 
@@ -593,17 +586,14 @@ contains
       deallocate( s%block_coords )
       deallocate( s%neighbors )
       call mpi_comm_free( s%comm_block, ierr )
-
-      do ib = 1_SP, s%nb
-         call wb_block_destroy( s%blocks(ib) )
-      end do
-      deallocate( s%blocks )
+      call wb_block_destroy( s%local_block )
    end subroutine wb_state_destroy
 
    subroutine write_block_information( f, s )
       integer, intent(in) :: f
       type(WB_State), intent(in) :: s
       integer(SP) :: ib, i_dim
+      integer(MP) :: ierr
       character(len=STRING_LENGTH) :: label
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
@@ -636,24 +626,29 @@ contains
             call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
          end do
+      end if
 
-         do ib = 1_SP, s%nb
-            call write_table_entry( f, ib, IB_COLUMN_WIDTH )
-            call write_table_entry( f, &
-               int(s%blocks(ib)%block_size,SP), SIZE_COLUMN_WIDTH )
+      do ib = 1_SP, s%nb
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         if ( ib .eq. s%ib .and. s%block_rank .eq. BLOCK_MASTER ) then
+            call write_table_entry( f, s%ib, IB_COLUMN_WIDTH )
+            call write_table_entry( f, int(s%local_block%block_size,SP), &
+               SIZE_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_table_entry( f, &
-               int(s%blocks(ib)%np(i_dim),SP), NP_COLUMN_WIDTH )
+               call write_table_entry( f, int(s%local_block%np(i_dim),SP), &
+                  NP_COLUMN_WIDTH )
             end do
-            call write_table_entry( f, &
-               product(s%blocks(ib)%nx), POINTS_COLUMN_WIDTH )
+            call write_table_entry( f, product(s%local_block%nx), &
+               POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_table_entry( f, &
-               s%blocks(ib)%nx(i_dim), NX_COLUMN_WIDTH, &
-               end_row=(i_dim .eq. s%n_dim) )
+               call write_table_entry( f, s%local_block%nx(i_dim), &
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
             end do
-         end do
+         end if
+      end do
 
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
          call write_blank_line( f )
       end if
    end subroutine write_block_information
