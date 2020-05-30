@@ -218,7 +218,7 @@ contains
       end if
    end subroutine check_general_variables
 
-   subroutine decompose_blocks( s, blocks, processes )
+   subroutine decompose_domain( s, blocks, processes )
       integer(MP) :: assigned_processes, ierr, world_rank
       integer(SP) :: ib, i_dim
       type(MPI_Comm) :: comm_split
@@ -268,7 +268,7 @@ contains
          call mpi_bcast( processes(world_rank)%nx, int(s%n_dim,MP), &
             MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
-   end subroutine decompose_blocks
+   end subroutine decompose_domain
 
    subroutine find_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
@@ -553,7 +553,7 @@ contains
          call check_block_dimension_arrays( blocks, nb, n_dim, ng )
          call check_block_neighbors( blocks, nb, n_dim )
       end if
-      call decompose_blocks( s, blocks, processes )
+      call decompose_domain( s, blocks, processes )
       call check_block_points( s, blocks )
       call identify_process_neighbors( s, blocks, processes )
       s%local_block = blocks(s%ib)
