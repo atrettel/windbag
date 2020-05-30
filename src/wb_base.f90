@@ -98,29 +98,31 @@ module wb_base
          wb_subdomain_construct_variables
    end interface wb_subdomain_construct
 contains
-   subroutine check_block_dimension_arrays( blk, ib, n_dim, ng )
-      integer(SP), intent(in) :: ib, n_dim, ng
-      type(WB_Block), intent(in) :: blk
-      integer(SP) :: i_dir, i_dim
+   subroutine check_block_dimension_arrays( blocks, nb, n_dim, ng )
+      integer(SP), intent(in) :: nb, n_dim, ng
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      integer(SP) :: ib, i_dir, i_dim
 
-      do i_dim = 1_SP, n_dim
-         if ( blk%np(i_dim) .lt. 1_MP ) then
-            call wb_abort( "number of processes in direction N1 of &
-                           &block N2 is less than 1", &
-                           EXIT_DATAERR, (/ i_dim, ib /) )
-         end if
-         if ( blk%nx(i_dim) .lt. ng ) then
-            call wb_abort( "number of points in direction N1 of block &
-                           &N2 is less than number of ghost points N3", &
-                           EXIT_DATAERR, (/ i_dim, ib, ng /) )
-         end if
-         do i_dir = 1_SP, N_DIR
-            if ( blk%neighbors(i_dim,i_dir) .lt. &
-               NO_BLOCK_NEIGHBOR ) then
-               call wb_abort( "neighbor to block N1 in direction N2 and &
-                              &dimension N3 is negative", &
-                              EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
+      do ib = 1_SP, nb
+         do i_dim = 1_SP, n_dim
+            if ( blocks(ib)%np(i_dim) .lt. 1_MP ) then
+               call wb_abort( "number of processes in direction N1 of &
+                              &block N2 is less than 1", &
+                              EXIT_DATAERR, (/ i_dim, ib /) )
             end if
+            if ( blocks(ib)%nx(i_dim) .lt. ng ) then
+               call wb_abort( "number of points in direction N1 of block &
+                              &N2 is less than number of ghost points N3", &
+                              EXIT_DATAERR, (/ i_dim, ib, ng /) )
+            end if
+            do i_dir = 1_SP, N_DIR
+               if ( blocks(ib)%neighbors(i_dim,i_dir) .lt. &
+                  NO_BLOCK_NEIGHBOR ) then
+                  call wb_abort( "neighbor to block N1 in direction N2 and &
+                                 &dimension N3 is negative", &
+                                 EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
+               end if
+            end do
          end do
       end do
    end subroutine check_block_dimension_arrays
@@ -129,7 +131,6 @@ contains
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       integer(SP), intent(in) :: nb, n_dim
       integer(SP) :: ib, i_dim, j_dim, neighbor_l, neighbor_u
-      integer(MP) :: ierr, world_rank
 
       ! Ensure that lower and upper pairs exist, and that their number of
       ! points and processes match.  Since this is just checking and not
@@ -137,44 +138,41 @@ contains
       ! have each block master check this for their own blocks since the block
       ! communicators do not exist yet.  If that were possible, it would
       ! eliminate the loop over all blocks.
-      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
-      if ( world_rank .eq. WORLD_MASTER ) then
-         do ib = 1_SP, nb
-            do i_dim = 1_SP, n_dim
-               neighbor_l = blocks(ib)%neighbors(i_dim,LOWER_DIR)
-               if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-                  neighbor_u = blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
-                  if ( ib .ne. neighbor_u ) then
-                     call wb_abort( "lower face of block N1 does not neighbor &
-                                    &upper face of block N2 in direction N3", &
-                        EXIT_DATAERR, &
-                        (/ ib, neighbor_l, i_dim /) )
-                  else
-                     do j_dim = 1_SP, n_dim
-                        if ( j_dim .ne. i_dim .and. &
-                           blocks(ib)%np(j_dim) .ne. &
-                           blocks(neighbor_l)%np(j_dim) ) then
-                           call wb_abort( "face in direction N1 shared by &
-                                          &blocks N2 and N3 does not match &
-                                          &processes in direction N4", &
-                              EXIT_DATAERR, &
-                              (/ i_dim, ib, neighbor_l, j_dim /) )
-                        end if
-                        if ( j_dim .ne. i_dim .and. &
-                           blocks(ib)%nx(j_dim) .ne. &
-                           blocks(neighbor_l)%nx(j_dim) ) then
-                           call wb_abort( "face in direction N1 shared by &
-                                          &blocks N2 and N3 does not match &
-                                          &points in direction N4", &
-                              EXIT_DATAERR, &
-                              (/ i_dim, ib, neighbor_l, j_dim /) )
-                        end if
-                     end do
-                  end if
+      do ib = 1_SP, nb
+         do i_dim = 1_SP, n_dim
+            neighbor_l = blocks(ib)%neighbors(i_dim,LOWER_DIR)
+            if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
+               neighbor_u = blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
+               if ( ib .ne. neighbor_u ) then
+                  call wb_abort( "lower face of block N1 does not neighbor &
+                                 &upper face of block N2 in direction N3", &
+                     EXIT_DATAERR, &
+                     (/ ib, neighbor_l, i_dim /) )
+               else
+                  do j_dim = 1_SP, n_dim
+                     if ( j_dim .ne. i_dim .and. &
+                        blocks(ib)%np(j_dim) .ne. &
+                        blocks(neighbor_l)%np(j_dim) ) then
+                        call wb_abort( "face in direction N1 shared by &
+                                       &blocks N2 and N3 does not match &
+                                       &processes in direction N4", &
+                           EXIT_DATAERR, &
+                           (/ i_dim, ib, neighbor_l, j_dim /) )
+                     end if
+                     if ( j_dim .ne. i_dim .and. &
+                        blocks(ib)%nx(j_dim) .ne. &
+                        blocks(neighbor_l)%nx(j_dim) ) then
+                        call wb_abort( "face in direction N1 shared by &
+                                       &blocks N2 and N3 does not match &
+                                       &points in direction N4", &
+                           EXIT_DATAERR, &
+                           (/ i_dim, ib, neighbor_l, j_dim /) )
+                     end if
+                  end do
                end if
-            end do
+            end if
          end do
-      end if
+      end do
    end subroutine check_block_neighbors
 
    subroutine check_block_points( s, blocks )
@@ -358,10 +356,10 @@ contains
       call write_process_neighbors(       output_unit, s )
    end subroutine print_initial_information
 
-   subroutine read_block_namelists( filename, nb, n_dim, ng, blocks )
+   subroutine read_block_namelists( filename, nb, n_dim, blocks )
       character(len=STRING_LENGTH), intent(in) :: filename
       type(WB_Block), dimension(:), allocatable, intent(out) :: blocks
-      integer(SP), intent(in) :: nb, n_dim, ng
+      integer(SP), intent(in) :: nb, n_dim
       integer :: file_unit
       integer(MP) :: ierr, world_rank, world_size
       integer(SP) :: ib, jb
@@ -390,7 +388,6 @@ contains
       do jb = 1_SP, nb
          if ( world_rank .eq. WORLD_MASTER ) then
             read( unit=file_unit, nml=block )
-
             if ( ib .lt. 1_SP .or. ib .gt. nb ) then
                call wb_abort( "block N1 is out of acceptable range [N2, N3]", &
                   EXIT_DATAERR, (/ ib, 1_SP, nb /) )
@@ -410,10 +407,6 @@ contains
 
          call wb_block_construct( blocks(ib), n_dim, np, nx, neighbors_l, &
             neighbors_u, ib )
-
-         if ( world_rank .eq. WORLD_MASTER ) then
-            call check_block_dimension_arrays( blocks(ib), ib, n_dim, ng )
-         end if
       end do
       if ( world_rank .eq. WORLD_MASTER ) then
          close( unit=file_unit )
@@ -555,8 +548,11 @@ contains
 
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
       call wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
-      call read_block_namelists( filename, nb, n_dim, ng, blocks )
-      call check_block_neighbors( blocks, nb, n_dim )
+      call read_block_namelists( filename, nb, n_dim, blocks )
+      if ( s%world_rank .eq. WORLD_MASTER ) then
+         call check_block_dimension_arrays( blocks, nb, n_dim, ng )
+         call check_block_neighbors( blocks, nb, n_dim )
+      end if
       call decompose_blocks( s, blocks, processes )
       call check_block_points( s, blocks )
       call identify_process_neighbors( s, blocks, processes )
