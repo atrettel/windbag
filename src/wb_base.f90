@@ -98,6 +98,15 @@ module wb_base
          wb_subdomain_construct_variables
    end interface wb_subdomain_construct
 contains
+   subroutine check_block_bounds( ib, nb )
+      integer(SP), intent(in) :: ib, nb
+
+      if ( ib .lt. 1_SP .or. ib .gt. nb ) then
+         call wb_abort( "block N1 is out of acceptable range [N2, N3]", &
+            EXIT_DATAERR, (/ ib, 1_SP, nb /) )
+      end if
+   end subroutine check_block_bounds
+
    subroutine check_block_dimension_arrays( blocks, nb, n_dim, ng )
       integer(SP), intent(in) :: nb, n_dim, ng
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
@@ -388,10 +397,7 @@ contains
       do jb = 1_SP, nb
          if ( world_rank .eq. WORLD_MASTER ) then
             read( unit=file_unit, nml=block )
-            if ( ib .lt. 1_SP .or. ib .gt. nb ) then
-               call wb_abort( "block N1 is out of acceptable range [N2, N3]", &
-                  EXIT_DATAERR, (/ ib, 1_SP, nb /) )
-            end if
+            call check_block_bounds( ib, nb )
          end if
 
          call mpi_bcast( ib, 1_MP, MPI_INTEGER, WORLD_MASTER, &
