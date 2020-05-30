@@ -21,8 +21,8 @@ module wb_base
 
    private
 
-   public WB_State, find_input_file, print_initial_information, &
-      wb_state_construct, wb_state_destroy
+   public WB_Subdomain, find_input_file, print_initial_information, &
+      wb_subdomain_construct, wb_subdomain_destroy
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -69,7 +69,7 @@ module wb_base
       integer(SP) :: ib
    end type WB_Process
 
-   type WB_State
+   type WB_Subdomain
       private
       character(len=:), allocatable :: case_name
       integer(MP) :: block_rank, block_size
@@ -87,16 +87,16 @@ module wb_base
       real(FP), dimension(:,:,:,:), allocatable :: f
       type(MPI_Comm) :: comm_block
       type(WB_Block) :: local_block
-   end type WB_State
+   end type WB_Subdomain
 
    interface total_points
-      module procedure wb_block_total_points, wb_state_total_points
+      module procedure wb_block_total_points, wb_subdomain_total_points
    end interface total_points
 
-   interface wb_state_construct
-      module procedure wb_state_construct_namelist, &
-         wb_state_construct_variables
-   end interface wb_state_construct
+   interface wb_subdomain_construct
+      module procedure wb_subdomain_construct_namelist, &
+         wb_subdomain_construct_variables
+   end interface wb_subdomain_construct
 contains
    subroutine check_block_dimension_arrays( blk, ib, n_dim, ng )
       integer(SP), intent(in) :: ib, n_dim, ng
@@ -180,7 +180,7 @@ contains
    subroutine check_block_points( s, blocks )
       integer(SP) :: points_in_block, points_in_processes
       integer(MP) :: ierr
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
       type(WB_Block), dimension(:), allocatable :: blocks
 
       points_in_block = total_points(blocks(s%ib))
@@ -224,7 +224,7 @@ contains
       integer(MP) :: assigned_processes, ierr, world_rank
       integer(SP) :: ib, i_dim
       type(MPI_Comm) :: comm_split
-      type(WB_State), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: s
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
 
@@ -298,7 +298,7 @@ contains
       integer(SP) :: block_neighbor, i_dir, i_dim
       integer(MP), dimension(N_DIR) :: block_ranks
       integer(MP), dimension(:), allocatable :: block_coords
-      type(WB_State), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: s
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(in) :: processes
 
@@ -349,7 +349,7 @@ contains
    end subroutine identify_process_neighbors
 
    subroutine print_initial_information( s )
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
 
       call write_environment_information( output_unit, s )
       call write_scalar_variables(        output_unit, s )
@@ -544,8 +544,8 @@ contains
       deallocate( process%nx )
    end subroutine wb_process_destroy
 
-   subroutine wb_state_construct_namelist( s, filename )
-      type(WB_State), intent(inout) :: s
+   subroutine wb_subdomain_construct_namelist( s, filename )
+      type(WB_Subdomain), intent(inout) :: s
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
       integer(SP) :: ib, nb, n_dim, ng
@@ -554,7 +554,7 @@ contains
       type(WB_Process), dimension(:), allocatable :: processes
 
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
-      call wb_state_construct_variables( s, nb, n_dim, ng, case_name )
+      call wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
       call read_block_namelists( filename, nb, n_dim, ng, blocks )
       call check_block_neighbors( blocks, nb, n_dim )
       call decompose_blocks( s, blocks, processes )
@@ -571,10 +571,10 @@ contains
          call wb_process_destroy( processes(world_rank) )
       end do
       deallocate( processes )
-   end subroutine wb_state_construct_namelist
+   end subroutine wb_subdomain_construct_namelist
 
-   subroutine wb_state_construct_variables( s, nb, n_dim, ng, case_name )
-      type(WB_State), intent(inout) :: s
+   subroutine wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
+      type(WB_Subdomain), intent(inout) :: s
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
       integer(SP), optional, intent(in) :: nb, n_dim, ng
       integer(MP) :: ierr
@@ -611,11 +611,11 @@ contains
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
       call wb_block_construct( s%local_block, s%n_dim )
-   end subroutine wb_state_construct_variables
+   end subroutine wb_subdomain_construct_variables
 
-   subroutine wb_state_destroy( s )
+   subroutine wb_subdomain_destroy( s )
       integer(MP) :: ierr
-      type(WB_State), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: s
 
       deallocate( s%case_name )
       deallocate( s%nx )
@@ -623,18 +623,18 @@ contains
       deallocate( s%neighbors )
       call mpi_comm_free( s%comm_block, ierr )
       call wb_block_destroy( s%local_block )
-   end subroutine wb_state_destroy
+   end subroutine wb_subdomain_destroy
 
-   function wb_state_total_points( s ) result( points_in_state )
-      type(WB_State), intent(in) :: s
+   function wb_subdomain_total_points( s ) result( points_in_state )
+      type(WB_Subdomain), intent(in) :: s
       integer(SP) :: points_in_state
 
       points_in_state = product(s%nx)
-   end function wb_state_total_points
+   end function wb_subdomain_total_points
 
    subroutine write_block_information( f, s )
       integer, intent(in) :: f
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
       integer(SP) :: ib, i_dim
       integer(MP) :: ierr
       character(len=STRING_LENGTH) :: label
@@ -698,7 +698,7 @@ contains
 
    subroutine write_environment_information( f, s )
       integer, intent(in) :: f
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
       integer(MP) :: ierr, mpi_major_version_number, &
          mpi_minor_version_number, version_length
       character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
@@ -766,7 +766,7 @@ contains
 
    subroutine write_process_information( f, s )
       integer, intent(in) :: f
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
       integer(MP) :: ierr, processor_length, world_rank
       integer(SP) :: i_dim
       character(len=STRING_LENGTH) :: label
@@ -843,7 +843,7 @@ contains
 
    subroutine write_process_neighbors( f, s )
       integer, intent(in) :: f
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
       integer(MP) :: ierr, world_rank, neighbor
       integer(SP) :: i_dim, i_dir, j_dir, face_count
       integer(SP), dimension(N_DIR) :: dirs
@@ -916,7 +916,7 @@ contains
 
    subroutine write_scalar_variables( f, s )
       integer, intent(in) :: f
-      type(WB_State), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: s
 
       if ( s%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, "State scalar variables", level=2_SP )

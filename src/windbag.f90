@@ -19,13 +19,13 @@ program windbag
    implicit none
    character(len=STRING_LENGTH) :: filename
    integer :: ierr
-   type(WB_State) :: s
+   type(WB_Subdomain) :: s
 
    call mpi_init( ierr )
    call find_mpi_precisions
    call find_input_file( filename )
-   call wb_state_construct( s, filename )
+   call wb_subdomain_construct( s, filename )
    call print_initial_information( s )
-   call wb_state_destroy( s )
+   call wb_subdomain_destroy( s )
    call mpi_finalize( ierr )
 end program windbag
