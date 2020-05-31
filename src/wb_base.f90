@@ -203,6 +203,26 @@ contains
       end if
    end subroutine check_block_points
 
+   subroutine check_block_world_size( blocks, nb )
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      integer(SP), intent(in) :: nb
+      integer(SP) :: ib
+      integer(MP) :: ierr, world_size, world_size_from_blocks
+
+      world_size_from_blocks = 0_MP
+      do ib = 1_SP, nb
+         world_size_from_blocks = world_size_from_blocks + &
+            blocks(ib)%block_size
+      end do
+      call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
+      if ( world_size_from_blocks .ne. world_size ) then
+         call wb_abort( &
+            "size of block domain decomposition (N1) does not match &
+            &world size (N2)", EXIT_DATAERR, &
+            int( (/ world_size_from_blocks, world_size /), SP ) )
+      end if
+   end subroutine check_block_world_size
+
    subroutine check_general_variables( nb, n_dim, ng, world_size )
       integer(SP), intent(in) :: nb, n_dim, ng
       integer(MP), intent(in) :: world_size
@@ -416,13 +436,6 @@ contains
       end do
       if ( world_rank .eq. WORLD_MASTER ) then
          close( unit=file_unit )
-
-         if ( sum( blocks(:)%block_size ) .ne. world_size ) then
-            call wb_abort( &
-               "size of block domain decomposition (N1) does not match &
-               &world size (N2)", EXIT_DATAERR, &
-               int( (/ sum( blocks(:)%block_size ), world_size /), SP ) )
-         end if
       end if
 
       deallocate( np )
@@ -558,6 +571,7 @@ contains
       if ( s%world_rank .eq. WORLD_MASTER ) then
          call check_block_dimension_arrays( blocks, nb, n_dim, ng )
          call check_block_neighbors( blocks, nb, n_dim )
+         call check_block_world_size( blocks, nb )
       end if
       call decompose_domain( s, blocks, processes )
       call check_block_points( s, blocks )
