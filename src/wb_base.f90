@@ -280,9 +280,11 @@ contains
 
       s%nx = blocks(s%ib)%nx / int(blocks(s%ib)%np,SP)
       do i_dim = 1_SP, s%n_dim
-         if ( s%block_coords(i_dim) .eq. blocks(s%ib)%np(i_dim)-1_MP ) then
-            s%nx(i_dim) = s%nx(i_dim) + modulo( blocks(s%ib)%nx(i_dim), &
-               int(blocks(s%ib)%np(i_dim),SP) )
+         if ( s%block_coords(i_dim) .eq. &
+            wb_block_processes( blocks(s%ib), i_dim ) - 1_MP ) then
+            s%nx(i_dim) = s%nx(i_dim) + modulo( &
+               wb_block_points( blocks(s%ib), i_dim ), &
+               int( wb_block_processes( blocks(s%ib), i_dim ), SP ) )
          end if
       end do
 
