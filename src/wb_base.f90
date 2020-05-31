@@ -114,18 +114,18 @@ contains
 
       do ib = 1_SP, nb
          do i_dim = 1_SP, n_dim
-            if ( blocks(ib)%np(i_dim) .lt. 1_MP ) then
+            if ( wb_block_processes( blocks(ib), i_dim ) .lt. 1_MP ) then
                call wb_abort( "number of processes in direction N1 of &
                               &block N2 is less than 1", &
                               EXIT_DATAERR, (/ i_dim, ib /) )
             end if
-            if ( blocks(ib)%nx(i_dim) .lt. ng ) then
+            if ( wb_block_points( blocks(ib), i_dim ) .lt. ng ) then
                call wb_abort( "number of points in direction N1 of block &
                               &N2 is less than number of ghost points N3", &
                               EXIT_DATAERR, (/ i_dim, ib, ng /) )
             end if
             do i_dir = 1_SP, N_DIR
-               if ( blocks(ib)%neighbors(i_dim,i_dir) .lt. &
+               if ( wb_block_neighbor( blocks(ib), i_dim, i_dir ) .lt. &
                   NO_BLOCK_NEIGHBOR ) then
                   call wb_abort( "neighbor to block N1 in direction N2 and &
                                  &dimension N3 is negative", &
@@ -531,6 +531,30 @@ contains
       deallocate( blk%neighbors )
       deallocate( blk%periods )
    end subroutine wb_block_destroy
+
+   function wb_block_neighbor( blk, i_dim, i_dir ) result( neighbor )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), intent(in) :: i_dim, i_dir
+      integer(SP) :: neighbor
+
+      neighbor = blk%neighbors(i_dim,i_dir)
+   end function wb_block_neighbor
+
+   function wb_block_points( blk, i_dim ) result( nx )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: nx
+
+      nx = blk%nx(i_dim)
+   end function wb_block_points
+
+   function wb_block_processes( blk, i_dim ) result( np )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), intent(in) :: i_dim
+      integer(MP) :: np
+
+      np = blk%np(i_dim)
+   end function wb_block_processes
 
    function wb_block_total_points( blk ) result( points_in_block )
       type(WB_Block), intent(in) :: blk
