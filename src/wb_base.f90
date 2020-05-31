@@ -355,7 +355,7 @@ contains
                end do
                s%neighbors(i_dim,i_dir) = world_rank
             else
-               block_neighbor = blocks(s%ib)%neighbors(i_dim,i_dir)
+               block_neighbor = wb_block_neighbor( blocks(s%ib), i_dim, i_dir )
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
                   s%neighbors(i_dim,i_dir) = MPI_PROC_NULL
                else
@@ -367,7 +367,7 @@ contains
                   block_coords = s%block_coords
                   if ( i_dir .eq. LOWER_DIR ) then
                      block_coords(i_dim) = &
-                        blocks(block_neighbor)%np(i_dim)-1_MP
+                        wb_block_processes(blocks(block_neighbor),i_dim)-1_MP
                   else
                      block_coords(i_dim) = 0_MP
                   end if
