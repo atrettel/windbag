@@ -149,9 +149,10 @@ contains
       ! eliminate the loop over all blocks.
       do ib = 1_SP, nb
          do i_dim = 1_SP, n_dim
-            neighbor_l = blocks(ib)%neighbors(i_dim,LOWER_DIR)
+            neighbor_l = wb_block_neighbor( blocks(ib), i_dim, LOWER_DIR )
             if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-               neighbor_u = blocks(neighbor_l)%neighbors(i_dim,UPPER_DIR)
+               neighbor_u = wb_block_neighbor( blocks(neighbor_l), i_dim, &
+                  UPPER_DIR )
                if ( ib .ne. neighbor_u ) then
                   call wb_abort( "lower face of block N1 does not neighbor &
                                  &upper face of block N2 in direction N3", &
@@ -160,8 +161,8 @@ contains
                else
                   do j_dim = 1_SP, n_dim
                      if ( j_dim .ne. i_dim .and. &
-                        blocks(ib)%np(j_dim) .ne. &
-                        blocks(neighbor_l)%np(j_dim) ) then
+                        wb_block_processes( blocks(ib),         j_dim ) .ne. &
+                        wb_block_processes( blocks(neighbor_l), j_dim ) ) then
                         call wb_abort( "face in direction N1 shared by &
                                        &blocks N2 and N3 does not match &
                                        &processes in direction N4", &
@@ -169,8 +170,8 @@ contains
                            (/ i_dim, ib, neighbor_l, j_dim /) )
                      end if
                      if ( j_dim .ne. i_dim .and. &
-                        blocks(ib)%nx(j_dim) .ne. &
-                        blocks(neighbor_l)%nx(j_dim) ) then
+                        wb_block_points( blocks(ib),         j_dim ) .ne. &
+                        wb_block_points( blocks(neighbor_l), j_dim ) ) then
                         call wb_abort( "face in direction N1 shared by &
                                        &blocks N2 and N3 does not match &
                                        &points in direction N4", &
