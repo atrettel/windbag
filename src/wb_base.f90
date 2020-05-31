@@ -21,8 +21,8 @@ module wb_base
 
    private
 
-   public WB_Subdomain, find_input_file, print_initial_information, &
-      wb_subdomain_construct, wb_subdomain_destroy
+   public find_input_file, print_initial_information, wb_subdomain_construct, &
+      wb_subdomain_destroy
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -51,7 +51,7 @@ module wb_base
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
 
-   type WB_Block
+   type, private :: WB_Block
       private
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx
@@ -60,7 +60,7 @@ module wb_base
       logical :: reorder
    end type WB_Block
 
-   type WB_Process
+   type, private :: WB_Process
       private
       integer(MP) :: block_rank
       integer(MP), dimension(:), allocatable :: block_coords
@@ -68,7 +68,7 @@ module wb_base
       integer(SP) :: ib
    end type WB_Process
 
-   type WB_Subdomain
+   type, public :: WB_Subdomain
       private
       character(len=:), allocatable :: case_name
       integer(MP) :: block_rank, block_size
