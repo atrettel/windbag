@@ -254,6 +254,9 @@ contains
       type(WB_Subdomain), intent(inout) :: s
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
+      integer(SP), dimension(:), allocatable :: nx
+      integer(MP), dimension(:), allocatable :: np
+      logical, dimension(:), allocatable :: periods
 
       ib = 1_SP
       assigned_processes = 0_MP
@@ -268,20 +271,21 @@ contains
       end do
 
       s%ib = processes(s%world_rank)%ib
+      allocate( periods(s%n_dim), nx(s%n_dim), np(s%n_dim) )
+      call wb_block_periods_vector(   blocks(s%ib), periods )
+      call wb_block_points_vector(    blocks(s%ib), nx      )
+      call wb_block_processes_vector( blocks(s%ib), np      )
       call mpi_comm_split( MPI_COMM_WORLD, int(s%ib,MP), 0_MP, comm_split, &
          ierr )
-      call mpi_cart_create( comm_split, int(s%n_dim,MP), &
-         wb_block_processes_vector( blocks(s%ib) ), &
-         wb_block_periods_vector(   blocks(s%ib) ), &
-         wb_block_reorder(          blocks(s%ib) ), s%comm_block, ierr )
+      call mpi_cart_create( comm_split, int(s%n_dim,MP), np, periods, &
+         wb_block_reorder( blocks(s%ib) ), s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
       call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
          s%block_coords, ierr )
 
-      s%nx = wb_block_points_vector( blocks(s%ib) ) / &
-         int( wb_block_processes_vector( blocks(s%ib) ), SP )
+      s%nx = nx / int(np,SP)
       do i_dim = 1_SP, s%n_dim
          if ( s%block_coords(i_dim) .eq. &
             wb_block_processes( blocks(s%ib), i_dim ) - 1_MP ) then
@@ -302,6 +306,8 @@ contains
          call mpi_bcast( processes(world_rank)%nx, int(s%n_dim,MP), &
             MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
       end do
+
+      deallocate( periods, nx, np )
    end subroutine decompose_domain
 
    subroutine find_input_file( filename )
@@ -544,12 +550,12 @@ contains
       neighbor = blk%neighbors(i_dim,i_dir)
    end function wb_block_neighbor
 
-   function wb_block_periods_vector( blk ) result( periods )
+   subroutine wb_block_periods_vector( blk, periods )
       type(WB_Block), intent(in) :: blk
-      logical, dimension(:), allocatable :: periods
+      logical, dimension(:), allocatable, intent(out) :: periods
 
       periods = blk%periods
-   end function wb_block_periods_vector
+   end subroutine wb_block_periods_vector
 
    function wb_block_points( blk, i_dim ) result( nx )
       type(WB_Block), intent(in) :: blk
@@ -559,12 +565,12 @@ contains
       nx = blk%nx(i_dim)
    end function wb_block_points
 
-   function wb_block_points_vector( blk ) result( nx )
+   subroutine wb_block_points_vector( blk, nx )
       type(WB_Block), intent(in) :: blk
-      integer(SP), dimension(:), allocatable :: nx
+      integer(SP), dimension(:), allocatable, intent(out) :: nx
 
       nx = blk%nx
-   end function wb_block_points_vector
+   end subroutine wb_block_points_vector
 
    function wb_block_processes( blk, i_dim ) result( np )
       type(WB_Block), intent(in) :: blk
@@ -574,12 +580,12 @@ contains
       np = blk%np(i_dim)
    end function wb_block_processes
 
-   function wb_block_processes_vector( blk ) result( np )
+   subroutine wb_block_processes_vector( blk, np )
       type(WB_Block), intent(in) :: blk
-      integer(MP), dimension(:), allocatable :: np
+      integer(MP), dimension(:), allocatable, intent(out) :: np
 
       np = blk%np
-   end function wb_block_processes_vector
+   end subroutine wb_block_processes_vector
 
    function wb_block_reorder( blk ) result( reorder )
       type(WB_Block), intent(in) :: blk
