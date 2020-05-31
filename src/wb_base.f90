@@ -184,7 +184,7 @@ contains
       end do
    end subroutine check_block_neighbors
 
-   subroutine check_block_points( s, blocks )
+   subroutine check_block_total_points( s, blocks )
       integer(SP) :: points_in_block, points_in_processes
       integer(MP) :: ierr
       type(WB_Subdomain), intent(in) :: s
@@ -201,7 +201,7 @@ contains
             EXIT_FAILURE, &
             (/ s%ib, points_in_block, points_in_processes /) )
       end if
-   end subroutine check_block_points
+   end subroutine check_block_total_points
 
    subroutine check_block_world_size( blocks, nb )
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
@@ -574,7 +574,7 @@ contains
          call check_block_world_size( blocks, nb )
       end if
       call decompose_domain( s, blocks, processes )
-      call check_block_points( s, blocks )
+      call check_block_total_points( s, blocks )
       call identify_process_neighbors( s, blocks, processes )
       s%local_block = blocks(s%ib)
 
