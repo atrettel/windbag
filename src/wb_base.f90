@@ -270,7 +270,8 @@ contains
       s%ib = processes(s%world_rank)%ib
       call mpi_comm_split( MPI_COMM_WORLD, int(s%ib,MP), 0_MP, comm_split, &
          ierr )
-      call mpi_cart_create( comm_split, int(s%n_dim,MP), blocks(s%ib)%np, &
+      call mpi_cart_create( comm_split, int(s%n_dim,MP), &
+         wb_block_processes_vector( blocks(s%ib) ), &
          blocks(s%ib)%periods, blocks(s%ib)%reorder, s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
@@ -278,7 +279,8 @@ contains
       call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
          s%block_coords, ierr )
 
-      s%nx = blocks(s%ib)%nx / int(blocks(s%ib)%np,SP)
+      s%nx = wb_block_points_vector( blocks(s%ib) ) / &
+         int( wb_block_processes_vector( blocks(s%ib) ), SP )
       do i_dim = 1_SP, s%n_dim
          if ( s%block_coords(i_dim) .eq. &
             wb_block_processes( blocks(s%ib), i_dim ) - 1_MP ) then
@@ -549,6 +551,13 @@ contains
       nx = blk%nx(i_dim)
    end function wb_block_points
 
+   function wb_block_points_vector( blk ) result( nx )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), dimension(:), allocatable :: nx
+
+      nx = blk%nx
+   end function wb_block_points_vector
+
    function wb_block_processes( blk, i_dim ) result( np )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
@@ -556,6 +565,13 @@ contains
 
       np = blk%np(i_dim)
    end function wb_block_processes
+
+   function wb_block_processes_vector( blk ) result( np )
+      type(WB_Block), intent(in) :: blk
+      integer(MP), dimension(:), allocatable :: np
+
+      np = blk%np
+   end function wb_block_processes_vector
 
    function wb_block_size( blk ) result( block_size )
       type(WB_Block), intent(in) :: blk
