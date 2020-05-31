@@ -53,7 +53,6 @@ module wb_base
 
    type WB_Block
       private
-      integer(MP) :: block_size
       integer(MP), dimension(:), allocatable :: np
       integer(SP), dimension(:), allocatable :: nx
       integer(SP), dimension(:,:), allocatable :: neighbors
@@ -262,7 +261,7 @@ contains
       do world_rank = 0_MP, s%world_size-1_MP
          call wb_process_construct( processes(world_rank), s%n_dim, ib )
          assigned_processes = assigned_processes + 1_MP
-         if ( assigned_processes .eq. blocks(ib)%block_size ) then
+         if ( assigned_processes .eq. wb_block_size( blocks(ib) ) ) then
             assigned_processes = 0_MP
             ib = ib + 1_SP
          end if
@@ -498,7 +497,6 @@ contains
       blk%periods(:)     = .false.
 
       if ( present(np) ) then
-         blk%block_size = product(np)
          blk%np         = np
       end if
       if ( present(nx) ) then
@@ -561,7 +559,7 @@ contains
       type(WB_Block), intent(in) :: blk
       integer(MP) :: block_size
 
-      block_size = blk%block_size
+      block_size = product(blk%np)
    end function wb_block_size
 
    function wb_block_total_points( blk ) result( points_in_block )
@@ -723,7 +721,7 @@ contains
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( ib .eq. s%ib .and. s%block_rank .eq. BLOCK_MASTER ) then
             call write_table_entry( f, s%ib, IB_COLUMN_WIDTH )
-            call write_table_entry( f, int(s%local_block%block_size,SP), &
+            call write_table_entry( f, int(wb_block_size(s%local_block),SP), &
                SIZE_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
                call write_table_entry( f, int(s%local_block%np(i_dim),SP), &
