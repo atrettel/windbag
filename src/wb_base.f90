@@ -272,7 +272,8 @@ contains
          ierr )
       call mpi_cart_create( comm_split, int(s%n_dim,MP), &
          wb_block_processes_vector( blocks(s%ib) ), &
-         blocks(s%ib)%periods, blocks(s%ib)%reorder, s%comm_block, ierr )
+         wb_block_periods_vector(   blocks(s%ib) ), &
+         wb_block_reorder(          blocks(s%ib) ), s%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
       call mpi_comm_size( s%comm_block, s%block_size, ierr )
@@ -543,6 +544,13 @@ contains
       neighbor = blk%neighbors(i_dim,i_dir)
    end function wb_block_neighbor
 
+   function wb_block_periods_vector( blk ) result( periods )
+      type(WB_Block), intent(in) :: blk
+      logical, dimension(:), allocatable :: periods
+
+      periods = blk%periods
+   end function wb_block_periods_vector
+
    function wb_block_points( blk, i_dim ) result( nx )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
@@ -572,6 +580,13 @@ contains
 
       np = blk%np
    end function wb_block_processes_vector
+
+   function wb_block_reorder( blk ) result( reorder )
+      type(WB_Block), intent(in) :: blk
+      logical :: reorder
+
+      reorder = blk%reorder
+   end function wb_block_reorder
 
    function wb_block_size( blk ) result( block_size )
       type(WB_Block), intent(in) :: blk
