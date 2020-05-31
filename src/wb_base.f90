@@ -213,7 +213,7 @@ contains
       world_size_from_blocks = 0_MP
       do ib = 1_SP, nb
          world_size_from_blocks = world_size_from_blocks + &
-            blocks(ib)%block_size
+            wb_block_size( blocks(ib) )
       end do
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
       if ( world_size_from_blocks .ne. world_size ) then
@@ -556,6 +556,13 @@ contains
 
       np = blk%np(i_dim)
    end function wb_block_processes
+
+   function wb_block_size( blk ) result( block_size )
+      type(WB_Block), intent(in) :: blk
+      integer(MP) :: block_size
+
+      block_size = blk%block_size
+   end function wb_block_size
 
    function wb_block_total_points( blk ) result( points_in_block )
       type(WB_Block), intent(in) :: blk
