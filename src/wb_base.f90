@@ -22,7 +22,7 @@ module wb_base
    private
 
    public find_input_file, print_initial_information, wb_subdomain_construct, &
-      wb_subdomain_destroy
+      wb_subdomain_destroy, neighbor, points, total_points
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -87,6 +87,10 @@ module wb_base
       type(MPI_Comm) :: comm_block
       type(WB_Block) :: local_block
    end type WB_Subdomain
+
+   interface neighbor
+      module procedure wb_block_neighbor, wb_subdomain_neighbor
+   end interface neighbor
 
    interface points
       module procedure wb_block_points, wb_subdomain_points
@@ -762,6 +766,14 @@ contains
       call wb_block_destroy( s%local_block )
    end subroutine wb_subdomain_destroy
 
+   function wb_subdomain_neighbor( s, i_dim, i_dir ) result( neighbor )
+      type(WB_Subdomain), intent(in) :: s
+      integer(SP), intent(in) :: i_dim, i_dir
+      integer(MP) :: neighbor
+
+      neighbor = s%neighbors(i_dim,i_dir)
+   end function wb_subdomain_neighbor
+
    function wb_subdomain_points( s, i_dim ) result( points )
       type(WB_Subdomain), intent(in) :: s
       integer(SP), intent(in) :: i_dim
@@ -1038,7 +1050,7 @@ contains
                do i_dir = 1_SP, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1_SP
-                  neighbor = s%neighbors(i_dim,j_dir)
+                  neighbor = wb_subdomain_neighbor(s,i_dim,j_dir)
                   if ( neighbor .eq. MPI_PROC_NULL ) then
                      call write_table_entry( f, "-", &
                         RANK_COLUMN_WIDTH, &
