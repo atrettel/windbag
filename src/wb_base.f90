@@ -88,6 +88,10 @@ module wb_base
       type(WB_Block) :: local_block
    end type WB_Subdomain
 
+   interface points
+      module procedure wb_block_points, wb_subdomain_points
+   end interface points
+
    interface total_points
       module procedure wb_block_total_points, wb_subdomain_total_points
    end interface total_points
@@ -758,6 +762,14 @@ contains
       call wb_block_destroy( s%local_block )
    end subroutine wb_subdomain_destroy
 
+   function wb_subdomain_points( s, i_dim ) result( points )
+      type(WB_Subdomain), intent(in) :: s
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: points
+
+      points = s%nx(i_dim)
+   end function wb_subdomain_points
+
    function wb_subdomain_total_points( s ) result( points_in_state )
       type(WB_Subdomain), intent(in) :: s
       integer(SP) :: points_in_state
@@ -962,7 +974,7 @@ contains
             call write_table_entry( f, total_points(s), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, s%n_dim
-               call write_table_entry( f, s%nx(i_dim), &
+               call write_table_entry( f, wb_subdomain_points(s,i_dim), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
             end do
          end if
