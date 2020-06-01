@@ -254,15 +254,15 @@ contains
       type(WB_Subdomain), intent(inout) :: s
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
-      integer(SP), dimension(:), allocatable :: nx
+      integer(SP), dimension(:), allocatable :: nx, ib_array
       integer(MP), dimension(:), allocatable :: np
       logical, dimension(:), allocatable :: periods
 
       ib = 1_SP
       assigned_processes = 0_MP
-      allocate( processes(0_MP:s%world_size-1_MP) )
+      allocate( ib_array(0_MP:s%world_size-1_MP) )
       do world_rank = 0_MP, s%world_size-1_MP
-         call wb_process_construct( processes(world_rank), s%n_dim, ib )
+         ib_array(world_rank) = ib
          assigned_processes = assigned_processes + 1_MP
          if ( assigned_processes .eq. wb_block_size( blocks(ib) ) ) then
             assigned_processes = 0_MP
@@ -270,7 +270,7 @@ contains
          end if
       end do
 
-      s%ib = processes(s%world_rank)%ib
+      s%ib = ib_array(s%world_rank)
       allocate( periods(s%n_dim), nx(s%n_dim), np(s%n_dim) )
       call wb_block_periods_vector(   blocks(s%ib), periods )
       call wb_block_points_vector(    blocks(s%ib), nx      )
@@ -295,19 +295,19 @@ contains
          end if
       end do
 
-      processes(s%world_rank)%block_rank   = s%block_rank
-      processes(s%world_rank)%block_coords = s%block_coords
-      processes(s%world_rank)%nx           = s%nx
+      allocate( processes(0_MP:s%world_size-1_MP) )
       do world_rank = 0_MP, s%world_size-1_MP
-         call mpi_bcast( processes(world_rank)%block_rank, 1_MP, &
-            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( processes(world_rank)%block_coords, int(s%n_dim,MP), &
-            MPI_INTEGER, world_rank, MPI_COMM_WORLD, ierr )
-         call mpi_bcast( processes(world_rank)%nx, int(s%n_dim,MP), &
-            MPI_SP, world_rank, MPI_COMM_WORLD, ierr )
+         if ( world_rank .eq. s%world_rank ) then
+            call wb_process_construct( processes(world_rank), s%n_dim, &
+               ib_array(world_rank), world_rank, s%block_rank, &
+               s%block_coords, s%nx )
+         else
+            call wb_process_construct( processes(world_rank), s%n_dim, &
+               ib_array(world_rank), world_rank )
+         end if
       end do
 
-      deallocate( periods, nx, np )
+      deallocate( periods, nx, np, ib_array )
    end subroutine decompose_domain
 
    subroutine find_input_file( filename )
@@ -633,14 +633,37 @@ contains
       block_coords = process%block_coords
    end subroutine wb_process_block_coords
 
-   subroutine wb_process_construct( process, n_dim, ib )
+   subroutine wb_process_construct( process, n_dim, ib, world_rank, &
+      block_rank, block_coords, nx  )
       type(WB_Process), intent(inout) :: process
       integer(SP), intent(in) :: n_dim, ib
+      integer(MP), intent(in) :: world_rank
+      integer(MP), optional, intent(in) :: block_rank
+      integer(MP), dimension(:), allocatable, optional, intent(in) :: &
+         block_coords
+      integer(SP), dimension(:), allocatable, optional, intent(in) :: nx
+      integer(MP) :: ierr
 
       allocate( process%block_coords(n_dim) )
       allocate( process%nx(n_dim) )
 
       process%ib = ib
+      if ( present(block_rank) ) then
+         process%block_rank = block_rank
+      end if
+      if ( present(block_coords) ) then
+         process%block_coords = block_coords
+      end if
+      if ( present(nx) ) then
+         process%nx = nx
+      end if
+
+      call mpi_bcast( process%block_rank, 1_MP, MPI_INTEGER, world_rank, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( process%block_coords, int(n_dim,MP), MPI_INTEGER, &
+         world_rank, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( process%nx, int(n_dim,MP), MPI_SP, world_rank, &
+         MPI_COMM_WORLD, ierr )
    end subroutine wb_process_construct
 
    subroutine wb_process_destroy( process )
