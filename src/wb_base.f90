@@ -335,20 +335,22 @@ contains
       integer(MP) :: ierr, world_rank
       integer(SP) :: block_neighbor, i_dir, i_dim
       integer(MP), dimension(N_DIR) :: block_ranks
-      integer(MP), dimension(:), allocatable :: block_coords
+      integer(MP), dimension(:), allocatable :: block_coords, &
+         process_block_coords
       type(WB_Subdomain), intent(inout) :: s
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(in) :: processes
 
-      allocate( block_coords(s%n_dim) )
+      allocate( block_coords(s%n_dim), process_block_coords(s%n_dim) )
       do i_dim = 1_SP, s%n_dim
          call mpi_cart_shift( s%comm_block, int(i_dim,MP)-1_MP, 1_MP, &
             block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
          do i_dir = 1_SP, N_DIR
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
                do world_rank = 0_MP, s%world_size-1_MP
-                  if ( processes(world_rank)%ib .eq. s%ib .and. &
-                     processes(world_rank)%block_rank .eq. &
+                  if ( wb_process_block_number( processes(world_rank) ) .eq. &
+                     s%ib .and. &
+                     wb_process_block_rank( processes(world_rank) ) .eq. &
                      block_ranks(i_dir) ) then
                      exit
                   end if
@@ -372,8 +374,10 @@ contains
                      block_coords(i_dim) = 0_MP
                   end if
                   do world_rank = 0_MP, s%world_size-1_MP
-                     if ( processes(world_rank)%ib .eq. block_neighbor &
-                        .and. all( processes(world_rank)%block_coords &
+                     call wb_process_block_coords( processes(world_rank), &
+                        process_block_coords )
+                     if ( wb_process_block_number( processes(world_rank) ) &
+                        .eq. block_neighbor .and. all( process_block_coords &
                         .eq. block_coords ) ) then
                         exit
                      end if
@@ -383,7 +387,7 @@ contains
             end if
          end do
       end do
-      deallocate( block_coords )
+      deallocate( block_coords, process_block_coords )
    end subroutine identify_process_neighbors
 
    subroutine print_initial_information( s )
@@ -607,6 +611,27 @@ contains
 
       points_in_block = product(blk%nx)
    end function wb_block_total_points
+
+   function wb_process_block_number( process ) result( block_number )
+      type(WB_Process), intent(in) :: process
+      integer(SP) :: block_number
+
+      block_number = process%ib
+   end function wb_process_block_number
+
+   function wb_process_block_rank( process ) result( block_rank )
+      type(WB_Process), intent(in) :: process
+      integer(MP) :: block_rank
+
+      block_rank = process%block_rank
+   end function wb_process_block_rank
+
+   subroutine wb_process_block_coords( process, block_coords )
+      type(WB_Process), intent(in) :: process
+      integer(MP), dimension(:), allocatable, intent(out) :: block_coords
+
+      block_coords = process%block_coords
+   end subroutine wb_process_block_coords
 
    subroutine wb_process_construct( process, n_dim, ib )
       type(WB_Process), intent(inout) :: process
