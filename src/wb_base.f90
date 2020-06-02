@@ -210,22 +210,22 @@ contains
       end do
    end subroutine check_block_neighbors
 
-   subroutine check_block_total_points( s, blocks )
+   subroutine check_block_total_points( sd, blocks )
       integer(SP) :: points_in_block, points_in_processes
       integer(MP) :: ierr
-      type(WB_Subdomain), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: sd
       type(WB_Block), dimension(:), allocatable :: blocks
 
-      points_in_block = total_points(blocks(s%ib))
+      points_in_block = total_points(blocks(sd%ib))
       points_in_processes = 0_SP
-      call mpi_reduce( total_points(s), points_in_processes, &
-         int(s%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, s%comm_block, ierr )
-      if ( s%block_rank .eq. BLOCK_MASTER .and. &
+      call mpi_reduce( total_points(sd), points_in_processes, &
+         int(sd%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, sd%comm_block, ierr )
+      if ( sd%block_rank .eq. BLOCK_MASTER .and. &
          points_in_block .ne. points_in_processes ) then
          call wb_abort( "total points in block N1 (N2) does not match sum of &
                         &points in individual processes (N3)", &
             EXIT_FAILURE, &
-            (/ s%ib, points_in_block, points_in_processes /) )
+            (/ sd%ib, points_in_block, points_in_processes /) )
       end if
    end subroutine check_block_total_points
 
