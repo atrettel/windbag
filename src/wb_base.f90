@@ -876,42 +876,51 @@ contains
          call write_log_heading( f, PROGRAM_NAME )
 
          call write_log_heading( f, "Environment parameters", level=2_SP )
-         call write_table_entry( f, "Question", 30_SP )
-         call write_table_entry( f, "Answer", 10_SP, end_row=.true. )
-         call write_table_rule_entry( f, 30_SP )
-         call write_table_rule_entry( f, 10_SP, end_row=.true. )
-         call write_table_entry( f, "Are MPI subarrays supported?", 30_SP )
-         call write_table_entry( f, MPI_SUBARRAYS_SUPPORTED, 10_SP, &
+         call write_table_entry( f, "Question", QUESTION_COLUMN_WIDTH )
+         call write_table_entry( f, "Answer", ANSWER_COLUMN_WIDTH, &
             end_row=.true. )
-         call write_table_entry( f, "Is it big-endian?", 30_SP )
-         call write_table_entry( f, ARCH_IS_BIG_ENDIAN, 10_SP, &
+         call write_table_rule_entry( f, QUESTION_COLUMN_WIDTH )
+         call write_table_rule_entry( f, ANSWER_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Are MPI subarrays supported?", &
+            QUESTION_COLUMN_WIDTH )
+         call write_table_entry( f, MPI_SUBARRAYS_SUPPORTED, &
+            ANSWER_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Is it big-endian?", &
+            QUESTION_COLUMN_WIDTH )
+         call write_table_entry( f, ARCH_IS_BIG_ENDIAN, ANSWER_COLUMN_WIDTH, &
             end_row=.true. )
          call write_blank_line( f )
 
          call write_log_heading( f, "Data precision", level=2_SP )
-         call write_table_entry( f, "Data type", 20_SP )
-         call write_table_entry( f, "Variable", 10_SP )
-         call write_table_entry( f, "Fortran", 15_SP )
-         call write_table_entry( f, "MPI", 15_SP, end_row=.true. )
-         call write_table_rule_entry( f, 20_SP )
-         call write_table_rule_entry( f, 10_SP )
-         call write_table_rule_entry( f, 15_SP )
-         call write_table_rule_entry( f, 15_SP, end_row=.true. )
-         call write_table_entry( f, "Floating point", 20_SP )
-         call write_table_entry( f, "`FP`", 10_SP )
-         call write_table_entry( f, identify_real_precision(FP), 15_SP )
-         call write_table_entry( f, identify_real_precision(MPI_FP), 15_SP, &
+         call write_table_entry( f, "Data type", DATA_TYPE_COLUMN_WIDTH )
+         call write_table_entry( f, "Variable", VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, "Fortran", VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, "MPI", VARIABLE_COLUMN_WIDTH, &
             end_row=.true. )
-         call write_table_entry( f, "Integer", 20_SP )
-         call write_table_entry( f, "`SP`", 10_SP )
-         call write_table_entry( f, identify_integer_precision(SP), 15_SP )
+         call write_table_rule_entry( f, DATA_TYPE_COLUMN_WIDTH )
+         call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH )
+         call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH )
+         call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH, &
+            end_row=.true. )
+         call write_table_entry( f, "Floating point", DATA_TYPE_COLUMN_WIDTH )
+         call write_table_entry( f, "`FP`", VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, identify_real_precision(FP), &
+            VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, identify_real_precision(MPI_FP), &
+            VARIABLE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Integer", DATA_TYPE_COLUMN_WIDTH )
+         call write_table_entry( f, "`SP`", VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, identify_integer_precision(SP), &
+            VARIABLE_COLUMN_WIDTH )
          call write_table_entry( f, identify_integer_precision(MPI_SP), &
-            15_SP, end_row=.true. )
-         call write_table_entry( f, "Integer (MPI only)", 20_SP )
-         call write_table_entry( f, "`MP`", 10_SP )
-         call write_table_entry( f, identify_integer_precision(MP), 15_SP )
+            VARIABLE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Integer (MPI only)", &
+            DATA_TYPE_COLUMN_WIDTH )
+         call write_table_entry( f, "`MP`", VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, identify_integer_precision(MP), &
+            VARIABLE_COLUMN_WIDTH )
          call write_table_entry( f, identify_integer_precision(MPI_MP), &
-            15_SP, end_row=.true. )
+            VARIABLE_COLUMN_WIDTH, end_row=.true. )
          call write_blank_line( f )
 
          write (f,"(A, A)") "- Program version: ", VERSION
