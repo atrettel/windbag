@@ -1098,22 +1098,22 @@ contains
 
       if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, "State scalar variables", level=2_SP )
-         call write_table_entry( f, "Variable", 30_SP )
-         call write_table_entry( f, "Value", 20_SP, end_row=.true. )
-         call write_table_rule_entry( f, 30_SP, alignment=LEFT_ALIGNED )
-         call write_table_rule_entry( f, 20_SP, alignment=RIGHT_ALIGNED, &
+         call write_table_entry( f, "Property", PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, "Value", VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_rule_entry( f, PROPERTY_COLUMN_WIDTH, alignment=LEFT_ALIGNED )
+         call write_table_rule_entry( f, VALUE_COLUMN_WIDTH, alignment=RIGHT_ALIGNED, &
             end_row=.true. )
-         call write_table_entry( f, "Case name", 30_SP )
-         call write_table_entry( f, sd%case_name, 20_SP, &
+         call write_table_entry( f, "Case name", PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, sd%case_name, VALUE_COLUMN_WIDTH, &
             end_row=.true. )
-         call write_table_entry( f, "Number of dimensions", 30_SP )
-         call write_table_entry( f, sd%n_dim, 20_SP, &
+         call write_table_entry( f, "Number of blocks", PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, sd%nb, VALUE_COLUMN_WIDTH, &
             end_row=.true. )
-         call write_table_entry( f, "Number of blocks", 30_SP )
-         call write_table_entry( f, sd%nb, 20_SP, &
+         call write_table_entry( f, "Number of dimensions", PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, sd%n_dim, VALUE_COLUMN_WIDTH, &
             end_row=.true. )
-         call write_table_entry( f, "Number of ghost points", 30_SP )
-         call write_table_entry( f, sd%ng, 20_SP, &
+         call write_table_entry( f, "Number of ghost points", PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, sd%ng, VALUE_COLUMN_WIDTH, &
             end_row=.true. )
          call write_blank_line( f )
       end if
