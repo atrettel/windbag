@@ -722,9 +722,9 @@ contains
       deallocate( blocks )
    end subroutine wb_subdomain_construct_namelist
 
-   subroutine wb_subdomain_construct_variables( s, nb, n_dim, ng, blocks, &
+   subroutine wb_subdomain_construct_variables( sd, nb, n_dim, ng, blocks, &
       case_name )
-      type(WB_Subdomain), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
       integer(SP), intent(in) :: nb, n_dim, ng
       integer(MP) :: ierr, world_rank
@@ -732,29 +732,29 @@ contains
       type(WB_Process), dimension(:), allocatable :: processes
 
       if ( present(case_name) ) then
-         s%case_name = trim(case_name)
+         sd%case_name = trim(case_name)
       else
-         s%case_name = trim(DEFAULT_CASE_NAME)
+         sd%case_name = trim(DEFAULT_CASE_NAME)
       end if
 
-      s%nb    = nb
-      s%n_dim = n_dim
-      s%ng    = ng
+      sd%nb    = nb
+      sd%n_dim = n_dim
+      sd%ng    = ng
 
-      call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
-      call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
+      call mpi_comm_rank( MPI_COMM_WORLD, sd%world_rank, ierr )
+      call mpi_comm_size( MPI_COMM_WORLD, sd%world_size, ierr )
 
-      allocate( s%nx(s%n_dim) )
-      allocate( s%block_coords(s%n_dim) )
-      allocate( s%neighbors(s%n_dim,N_DIR) )
-      call wb_block_construct( s%local_block, s%n_dim )
+      allocate( sd%nx(sd%n_dim) )
+      allocate( sd%block_coords(sd%n_dim) )
+      allocate( sd%neighbors(sd%n_dim,N_DIR) )
+      call wb_block_construct( sd%local_block, sd%n_dim )
 
-      call decompose_domain( s, blocks, processes )
-      call check_block_total_points( s, blocks )
-      call identify_process_neighbors( s, blocks, processes )
-      s%local_block = blocks(s%ib)
+      call decompose_domain( sd, blocks, processes )
+      call check_block_total_points( sd, blocks )
+      call identify_process_neighbors( sd, blocks, processes )
+      sd%local_block = blocks(sd%ib)
 
-      do world_rank = 0_MP, s%world_size-1_MP
+      do world_rank = 0_MP, sd%world_size-1_MP
          call wb_process_destroy( processes(world_rank) )
       end do
       deallocate( processes )
