@@ -348,49 +348,50 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine find_input_file
 
-   subroutine identify_process_neighbors( s, blocks, processes )
+   subroutine identify_process_neighbors( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: block_neighbor, i_dir, i_dim
       integer(MP), dimension(N_DIR) :: block_ranks
       integer(MP), dimension(:), allocatable :: block_coords, &
          process_block_coords
-      type(WB_Subdomain), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: sd
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(in) :: processes
 
-      allocate( block_coords(s%n_dim), process_block_coords(s%n_dim) )
-      do i_dim = 1_SP, s%n_dim
-         call mpi_cart_shift( s%comm_block, int(i_dim,MP)-1_MP, 1_MP, &
+      allocate( block_coords(sd%n_dim), process_block_coords(sd%n_dim) )
+      do i_dim = 1_SP, sd%n_dim
+         call mpi_cart_shift( sd%comm_block, int(i_dim,MP)-1_MP, 1_MP, &
             block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
          do i_dir = 1_SP, N_DIR
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
-               do world_rank = 0_MP, s%world_size-1_MP
+               do world_rank = 0_MP, sd%world_size-1_MP
                   if ( wb_process_block_number( processes(world_rank) ) .eq. &
-                     s%ib .and. &
+                     sd%ib .and. &
                      wb_process_block_rank( processes(world_rank) ) .eq. &
                      block_ranks(i_dir) ) then
                      exit
                   end if
                end do
-               s%neighbors(i_dim,i_dir) = world_rank
+               sd%neighbors(i_dim,i_dir) = world_rank
             else
-               block_neighbor = wb_block_neighbor( blocks(s%ib), i_dim, i_dir )
+               block_neighbor = &
+                  wb_block_neighbor( blocks(sd%ib), i_dim, i_dir )
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
-                  s%neighbors(i_dim,i_dir) = MPI_PROC_NULL
+                  sd%neighbors(i_dim,i_dir) = MPI_PROC_NULL
                else
                   ! This block neighbors another block.  This neighboring block
                   ! sits on the opposite side of the current block.  Both
                   ! processes share the same block coordinates except for the
                   ! current spatial dimension i_dim.  The block coordinates for
                   ! dimension i_dim would be opposites for each.
-                  block_coords = s%block_coords
+                  block_coords = sd%block_coords
                   if ( i_dir .eq. LOWER_DIR ) then
                      block_coords(i_dim) = &
                         wb_block_processes(blocks(block_neighbor),i_dim)-1_MP
                   else
                      block_coords(i_dim) = 0_MP
                   end if
-                  do world_rank = 0_MP, s%world_size-1_MP
+                  do world_rank = 0_MP, sd%world_size-1_MP
                      call wb_process_block_coords( processes(world_rank), &
                         process_block_coords )
                      if ( wb_process_block_number( processes(world_rank) ) &
@@ -399,7 +400,7 @@ contains
                         exit
                      end if
                   end do
-                  s%neighbors(i_dim,i_dir) = world_rank
+                  sd%neighbors(i_dim,i_dir) = world_rank
                end if
             end if
          end do
