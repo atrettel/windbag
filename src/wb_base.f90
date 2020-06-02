@@ -784,7 +784,13 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(SP) :: points
 
-      points = s%nx(i_dim)
+      if ( i_dim .lt. MIN_N_DIM .or. i_dim .gt. MAX_N_DIM ) then
+         points = 0_SP
+      else if ( i_dim .gt. s%n_dim ) then
+         points = 1_SP
+      else
+         points = s%nx(i_dim)
+      end if
    end function wb_subdomain_points
 
    function wb_subdomain_total_points( s ) result( points_in_state )
