@@ -273,53 +273,53 @@ contains
       end if
    end subroutine check_general_variables
 
-   subroutine decompose_domain( s, blocks, processes )
+   subroutine decompose_domain( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: i_dim
       type(MPI_Comm) :: comm_split
-      type(WB_Subdomain), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: sd
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
       integer(SP), dimension(:), allocatable :: nx, block_assignment
       integer(MP), dimension(:), allocatable :: np
       logical, dimension(:), allocatable :: periods
 
-      allocate( block_assignment(0_MP:s%world_size-1_MP) )
-      call assign_blocks( blocks, block_assignment, s%world_size )
+      allocate( block_assignment(0_MP:sd%world_size-1_MP) )
+      call assign_blocks( blocks, block_assignment, sd%world_size )
 
-      s%ib = block_assignment(s%world_rank)
-      allocate( periods(s%n_dim), nx(s%n_dim), np(s%n_dim) )
-      call wb_block_periods_vector(   blocks(s%ib), periods )
-      call wb_block_points_vector(    blocks(s%ib), nx      )
-      call wb_block_processes_vector( blocks(s%ib), np      )
-      call mpi_comm_split( MPI_COMM_WORLD, int(s%ib,MP), 0_MP, comm_split, &
+      sd%ib = block_assignment(sd%world_rank)
+      allocate( periods(sd%n_dim), nx(sd%n_dim), np(sd%n_dim) )
+      call wb_block_periods_vector(   blocks(sd%ib), periods )
+      call wb_block_points_vector(    blocks(sd%ib), nx      )
+      call wb_block_processes_vector( blocks(sd%ib), np      )
+      call mpi_comm_split( MPI_COMM_WORLD, int(sd%ib,MP), 0_MP, comm_split, &
          ierr )
-      call mpi_cart_create( comm_split, int(s%n_dim,MP), np, periods, &
-         wb_block_reorder( blocks(s%ib) ), s%comm_block, ierr )
+      call mpi_cart_create( comm_split, int(sd%n_dim,MP), np, periods, &
+         wb_block_reorder( blocks(sd%ib) ), sd%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
-      call mpi_comm_rank( s%comm_block, s%block_rank, ierr )
-      call mpi_comm_size( s%comm_block, s%block_size, ierr )
-      call mpi_cart_coords( s%comm_block, s%block_rank, int(s%n_dim,MP), &
-         s%block_coords, ierr )
+      call mpi_comm_rank( sd%comm_block, sd%block_rank, ierr )
+      call mpi_comm_size( sd%comm_block, sd%block_size, ierr )
+      call mpi_cart_coords( sd%comm_block, sd%block_rank, int(sd%n_dim,MP), &
+         sd%block_coords, ierr )
 
-      s%nx = nx / int(np,SP)
-      do i_dim = 1_SP, s%n_dim
-         if ( s%block_coords(i_dim) .eq. &
-            wb_block_processes( blocks(s%ib), i_dim ) - 1_MP ) then
-            s%nx(i_dim) = s%nx(i_dim) + modulo( &
-               wb_block_points( blocks(s%ib), i_dim ), &
-               int( wb_block_processes( blocks(s%ib), i_dim ), SP ) )
+      sd%nx = nx / int(np,SP)
+      do i_dim = 1_SP, sd%n_dim
+         if ( sd%block_coords(i_dim) .eq. &
+            wb_block_processes( blocks(sd%ib), i_dim ) - 1_MP ) then
+            sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
+               wb_block_points( blocks(sd%ib), i_dim ), &
+               int( wb_block_processes( blocks(sd%ib), i_dim ), SP ) )
          end if
       end do
 
-      allocate( processes(0_MP:s%world_size-1_MP) )
-      do world_rank = 0_MP, s%world_size-1_MP
-         if ( world_rank .eq. s%world_rank ) then
-            call wb_process_construct( processes(world_rank), s%n_dim, &
-               block_assignment(world_rank), world_rank, s%block_rank, &
-               s%block_coords, s%nx )
+      allocate( processes(0_MP:sd%world_size-1_MP) )
+      do world_rank = 0_MP, sd%world_size-1_MP
+         if ( world_rank .eq. sd%world_rank ) then
+            call wb_process_construct( processes(world_rank), sd%n_dim, &
+               block_assignment(world_rank), world_rank, sd%block_rank, &
+               sd%block_coords, sd%nx )
          else
-            call wb_process_construct( processes(world_rank), s%n_dim, &
+            call wb_process_construct( processes(world_rank), sd%n_dim, &
                block_assignment(world_rank), world_rank )
          end if
       end do
