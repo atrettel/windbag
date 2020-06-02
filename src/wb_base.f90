@@ -697,7 +697,6 @@ contains
       integer(SP) :: ib, nb, n_dim, ng
       integer(MP) :: ierr, world_rank, world_size
       type(WB_Block), dimension(:), allocatable :: blocks
-      type(WB_Process), dimension(:), allocatable :: processes
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
@@ -712,28 +711,24 @@ contains
          call check_block_neighbors( blocks, nb, n_dim )
          call check_block_world_size( blocks, nb )
       end if
-      call wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
-      call decompose_domain( s, blocks, processes )
-      call check_block_total_points( s, blocks )
-      call identify_process_neighbors( s, blocks, processes )
-      s%local_block = blocks(s%ib)
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      call wb_subdomain_construct_variables( s, nb, n_dim, ng, blocks, &
+         case_name )
 
       do ib = 1_SP, nb
          call wb_block_destroy( blocks(ib) )
       end do
       deallocate( blocks )
-
-      do world_rank = 0_MP, s%world_size-1_MP
-         call wb_process_destroy( processes(world_rank) )
-      end do
-      deallocate( processes )
    end subroutine wb_subdomain_construct_namelist
 
-   subroutine wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
+   subroutine wb_subdomain_construct_variables( s, nb, n_dim, ng, blocks, &
+      case_name )
       type(WB_Subdomain), intent(inout) :: s
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
-      integer(SP), optional, intent(in) :: nb, n_dim, ng
-      integer(MP) :: ierr
+      integer(SP), intent(in) :: nb, n_dim, ng
+      integer(MP) :: ierr, world_rank
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      type(WB_Process), dimension(:), allocatable :: processes
 
       if ( present(case_name) ) then
          s%case_name = trim(case_name)
@@ -741,23 +736,9 @@ contains
          s%case_name = trim(DEFAULT_CASE_NAME)
       end if
 
-      if ( present(nb) ) then
-         s%nb = nb
-      else
-         s%nb = DEFAULT_NB
-      end if
-
-      if ( present(n_dim) ) then
-         s%n_dim = n_dim
-      else
-         s%n_dim = DEFAULT_N_DIM
-      end if
-
-      if ( present(ng) ) then
-         s%ng = ng
-      else
-         s%ng = DEFAULT_NG
-      end if
+      s%nb    = nb
+      s%n_dim = n_dim
+      s%ng    = ng
 
       call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
@@ -766,6 +747,16 @@ contains
       allocate( s%block_coords(s%n_dim) )
       allocate( s%neighbors(s%n_dim,N_DIR) )
       call wb_block_construct( s%local_block, s%n_dim )
+
+      call decompose_domain( s, blocks, processes )
+      call check_block_total_points( s, blocks )
+      call identify_process_neighbors( s, blocks, processes )
+      s%local_block = blocks(s%ib)
+
+      do world_rank = 0_MP, s%world_size-1_MP
+         call wb_process_destroy( processes(world_rank) )
+      end do
+      deallocate( processes )
    end subroutine wb_subdomain_construct_variables
 
    subroutine wb_subdomain_destroy( s )
