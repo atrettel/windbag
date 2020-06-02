@@ -105,6 +105,24 @@ module wb_base
          wb_subdomain_construct_variables
    end interface wb_subdomain_construct
 contains
+   subroutine assign_blocks( blocks, block_assignment, world_size )
+      type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
+      integer(SP), dimension(:), allocatable, intent(inout) :: block_assignment
+      integer(MP) :: assigned_processes, world_rank, world_size
+      integer(SP) :: ib
+
+      ib = 1_SP
+      assigned_processes = 0_MP
+      do world_rank = 0_MP, world_size-1_MP
+         block_assignment(world_rank) = ib
+         assigned_processes = assigned_processes + 1_MP
+         if ( assigned_processes .eq. wb_block_size( blocks(ib) ) ) then
+            assigned_processes = 0_MP
+            ib = ib + 1_SP
+         end if
+      end do
+   end subroutine assign_blocks
+
    subroutine check_block_bounds( ib, nb )
       integer(SP), intent(in) :: ib, nb
 
@@ -256,29 +274,20 @@ contains
    end subroutine check_general_variables
 
    subroutine decompose_domain( s, blocks, processes )
-      integer(MP) :: assigned_processes, ierr, world_rank
-      integer(SP) :: ib, i_dim
+      integer(MP) :: ierr, world_rank
+      integer(SP) :: i_dim
       type(MPI_Comm) :: comm_split
       type(WB_Subdomain), intent(inout) :: s
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
-      integer(SP), dimension(:), allocatable :: nx, ib_array
+      integer(SP), dimension(:), allocatable :: nx, block_assignment
       integer(MP), dimension(:), allocatable :: np
       logical, dimension(:), allocatable :: periods
 
-      ib = 1_SP
-      assigned_processes = 0_MP
-      allocate( ib_array(0_MP:s%world_size-1_MP) )
-      do world_rank = 0_MP, s%world_size-1_MP
-         ib_array(world_rank) = ib
-         assigned_processes = assigned_processes + 1_MP
-         if ( assigned_processes .eq. wb_block_size( blocks(ib) ) ) then
-            assigned_processes = 0_MP
-            ib = ib + 1_SP
-         end if
-      end do
+      allocate( block_assignment(0_MP:s%world_size-1_MP) )
+      call assign_blocks( blocks, block_assignment, s%world_size )
 
-      s%ib = ib_array(s%world_rank)
+      s%ib = block_assignment(s%world_rank)
       allocate( periods(s%n_dim), nx(s%n_dim), np(s%n_dim) )
       call wb_block_periods_vector(   blocks(s%ib), periods )
       call wb_block_points_vector(    blocks(s%ib), nx      )
@@ -307,15 +316,15 @@ contains
       do world_rank = 0_MP, s%world_size-1_MP
          if ( world_rank .eq. s%world_rank ) then
             call wb_process_construct( processes(world_rank), s%n_dim, &
-               ib_array(world_rank), world_rank, s%block_rank, &
+               block_assignment(world_rank), world_rank, s%block_rank, &
                s%block_coords, s%nx )
          else
             call wb_process_construct( processes(world_rank), s%n_dim, &
-               ib_array(world_rank), world_rank )
+               block_assignment(world_rank), world_rank )
          end if
       end do
 
-      deallocate( periods, nx, np, ib_array )
+      deallocate( periods, nx, np, block_assignment )
    end subroutine decompose_domain
 
    subroutine find_input_file( filename )
