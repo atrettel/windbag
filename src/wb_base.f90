@@ -691,8 +691,8 @@ contains
       deallocate( process%nx )
    end subroutine wb_process_destroy
 
-   subroutine wb_subdomain_construct_namelist( s, filename )
-      type(WB_Subdomain), intent(inout) :: s
+   subroutine wb_subdomain_construct_namelist( sd, filename )
+      type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
       integer(SP) :: ib, nb, n_dim, ng
@@ -713,7 +713,7 @@ contains
          call check_block_world_size( blocks, nb )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      call wb_subdomain_construct_variables( s, nb, n_dim, ng, blocks, &
+      call wb_subdomain_construct_variables( sd, nb, n_dim, ng, blocks, &
          case_name )
 
       do ib = 1_SP, nb
