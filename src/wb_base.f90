@@ -695,13 +695,19 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
       integer(SP) :: ib, nb, n_dim, ng
-      integer(MP) :: world_rank
+      integer(MP) :: ierr, world_rank, world_size
       type(WB_Block), dimension(:), allocatable :: blocks
       type(WB_Process), dimension(:), allocatable :: processes
 
+      call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
+      call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
+      if ( world_rank .eq. WORLD_MASTER ) then
+         call check_general_variables( nb, n_dim, ng, world_size )
+      end if
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
       call read_block_namelists( filename, nb, n_dim, blocks )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_MASTER ) then
          call check_block_dimension_arrays( blocks, nb, n_dim, ng )
          call check_block_neighbors( blocks, nb, n_dim )
          call check_block_world_size( blocks, nb )
@@ -755,7 +761,6 @@ contains
 
       call mpi_comm_rank( MPI_COMM_WORLD, s%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, s%world_size, ierr )
-      call check_general_variables( s%nb, s%n_dim, s%ng, s%world_size )
 
       allocate( s%nx(s%n_dim) )
       allocate( s%block_coords(s%n_dim) )
