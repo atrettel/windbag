@@ -760,16 +760,16 @@ contains
       deallocate( processes )
    end subroutine wb_subdomain_construct_variables
 
-   subroutine wb_subdomain_destroy( s )
+   subroutine wb_subdomain_destroy( sd )
       integer(MP) :: ierr
-      type(WB_Subdomain), intent(inout) :: s
+      type(WB_Subdomain), intent(inout) :: sd
 
-      deallocate( s%case_name )
-      deallocate( s%nx )
-      deallocate( s%block_coords )
-      deallocate( s%neighbors )
-      call mpi_comm_free( s%comm_block, ierr )
-      call wb_block_destroy( s%local_block )
+      deallocate( sd%case_name )
+      deallocate( sd%nx )
+      deallocate( sd%block_coords )
+      deallocate( sd%neighbors )
+      call mpi_comm_free( sd%comm_block, ierr )
+      call wb_block_destroy( sd%local_block )
    end subroutine wb_subdomain_destroy
 
    function wb_subdomain_neighbor( s, i_dim, i_dir ) result( neighbor )
