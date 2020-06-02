@@ -108,10 +108,22 @@ contains
       logical, optional, intent(in) :: end_row
       character(len=STRING_LENGTH) :: write_fmt
 
-      write (write_fmt,"(A, I2.1, A)") "(A, L", width, ", A)"
-      write (f, write_fmt, advance="no") "| ", entry, " "
-      if ( present(end_row) .and. end_row .eqv. .true. ) then
-         write (f, "(A)", advance="yes") "|"
+      if ( width .lt. 5_SP ) then
+         write (write_fmt,"(A, I2.1, A)") "(A, L", width, ", A)"
+         write (f, write_fmt, advance="no") "| ", entry, " "
+         if ( present(end_row) .and. end_row .eqv. .true. ) then
+            write (f, "(A)", advance="yes") "|"
+         end if
+      else
+         write (write_fmt,"(A, I2.1, A)") "(A, A", width, ", A)"
+         if ( entry .eqv. .true. ) then
+            write (f, write_fmt, advance="no") "| ", "True", " "
+         else
+            write (f, write_fmt, advance="no") "| ", "False", " "
+         end if
+         if ( present(end_row) .and. end_row .eqv. .true. ) then
+            write (f, "(A)", advance="yes") "|"
+         end if
       end if
    end subroutine write_table_entry_logical
 
