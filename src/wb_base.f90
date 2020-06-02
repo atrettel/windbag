@@ -573,7 +573,7 @@ contains
 
    subroutine wb_block_periods_vector( blk, periods )
       type(WB_Block), intent(in) :: blk
-      logical, dimension(:), allocatable, intent(out) :: periods
+      logical, dimension(:), allocatable, intent(inout) :: periods
 
       periods = blk%periods
    end subroutine wb_block_periods_vector
@@ -588,7 +588,7 @@ contains
 
    subroutine wb_block_points_vector( blk, nx )
       type(WB_Block), intent(in) :: blk
-      integer(SP), dimension(:), allocatable, intent(out) :: nx
+      integer(SP), dimension(:), allocatable, intent(inout) :: nx
 
       nx = blk%nx
    end subroutine wb_block_points_vector
@@ -603,7 +603,7 @@ contains
 
    subroutine wb_block_processes_vector( blk, np )
       type(WB_Block), intent(in) :: blk
-      integer(MP), dimension(:), allocatable, intent(out) :: np
+      integer(MP), dimension(:), allocatable, intent(inout) :: np
 
       np = blk%np
    end subroutine wb_block_processes_vector
