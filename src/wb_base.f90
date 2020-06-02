@@ -700,13 +700,13 @@ contains
       type(WB_Process), dimension(:), allocatable :: processes
 
       call read_general_namelist( filename, case_name, nb, n_dim, ng )
-      call wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
       call read_block_namelists( filename, nb, n_dim, blocks )
       if ( s%world_rank .eq. WORLD_MASTER ) then
          call check_block_dimension_arrays( blocks, nb, n_dim, ng )
          call check_block_neighbors( blocks, nb, n_dim )
          call check_block_world_size( blocks, nb )
       end if
+      call wb_subdomain_construct_variables( s, nb, n_dim, ng, case_name )
       call decompose_domain( s, blocks, processes )
       call check_block_total_points( s, blocks )
       call identify_process_neighbors( s, blocks, processes )
