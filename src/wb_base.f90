@@ -865,14 +865,14 @@ contains
       end if
    end subroutine write_block_information
 
-   subroutine write_environment_information( f, s )
+   subroutine write_environment_information( f, sd )
       integer, intent(in) :: f
-      type(WB_Subdomain), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: ierr, mpi_major_version_number, &
          mpi_minor_version_number, version_length
       character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, PROGRAM_NAME )
 
          call write_log_heading( f, "Environment parameters", level=2_SP )
@@ -933,30 +933,30 @@ contains
       end if
    end subroutine write_environment_information
 
-   subroutine write_process_information( f, s )
+   subroutine write_process_information( f, sd )
       integer, intent(in) :: f
-      type(WB_Subdomain), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: ierr, processor_length, world_rank
       integer(SP) :: i_dim
       character(len=STRING_LENGTH) :: label
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, "Process information", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
          call write_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
          call write_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             write (label,"(A, I1, A)") "(", i_dim, ")"
             call write_table_entry( f, label, COORDS_COLUMN_WIDTH )
          end do
          call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
             call write_table_entry( f, label, NX_COLUMN_WIDTH, &
-               end_row=(i_dim .eq. s%n_dim) )
+               end_row=(i_dim .eq. sd%n_dim) )
          end do
 
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
@@ -967,52 +967,52 @@ contains
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             call write_table_rule_entry( f, COORDS_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
          call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
-               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. sd%n_dim) )
          end do
       end if
 
       call mpi_get_processor_name( processor_name, processor_length, ierr )
-      do world_rank = 0_MP, s%world_size-1_MP
+      do world_rank = 0_MP, sd%world_size-1_MP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( s%world_rank .eq. world_rank ) then
-            call write_table_entry( f, int(s%world_rank,SP), &
+         if ( sd%world_rank .eq. world_rank ) then
+            call write_table_entry( f, int(sd%world_rank,SP), &
                RANK_COLUMN_WIDTH )
             call write_table_entry(  f, processor_name, &
                HOSTNAME_COLUMN_WIDTH )
-            call write_table_entry( f, s%ib, &
+            call write_table_entry( f, sd%ib, &
                IB_COLUMN_WIDTH )
-            call write_table_entry( f, int(s%block_rank,SP), &
+            call write_table_entry( f, int(sd%block_rank,SP), &
                RANK_COLUMN_WIDTH )
-            do i_dim = 1_SP, s%n_dim
+            do i_dim = 1_SP, sd%n_dim
                call write_table_entry( f, &
-               int(s%block_coords(i_dim),SP), COORDS_COLUMN_WIDTH )
+               int(sd%block_coords(i_dim),SP), COORDS_COLUMN_WIDTH )
             end do
-            call write_table_entry( f, total_points(s), &
+            call write_table_entry( f, total_points(sd), &
                POINTS_COLUMN_WIDTH )
-            do i_dim = 1_SP, s%n_dim
-               call write_table_entry( f, wb_subdomain_points(s,i_dim), &
-                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
+            do i_dim = 1_SP, sd%n_dim
+               call write_table_entry( f, wb_subdomain_points(sd,i_dim), &
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. sd%n_dim) )
             end do
          end if
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_blank_line( f )
       end if
    end subroutine write_process_information
 
-   subroutine write_process_neighbors( f, s )
+   subroutine write_process_neighbors( f, sd )
       integer, intent(in) :: f
-      type(WB_Subdomain), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: ierr, world_rank, neighbor
       integer(SP) :: i_dim, i_dir, j_dir, face_count
       integer(SP), dimension(N_DIR) :: dirs
@@ -1021,11 +1021,11 @@ contains
       face_count = 0_SP
       dirs = (/ LOWER_DIR, UPPER_DIR /)
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, "Process neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             do i_dir = 1_SP, N_DIR
                j_dir = dirs(i_dir)
                face_count = face_count + 1_SP
@@ -1035,42 +1035,42 @@ contains
                   write (label,"(I1, A)") i_dim, "U"
                end if
                call write_table_entry( f, label, RANK_COLUMN_WIDTH, &
-                  end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
+                  end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
             end do
          end do
 
          face_count = 0_SP
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             do i_dir = 1_SP, N_DIR
                face_count = face_count + 1_SP
                call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
                   alignment=RIGHT_ALIGNED, &
-                  end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
+                  end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
             end do
          end do
       end if
 
-      do world_rank = 0_MP, s%world_size-1_MP
+      do world_rank = 0_MP, sd%world_size-1_MP
          face_count = 0_SP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( s%world_rank .eq. world_rank ) then
-            call write_table_entry( f, int(s%world_rank,SP), &
+         if ( sd%world_rank .eq. world_rank ) then
+            call write_table_entry( f, int(sd%world_rank,SP), &
                RANK_COLUMN_WIDTH )
-            do i_dim = 1_SP, s%n_dim
+            do i_dim = 1_SP, sd%n_dim
                do i_dir = 1_SP, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1_SP
-                  neighbor = wb_subdomain_neighbor(s,i_dim,j_dir)
+                  neighbor = wb_subdomain_neighbor(sd,i_dim,j_dir)
                   if ( neighbor .eq. MPI_PROC_NULL ) then
                      call write_table_entry( f, "-", &
                         RANK_COLUMN_WIDTH, &
-                        end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
+                        end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
                   else
                      call write_table_entry( f, int(neighbor,SP), &
                         RANK_COLUMN_WIDTH, &
-                        end_row=( face_count .eq. int(s%n_dim*N_DIR,MP) ) )
+                        end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
                   end if
                end do
             end do
@@ -1078,16 +1078,16 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_blank_line( f )
       end if
    end subroutine write_process_neighbors
 
-   subroutine write_scalar_variables( f, s )
+   subroutine write_scalar_variables( f, sd )
       integer, intent(in) :: f
-      type(WB_Subdomain), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: sd
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, "State scalar variables", level=2_SP )
          call write_table_entry( f, "Variable", 30_SP )
          call write_table_entry( f, "Value", 20_SP, end_row=.true. )
@@ -1095,16 +1095,16 @@ contains
          call write_table_rule_entry( f, 20_SP, alignment=RIGHT_ALIGNED, &
             end_row=.true. )
          call write_table_entry( f, "Case name", 30_SP )
-         call write_table_entry( f, s%case_name, 20_SP, &
+         call write_table_entry( f, sd%case_name, 20_SP, &
             end_row=.true. )
          call write_table_entry( f, "Number of dimensions", 30_SP )
-         call write_table_entry( f, s%n_dim, 20_SP, &
+         call write_table_entry( f, sd%n_dim, 20_SP, &
             end_row=.true. )
          call write_table_entry( f, "Number of blocks", 30_SP )
-         call write_table_entry( f, s%nb, 20_SP, &
+         call write_table_entry( f, sd%nb, 20_SP, &
             end_row=.true. )
          call write_table_entry( f, "Number of ghost points", 30_SP )
-         call write_table_entry( f, s%ng, 20_SP, &
+         call write_table_entry( f, sd%ng, 20_SP, &
             end_row=.true. )
          call write_blank_line( f )
       end if
