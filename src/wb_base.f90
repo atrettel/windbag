@@ -408,14 +408,14 @@ contains
       deallocate( block_coords, process_block_coords )
    end subroutine identify_process_neighbors
 
-   subroutine print_initial_information( s )
-      type(WB_Subdomain), intent(in) :: s
+   subroutine print_initial_information( sd )
+      type(WB_Subdomain), intent(in) :: sd
 
-      call write_environment_information( output_unit, s )
-      call write_scalar_variables(        output_unit, s )
-      call write_block_information(       output_unit, s )
-      call write_process_information(     output_unit, s )
-      call write_process_neighbors(       output_unit, s )
+      call write_environment_information( output_unit, sd )
+      call write_scalar_variables(        output_unit, sd )
+      call write_block_information(       output_unit, sd )
+      call write_process_information(     output_unit, sd )
+      call write_process_neighbors(       output_unit, sd )
    end subroutine print_initial_information
 
    subroutine read_block_namelists( filename, nb, n_dim, blocks )
