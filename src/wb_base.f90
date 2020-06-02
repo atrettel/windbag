@@ -801,66 +801,66 @@ contains
       points_in_state = product(sd%nx)
    end function wb_subdomain_total_points
 
-   subroutine write_block_information( f, s )
+   subroutine write_block_information( f, sd )
       integer, intent(in) :: f
-      type(WB_Subdomain), intent(in) :: s
+      type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: ib, i_dim
       integer(MP) :: ierr
       character(len=STRING_LENGTH) :: label
 
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_log_heading( f, "Block information", level=2_SP )
 
          call write_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
          call write_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
             call write_table_entry( f, label, NP_COLUMN_WIDTH )
          end do
          call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
             call write_table_entry( f, label, NX_COLUMN_WIDTH, &
-               end_row=(i_dim .eq. s%n_dim) )
+               end_row=(i_dim .eq. sd%n_dim) )
          end do
 
          call write_table_rule_entry( f, IB_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, SIZE_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             call write_table_rule_entry( f, NP_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
          call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, s%n_dim
+         do i_dim = 1_SP, sd%n_dim
             call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
-               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. s%n_dim) )
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. sd%n_dim) )
          end do
       end if
 
-      do ib = 1_SP, s%nb
+      do ib = 1_SP, sd%nb
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( ib .eq. s%ib .and. s%block_rank .eq. BLOCK_MASTER ) then
-            call write_table_entry( f, s%ib, IB_COLUMN_WIDTH )
-            call write_table_entry( f, int(wb_block_size(s%local_block),SP), &
+         if ( ib .eq. sd%ib .and. sd%block_rank .eq. BLOCK_MASTER ) then
+            call write_table_entry( f, sd%ib, IB_COLUMN_WIDTH )
+            call write_table_entry( f, int(wb_block_size(sd%local_block),SP), &
                SIZE_COLUMN_WIDTH )
-            do i_dim = 1_SP, s%n_dim
-               call write_table_entry( f, int(s%local_block%np(i_dim),SP), &
+            do i_dim = 1_SP, sd%n_dim
+               call write_table_entry( f, int(sd%local_block%np(i_dim),SP), &
                   NP_COLUMN_WIDTH )
             end do
-            call write_table_entry( f, total_points(s%local_block), &
+            call write_table_entry( f, total_points(sd%local_block), &
                POINTS_COLUMN_WIDTH )
-            do i_dim = 1_SP, s%n_dim
-               call write_table_entry( f, s%local_block%nx(i_dim), &
-                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. s%n_dim) )
+            do i_dim = 1_SP, sd%n_dim
+               call write_table_entry( f, sd%local_block%nx(i_dim), &
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. sd%n_dim) )
             end do
          end if
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( s%world_rank .eq. WORLD_MASTER ) then
+      if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_blank_line( f )
       end if
    end subroutine write_block_information
