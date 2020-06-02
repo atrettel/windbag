@@ -772,33 +772,33 @@ contains
       call wb_block_destroy( sd%local_block )
    end subroutine wb_subdomain_destroy
 
-   function wb_subdomain_neighbor( s, i_dim, i_dir ) result( neighbor )
-      type(WB_Subdomain), intent(in) :: s
+   function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
+      type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim, i_dir
       integer(MP) :: neighbor
 
-      neighbor = s%neighbors(i_dim,i_dir)
+      neighbor = sd%neighbors(i_dim,i_dir)
    end function wb_subdomain_neighbor
 
-   function wb_subdomain_points( s, i_dim ) result( points )
-      type(WB_Subdomain), intent(in) :: s
+   function wb_subdomain_points( sd, i_dim ) result( points )
+      type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       integer(SP) :: points
 
       if ( i_dim .lt. MIN_N_DIM .or. i_dim .gt. MAX_N_DIM ) then
          points = 0_SP
-      else if ( i_dim .gt. s%n_dim ) then
+      else if ( i_dim .gt. sd%n_dim ) then
          points = 1_SP
       else
-         points = s%nx(i_dim)
+         points = sd%nx(i_dim)
       end if
    end function wb_subdomain_points
 
-   function wb_subdomain_total_points( s ) result( points_in_state )
-      type(WB_Subdomain), intent(in) :: s
+   function wb_subdomain_total_points( sd ) result( points_in_state )
+      type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: points_in_state
 
-      points_in_state = product(s%nx)
+      points_in_state = product(sd%nx)
    end function wb_subdomain_total_points
 
    subroutine write_block_information( f, s )
