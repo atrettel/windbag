@@ -151,7 +151,7 @@ contains
                               EXIT_DATAERR, (/ i_dim, ib, ng /) )
             end if
             do i_dir = 1_SP, N_DIR
-               if ( wb_block_neighbor( blocks(ib), i_dim, i_dir ) .lt. &
+               if ( neighbor( blocks(ib), i_dim, i_dir ) .lt. &
                   NO_BLOCK_NEIGHBOR ) then
                   call wb_abort( "neighbor to block N1 in direction N2 and &
                                  &dimension N3 is negative", &
@@ -175,10 +175,9 @@ contains
       ! eliminate the loop over all blocks.
       do ib = 1_SP, nb
          do i_dim = 1_SP, n_dim
-            neighbor_l = wb_block_neighbor( blocks(ib), i_dim, LOWER_DIR )
+            neighbor_l = neighbor( blocks(ib), i_dim, LOWER_DIR )
             if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-               neighbor_u = wb_block_neighbor( blocks(neighbor_l), i_dim, &
-                  UPPER_DIR )
+               neighbor_u = neighbor( blocks(neighbor_l), i_dim, UPPER_DIR )
                if ( ib .ne. neighbor_u ) then
                   call wb_abort( "lower face of block N1 does not neighbor &
                                  &upper face of block N2 in direction N3", &
@@ -392,8 +391,7 @@ contains
                end do
                sd%neighbors(i_dim,i_dir) = world_rank
             else
-               block_neighbor = &
-                  wb_block_neighbor( blocks(sd%ib), i_dim, i_dir )
+               block_neighbor = neighbor( blocks(sd%ib), i_dim, i_dir )
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
                   sd%neighbors(i_dim,i_dir) = MPI_PROC_NULL
                else
