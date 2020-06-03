@@ -283,7 +283,7 @@ contains
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
       integer(SP), dimension(:), allocatable :: block_nx, block_assignments, &
          block_neighbors_l, block_neighbors_u
-      integer(MP), dimension(:), allocatable :: block_np
+      integer(MP), dimension(:), allocatable :: block_coords, block_np
       logical, dimension(:), allocatable :: block_periods
 
       allocate( block_assignments(0_MP:wb_subdomain_world_size(sd)-1_MP) )
@@ -291,11 +291,12 @@ contains
          wb_subdomain_world_size(sd) )
 
       sd%ib = block_assignments(wb_subdomain_world_rank(sd))
-      allocate( block_neighbors_l(wb_subdomain_dimensions(sd)) )
-      allocate( block_neighbors_u(wb_subdomain_dimensions(sd)) )
-      allocate( block_np(wb_subdomain_dimensions(sd)) )
-      allocate( block_nx(wb_subdomain_dimensions(sd)) )
-      allocate( block_periods(wb_subdomain_dimensions(sd)) )
+      allocate(      block_coords(wb_subdomain_dimensions(sd)), &
+                block_neighbors_l(wb_subdomain_dimensions(sd)), &
+                block_neighbors_u(wb_subdomain_dimensions(sd)), &
+                         block_np(wb_subdomain_dimensions(sd)), &
+                         block_nx(wb_subdomain_dimensions(sd)), &
+                    block_periods(wb_subdomain_dimensions(sd)) )
       call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
          block_neighbors_l, LOWER_DIR )
       call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
@@ -321,9 +322,10 @@ contains
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
          wb_subdomain_dimensions_mp(sd), sd%block_coords, ierr )
 
+      call wb_subdomain_block_coords_vector( sd, block_coords )
       sd%nx = block_nx / int(block_np,SP)
       do i_dim = 1_SP, wb_subdomain_dimensions(sd)
-         if ( sd%block_coords(i_dim) .eq. &
+         if ( block_coords(i_dim) .eq. &
             wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
                wb_block_points( sd%local_block, i_dim ), &
@@ -336,7 +338,7 @@ contains
          if ( world_rank .eq. wb_subdomain_world_rank(sd) ) then
             call wb_process_construct( processes(world_rank), &
                wb_subdomain_dimensions(sd), block_assignments(world_rank), &
-               world_rank, wb_subdomain_block_rank(sd), sd%block_coords, &
+               world_rank, wb_subdomain_block_rank(sd), block_coords, &
                sd%nx )
          else
             call wb_process_construct( processes(world_rank), &
@@ -345,12 +347,13 @@ contains
          end if
       end do
 
-      deallocate( block_assignments )
-      deallocate( block_neighbors_l )
-      deallocate( block_neighbors_u )
-      deallocate( block_np )
-      deallocate( block_nx )
-      deallocate( block_periods )
+      deallocate( block_assignments, &
+                  block_coords,      &
+                  block_neighbors_l, &
+                  block_neighbors_u, &
+                  block_np,          &
+                  block_nx,          &
+                  block_periods )
    end subroutine decompose_domain
 
    subroutine find_input_file( filename )
@@ -410,7 +413,7 @@ contains
                   ! processes share the same block coordinates except for the
                   ! current spatial dimension i_dim.  The block coordinates for
                   ! dimension i_dim would be opposites for each.
-                  block_coords = sd%block_coords
+                  call wb_subdomain_block_coords_vector( sd, block_coords )
                   if ( i_dir .eq. LOWER_DIR ) then
                      block_coords(i_dim) = &
                         wb_block_processes(blocks(block_neighbor),i_dim)-1_MP
@@ -724,6 +727,13 @@ contains
       deallocate( process%block_coords )
       deallocate( process%nx )
    end subroutine wb_process_destroy
+
+   subroutine wb_subdomain_block_coords_vector( sd, block_coords )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(MP), dimension(:), allocatable, intent(inout) :: block_coords
+
+      block_coords = sd%block_coords
+   end subroutine wb_subdomain_block_coords_vector
 
    function wb_subdomain_block_number( sd ) result( ib )
       type(WB_Subdomain), intent(in) :: sd
