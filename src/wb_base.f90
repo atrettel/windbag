@@ -218,13 +218,15 @@ contains
       points_in_block = total_points(sd%local_block)
       points_in_processes = 0_SP
       call mpi_reduce( total_points(sd), points_in_processes, &
-         int(sd%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, sd%comm_block, ierr )
-      if ( sd%block_rank .eq. BLOCK_MASTER .and. &
+         int(wb_subdomain_dimensions(sd),MP), MPI_SP, MPI_SUM, BLOCK_MASTER, &
+         sd%comm_block, ierr )
+      if ( wb_subdomain_block_rank(sd) .eq. BLOCK_MASTER .and. &
          points_in_block .ne. points_in_processes ) then
          call wb_abort( "total points in block N1 (N2) does not match sum of &
                         &points in individual processes (N3)", &
             EXIT_FAILURE, &
-            (/ sd%ib, points_in_block, points_in_processes /) )
+            (/ wb_subdomain_block_number(sd), points_in_block, &
+            points_in_processes /) )
       end if
    end subroutine check_block_total_points
 
@@ -715,6 +717,20 @@ contains
       deallocate( process%nx )
    end subroutine wb_process_destroy
 
+   function wb_subdomain_block_number( sd ) result( ib )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: ib
+
+      ib = sd%ib
+   end function
+
+   function wb_subdomain_block_rank( sd ) result( block_rank )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(MP) :: block_rank
+
+      block_rank = sd%block_rank
+   end function
+
    subroutine wb_subdomain_construct_namelist( sd, filename )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -793,6 +809,13 @@ contains
       call mpi_comm_free( sd%comm_block, ierr )
       call wb_block_destroy( sd%local_block )
    end subroutine wb_subdomain_destroy
+
+   function wb_subdomain_dimensions( sd ) result( n_dim )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: n_dim
+
+      n_dim = sd%n_dim
+   end function wb_subdomain_dimensions
 
    function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
       type(WB_Subdomain), intent(in) :: sd
