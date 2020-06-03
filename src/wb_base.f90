@@ -311,7 +311,7 @@ contains
          wb_subdomain_block_number(sd) )
 
       call mpi_comm_split( MPI_COMM_WORLD, &
-         int(wb_subdomain_block_number(sd),MP), 0_MP, comm_split, ierr )
+         wb_subdomain_block_number_mp(sd), 0_MP, comm_split, ierr )
       call mpi_cart_create( comm_split, wb_subdomain_dimensions_mp(sd), &
          block_np, block_periods, wb_block_reorder(sd%local_block), &
          sd%comm_block, ierr )
@@ -729,7 +729,14 @@ contains
       integer(SP) :: ib
 
       ib = sd%ib
-   end function
+   end function wb_subdomain_block_number
+
+   function wb_subdomain_block_number_mp( sd ) result( ib )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(MP) :: ib
+
+      ib = int(wb_subdomain_block_number(sd),MP)
+   end function wb_subdomain_block_number_mp
 
    function wb_subdomain_block_rank( sd ) result( block_rank )
       type(WB_Subdomain), intent(in) :: sd
