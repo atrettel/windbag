@@ -322,7 +322,7 @@ contains
          wb_subdomain_dimensions_mp(sd), sd%block_coords, ierr )
 
       sd%nx = block_nx / int(block_np,SP)
-      do i_dim = 1_SP, sd%n_dim
+      do i_dim = 1_SP, wb_subdomain_dimensions(sd)
          if ( sd%block_coords(i_dim) .eq. &
             wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
@@ -333,7 +333,7 @@ contains
 
       allocate( processes(0_MP:wb_subdomain_world_size(sd)-1_MP) )
       do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
-         if ( world_rank .eq. sd%world_rank ) then
+         if ( world_rank .eq. wb_subdomain_world_rank(sd) ) then
             call wb_process_construct( processes(world_rank), &
                wb_subdomain_dimensions(sd), block_assignments(world_rank), &
                world_rank, wb_subdomain_block_rank(sd), sd%block_coords, &
