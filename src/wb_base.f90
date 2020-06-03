@@ -105,16 +105,17 @@ module wb_base
          wb_subdomain_construct_variables
    end interface wb_subdomain_construct
 contains
-   subroutine assign_blocks( blocks, block_assignment, world_size )
+   subroutine assign_blocks( blocks, block_assignments, world_size )
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
-      integer(SP), dimension(:), allocatable, intent(inout) :: block_assignment
+      integer(SP), dimension(:), allocatable, intent(inout) :: &
+         block_assignments
       integer(MP) :: assigned_processes, world_rank, world_size
       integer(SP) :: ib
 
       ib = 1_SP
       assigned_processes = 0_MP
       do world_rank = 0_MP, world_size-1_MP
-         block_assignment(world_rank) = ib
+         block_assignments(world_rank) = ib
          assigned_processes = assigned_processes + 1_MP
          if ( assigned_processes .eq. wb_block_size( blocks(ib) ) ) then
             assigned_processes = 0_MP
@@ -279,29 +280,42 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
-      integer(SP), dimension(:), allocatable :: nx, block_assignment
-      integer(MP), dimension(:), allocatable :: np
-      logical, dimension(:), allocatable :: periods
+      integer(SP), dimension(:), allocatable :: block_nx, block_assignments, &
+         block_neighbors_l, block_neighbors_u
+      integer(MP), dimension(:), allocatable :: block_np
+      logical, dimension(:), allocatable :: block_periods
 
-      allocate( block_assignment(0_MP:sd%world_size-1_MP) )
-      call assign_blocks( blocks, block_assignment, sd%world_size )
+      allocate( block_assignments(0_MP:sd%world_size-1_MP) )
+      call assign_blocks( blocks, block_assignments, sd%world_size )
 
-      sd%ib = block_assignment(sd%world_rank)
-      allocate( periods(sd%n_dim), nx(sd%n_dim), np(sd%n_dim) )
-      call wb_block_periods_vector(   blocks(sd%ib), periods )
-      call wb_block_points_vector(    blocks(sd%ib), nx      )
-      call wb_block_processes_vector( blocks(sd%ib), np      )
+      sd%ib = block_assignments(sd%world_rank)
+      allocate( block_neighbors_l(sd%n_dim) )
+      allocate( block_neighbors_u(sd%n_dim) )
+      allocate( block_np(sd%n_dim) )
+      allocate( block_nx(sd%n_dim) )
+      allocate( block_periods(sd%n_dim) )
+      call wb_block_neighbors_vector( blocks(sd%ib), block_neighbors_l, &
+         LOWER_DIR )
+      call wb_block_neighbors_vector( blocks(sd%ib), block_neighbors_u, &
+         UPPER_DIR )
+      call wb_block_processes_vector( blocks(sd%ib), block_np      )
+      call wb_block_points_vector(    blocks(sd%ib), block_nx      )
+      call wb_block_periods_vector(   blocks(sd%ib), block_periods )
+      call wb_block_construct( sd%local_block, sd%n_dim, block_np, block_nx, &
+         block_neighbors_l, block_neighbors_u, sd%ib )
+
       call mpi_comm_split( MPI_COMM_WORLD, int(sd%ib,MP), 0_MP, comm_split, &
          ierr )
-      call mpi_cart_create( comm_split, int(sd%n_dim,MP), np, periods, &
-         wb_block_reorder( blocks(sd%ib) ), sd%comm_block, ierr )
+      call mpi_cart_create( comm_split, int(sd%n_dim,MP), block_np, &
+         block_periods, wb_block_reorder( blocks(sd%ib) ), sd%comm_block, &
+         ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( sd%comm_block, sd%block_rank, ierr )
       call mpi_comm_size( sd%comm_block, sd%block_size, ierr )
       call mpi_cart_coords( sd%comm_block, sd%block_rank, int(sd%n_dim,MP), &
          sd%block_coords, ierr )
 
-      sd%nx = nx / int(np,SP)
+      sd%nx = block_nx / int(block_np,SP)
       do i_dim = 1_SP, sd%n_dim
          if ( sd%block_coords(i_dim) .eq. &
             wb_block_processes( blocks(sd%ib), i_dim ) - 1_MP ) then
@@ -315,15 +329,20 @@ contains
       do world_rank = 0_MP, sd%world_size-1_MP
          if ( world_rank .eq. sd%world_rank ) then
             call wb_process_construct( processes(world_rank), sd%n_dim, &
-               block_assignment(world_rank), world_rank, sd%block_rank, &
+               block_assignments(world_rank), world_rank, sd%block_rank, &
                sd%block_coords, sd%nx )
          else
             call wb_process_construct( processes(world_rank), sd%n_dim, &
-               block_assignment(world_rank), world_rank )
+               block_assignments(world_rank), world_rank )
          end if
       end do
 
-      deallocate( periods, nx, np, block_assignment )
+      deallocate( block_assignments )
+      deallocate( block_neighbors_l )
+      deallocate( block_neighbors_u )
+      deallocate( block_np )
+      deallocate( block_nx )
+      deallocate( block_periods )
    end subroutine decompose_domain
 
    subroutine find_input_file( filename )
@@ -571,6 +590,14 @@ contains
       neighbor = blk%neighbors(i_dim,i_dir)
    end function wb_block_neighbor
 
+   subroutine wb_block_neighbors_vector( blk, neighbors, i_dir )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), intent(in) :: i_dir
+      integer(SP), dimension(:), allocatable, intent(inout) :: neighbors
+
+      neighbors = blk%neighbors(:,i_dir)
+   end subroutine wb_block_neighbors_vector
+
    subroutine wb_block_periods_vector( blk, periods )
       type(WB_Block), intent(in) :: blk
       logical, dimension(:), allocatable, intent(inout) :: periods
@@ -748,14 +775,6 @@ contains
       allocate( sd%neighbors(sd%n_dim,N_DIR) )
 
       call decompose_domain( sd, blocks, processes )
-
-      ! This assignment is bad and I should correct it.  It does not copy the
-      ! data in the arrays, only the pointers to the arrays.  This is not a
-      ! problem now but is a problem later when the blocks array is
-      ! deallocated.  After that, local_block becomes meaningless.
-      call wb_block_construct( sd%local_block, sd%n_dim )
-      sd%local_block = blocks(sd%ib)
-
       call check_block_total_points( sd )
       call identify_process_neighbors( sd, blocks, processes )
 
