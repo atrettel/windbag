@@ -728,6 +728,14 @@ contains
       deallocate( process%nx )
    end subroutine wb_process_destroy
 
+   function wb_subdomain_block_coord( sd, i_dim ) result( block_coord )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: i_dim
+      integer(MP) :: block_coord
+
+      block_coord = sd%block_coords(i_dim)
+   end function wb_subdomain_block_coord
+
    subroutine wb_subdomain_block_coords_vector( sd, block_coords )
       type(WB_Subdomain), intent(in) :: sd
       integer(MP), dimension(:), allocatable, intent(inout) :: block_coords
@@ -1107,7 +1115,8 @@ contains
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, sd%n_dim
                call write_table_entry( f, &
-               int(sd%block_coords(i_dim),SP), COORDS_COLUMN_WIDTH )
+               int(wb_subdomain_block_coord(sd,i_dim),SP), &
+               COORDS_COLUMN_WIDTH )
             end do
             call write_table_entry( f, total_points(sd), &
                POINTS_COLUMN_WIDTH )
