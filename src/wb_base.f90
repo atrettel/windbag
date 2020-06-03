@@ -210,13 +210,12 @@ contains
       end do
    end subroutine check_block_neighbors
 
-   subroutine check_block_total_points( sd, blocks )
+   subroutine check_block_total_points( sd )
       integer(SP) :: points_in_block, points_in_processes
       integer(MP) :: ierr
       type(WB_Subdomain), intent(in) :: sd
-      type(WB_Block), dimension(:), allocatable :: blocks
 
-      points_in_block = total_points(blocks(sd%ib))
+      points_in_block = total_points(sd%local_block)
       points_in_processes = 0_SP
       call mpi_reduce( total_points(sd), points_in_processes, &
          int(sd%n_dim,MP), MPI_SP, MPI_SUM, BLOCK_MASTER, sd%comm_block, ierr )
@@ -747,12 +746,18 @@ contains
       allocate( sd%nx(sd%n_dim) )
       allocate( sd%block_coords(sd%n_dim) )
       allocate( sd%neighbors(sd%n_dim,N_DIR) )
-      call wb_block_construct( sd%local_block, sd%n_dim )
 
       call decompose_domain( sd, blocks, processes )
-      call check_block_total_points( sd, blocks )
-      call identify_process_neighbors( sd, blocks, processes )
+
+      ! This assignment is bad and I should correct it.  It does not copy the
+      ! data in the arrays, only the pointers to the arrays.  This is not a
+      ! problem now but is a problem later when the blocks array is
+      ! deallocated.  After that, local_block becomes meaningless.
+      call wb_block_construct( sd%local_block, sd%n_dim )
       sd%local_block = blocks(sd%ib)
+
+      call check_block_total_points( sd )
+      call identify_process_neighbors( sd, blocks, processes )
 
       do world_rank = 0_MP, sd%world_size-1_MP
          call wb_process_destroy( processes(world_rank) )
