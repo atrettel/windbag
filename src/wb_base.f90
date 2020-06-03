@@ -431,7 +431,7 @@ contains
       call write_scalar_variables(        output_unit, sd )
       call write_block_information(       output_unit, sd )
       call write_process_information(     output_unit, sd )
-      call write_process_neighbors(       output_unit, sd )
+      call write_subdomain_neighbors(     output_unit, sd )
    end subroutine print_initial_information
 
    subroutine read_block_namelists( filename, nb, n_dim, blocks )
@@ -1041,10 +1041,10 @@ contains
       end if
    end subroutine write_process_information
 
-   subroutine write_process_neighbors( f, sd )
+   subroutine write_subdomain_neighbors( f, sd )
       integer, intent(in) :: f
       type(WB_Subdomain), intent(in) :: sd
-      integer(MP) :: ierr, world_rank, neighbor
+      integer(MP) :: ierr, world_rank, sd_neighbor
       integer(SP) :: i_dim, i_dir, j_dir, face_count
       integer(SP), dimension(N_DIR) :: dirs
       character(len=STRING_LENGTH) :: label
@@ -1093,13 +1093,13 @@ contains
                do i_dir = 1_SP, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1_SP
-                  neighbor = wb_subdomain_neighbor(sd,i_dim,j_dir)
-                  if ( neighbor .eq. MPI_PROC_NULL ) then
+                  sd_neighbor = neighbor( sd, i_dim, j_dir )
+                  if ( sd_neighbor .eq. MPI_PROC_NULL ) then
                      call write_table_entry( f, "-", &
                         RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
                   else
-                     call write_table_entry( f, int(neighbor,SP), &
+                     call write_table_entry( f, int(sd_neighbor,SP), &
                         RANK_COLUMN_WIDTH, &
                         end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
                   end if
@@ -1112,7 +1112,7 @@ contains
       if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_blank_line( f )
       end if
-   end subroutine write_process_neighbors
+   end subroutine write_subdomain_neighbors
 
    subroutine write_scalar_variables( f, sd )
       integer, intent(in) :: f
