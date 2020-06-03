@@ -430,7 +430,7 @@ contains
       call write_environment_information( output_unit, sd )
       call write_scalar_variables(        output_unit, sd )
       call write_block_information(       output_unit, sd )
-      call write_process_information(     output_unit, sd )
+      call write_subdomain_information(   output_unit, sd )
       call write_subdomain_neighbors(     output_unit, sd )
    end subroutine print_initial_information
 
@@ -964,7 +964,7 @@ contains
       end if
    end subroutine write_environment_information
 
-   subroutine write_process_information( f, sd )
+   subroutine write_subdomain_information( f, sd )
       integer, intent(in) :: f
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: ierr, processor_length, world_rank
@@ -973,7 +973,7 @@ contains
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
 
       if ( sd%world_rank .eq. WORLD_MASTER ) then
-         call write_log_heading( f, "Process information", level=2_SP )
+         call write_log_heading( f, "Subdomain information", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
@@ -1039,7 +1039,7 @@ contains
       if ( sd%world_rank .eq. WORLD_MASTER ) then
          call write_blank_line( f )
       end if
-   end subroutine write_process_information
+   end subroutine write_subdomain_information
 
    subroutine write_subdomain_neighbors( f, sd )
       integer, intent(in) :: f
@@ -1053,7 +1053,7 @@ contains
       dirs = (/ LOWER_DIR, UPPER_DIR /)
 
       if ( sd%world_rank .eq. WORLD_MASTER ) then
-         call write_log_heading( f, "Process neighbors", level=2_SP )
+         call write_log_heading( f, "Subdomain neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, sd%n_dim
