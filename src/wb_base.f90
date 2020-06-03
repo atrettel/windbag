@@ -218,7 +218,7 @@ contains
       points_in_block = total_points(sd%local_block)
       points_in_processes = 0_SP
       call mpi_reduce( total_points(sd), points_in_processes, &
-         int(wb_subdomain_dimensions(sd),MP), MPI_SP, MPI_SUM, BLOCK_MASTER, &
+         wb_subdomain_dimensions_mp(sd), MPI_SP, MPI_SUM, BLOCK_MASTER, &
          sd%comm_block, ierr )
       if ( wb_subdomain_is_block_master(sd) .and. &
          points_in_block .ne. points_in_processes ) then
@@ -312,14 +312,14 @@ contains
 
       call mpi_comm_split( MPI_COMM_WORLD, &
          int(wb_subdomain_block_number(sd),MP), 0_MP, comm_split, ierr )
-      call mpi_cart_create( comm_split, int(wb_subdomain_dimensions(sd),MP), &
+      call mpi_cart_create( comm_split, wb_subdomain_dimensions_mp(sd), &
          block_np, block_periods, wb_block_reorder(sd%local_block), &
          sd%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( sd%comm_block, sd%block_rank, ierr )
       call mpi_comm_size( sd%comm_block, sd%block_size, ierr )
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
-         int(wb_subdomain_dimensions(sd),MP), sd%block_coords, ierr )
+         wb_subdomain_dimensions_mp(sd), sd%block_coords, ierr )
 
       sd%nx = block_nx / int(block_np,SP)
       do i_dim = 1_SP, sd%n_dim
@@ -823,6 +823,13 @@ contains
 
       n_dim = sd%n_dim
    end function wb_subdomain_dimensions
+
+   function wb_subdomain_dimensions_mp( sd ) result( n_dim )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(MP) :: n_dim
+
+      n_dim = int(wb_subdomain_dimensions(sd),MP)
+   end function wb_subdomain_dimensions_mp
 
    function wb_subdomain_is_block_master( sd ) result( is_block_master )
       type(WB_Subdomain), intent(in) :: sd
