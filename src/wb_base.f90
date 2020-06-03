@@ -384,15 +384,16 @@ contains
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(in) :: processes
 
-      allocate( block_coords(sd%n_dim), process_block_coords(sd%n_dim) )
-      do i_dim = 1_SP, sd%n_dim
+      allocate( block_coords(wb_subdomain_dimensions(sd)), &
+        process_block_coords(wb_subdomain_dimensions(sd)) )
+      do i_dim = 1_SP, wb_subdomain_dimensions(sd)
          call mpi_cart_shift( sd%comm_block, int(i_dim,MP)-1_MP, 1_MP, &
             block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
          do i_dir = 1_SP, N_DIR
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
-               do world_rank = 0_MP, sd%world_size-1_MP
+               do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
                   if ( wb_process_block_number( processes(world_rank) ) .eq. &
-                     sd%ib .and. &
+                     wb_subdomain_block_number(sd) .and. &
                      wb_process_block_rank( processes(world_rank) ) .eq. &
                      block_ranks(i_dir) ) then
                      exit
@@ -400,7 +401,7 @@ contains
                end do
                sd%neighbors(i_dim,i_dir) = world_rank
             else
-               block_neighbor = neighbor( blocks(sd%ib), i_dim, i_dir )
+               block_neighbor = neighbor( sd%local_block, i_dim, i_dir )
                if ( block_neighbor .eq. NO_BLOCK_NEIGHBOR ) then
                   sd%neighbors(i_dim,i_dir) = MPI_PROC_NULL
                else
@@ -416,7 +417,7 @@ contains
                   else
                      block_coords(i_dim) = 0_MP
                   end if
-                  do world_rank = 0_MP, sd%world_size-1_MP
+                  do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
                      call wb_process_block_coords( processes(world_rank), &
                         process_block_coords )
                      if ( wb_process_block_number( processes(world_rank) ) &
