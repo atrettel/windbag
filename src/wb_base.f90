@@ -313,8 +313,8 @@ contains
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( sd%comm_block, sd%block_rank, ierr )
       call mpi_comm_size( sd%comm_block, sd%block_size, ierr )
-      call mpi_cart_coords( sd%comm_block, sd%block_rank, int(sd%n_dim,MP), &
-         sd%block_coords, ierr )
+      call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
+         int(sd%n_dim,MP), sd%block_coords, ierr )
 
       sd%nx = block_nx / int(block_np,SP)
       do i_dim = 1_SP, sd%n_dim
@@ -330,8 +330,8 @@ contains
       do world_rank = 0_MP, sd%world_size-1_MP
          if ( world_rank .eq. sd%world_rank ) then
             call wb_process_construct( processes(world_rank), sd%n_dim, &
-               block_assignments(world_rank), world_rank, sd%block_rank, &
-               sd%block_coords, sd%nx )
+               block_assignments(world_rank), world_rank, &
+               wb_subdomain_block_rank(sd), sd%block_coords, sd%nx )
          else
             call wb_process_construct( processes(world_rank), sd%n_dim, &
                block_assignments(world_rank), world_rank )
@@ -1043,7 +1043,7 @@ contains
                HOSTNAME_COLUMN_WIDTH )
             call write_table_entry( f, sd%ib, &
                IB_COLUMN_WIDTH )
-            call write_table_entry( f, int(sd%block_rank,SP), &
+            call write_table_entry( f, int(wb_subdomain_block_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, sd%n_dim
                call write_table_entry( f, &
