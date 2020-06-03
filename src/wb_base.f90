@@ -286,55 +286,62 @@ contains
       integer(MP), dimension(:), allocatable :: block_np
       logical, dimension(:), allocatable :: block_periods
 
-      allocate( block_assignments(0_MP:sd%world_size-1_MP) )
-      call assign_blocks( blocks, block_assignments, sd%world_size )
+      allocate( block_assignments(0_MP:wb_subdomain_world_size(sd)-1_MP) )
+      call assign_blocks( blocks, block_assignments, &
+         wb_subdomain_world_size(sd) )
 
-      sd%ib = block_assignments(sd%world_rank)
-      allocate( block_neighbors_l(sd%n_dim) )
-      allocate( block_neighbors_u(sd%n_dim) )
-      allocate( block_np(sd%n_dim) )
-      allocate( block_nx(sd%n_dim) )
-      allocate( block_periods(sd%n_dim) )
-      call wb_block_neighbors_vector( blocks(sd%ib), block_neighbors_l, &
-         LOWER_DIR )
-      call wb_block_neighbors_vector( blocks(sd%ib), block_neighbors_u, &
-         UPPER_DIR )
-      call wb_block_processes_vector( blocks(sd%ib), block_np      )
-      call wb_block_points_vector(    blocks(sd%ib), block_nx      )
-      call wb_block_periods_vector(   blocks(sd%ib), block_periods )
-      call wb_block_construct( sd%local_block, sd%n_dim, block_np, block_nx, &
-         block_neighbors_l, block_neighbors_u, sd%ib )
+      sd%ib = block_assignments(wb_subdomain_world_rank(sd))
+      allocate( block_neighbors_l(wb_subdomain_dimensions(sd)) )
+      allocate( block_neighbors_u(wb_subdomain_dimensions(sd)) )
+      allocate( block_np(wb_subdomain_dimensions(sd)) )
+      allocate( block_nx(wb_subdomain_dimensions(sd)) )
+      allocate( block_periods(wb_subdomain_dimensions(sd)) )
+      call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
+         block_neighbors_l, LOWER_DIR )
+      call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
+         block_neighbors_u, UPPER_DIR )
+      call wb_block_processes_vector( blocks(wb_subdomain_block_number(sd)), &
+         block_np )
+      call wb_block_points_vector( blocks(wb_subdomain_block_number(sd)), &
+         block_nx )
+      call wb_block_periods_vector( blocks(wb_subdomain_block_number(sd)), &
+         block_periods )
+      call wb_block_construct( sd%local_block, wb_subdomain_dimensions(sd), &
+         block_np, block_nx, block_neighbors_l, block_neighbors_u, &
+         wb_subdomain_block_number(sd) )
 
-      call mpi_comm_split( MPI_COMM_WORLD, int(sd%ib,MP), 0_MP, comm_split, &
-         ierr )
-      call mpi_cart_create( comm_split, int(sd%n_dim,MP), block_np, &
-         block_periods, wb_block_reorder( blocks(sd%ib) ), sd%comm_block, &
-         ierr )
+      call mpi_comm_split( MPI_COMM_WORLD, &
+         int(wb_subdomain_block_number(sd),MP), 0_MP, comm_split, ierr )
+      call mpi_cart_create( comm_split, int(wb_subdomain_dimensions(sd),MP), &
+         block_np, block_periods, wb_block_reorder(sd%local_block), &
+         sd%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( sd%comm_block, sd%block_rank, ierr )
       call mpi_comm_size( sd%comm_block, sd%block_size, ierr )
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
-         int(sd%n_dim,MP), sd%block_coords, ierr )
+         int(wb_subdomain_dimensions(sd),MP), sd%block_coords, ierr )
 
       sd%nx = block_nx / int(block_np,SP)
       do i_dim = 1_SP, sd%n_dim
          if ( sd%block_coords(i_dim) .eq. &
-            wb_block_processes( blocks(sd%ib), i_dim ) - 1_MP ) then
+            wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
-               wb_block_points( blocks(sd%ib), i_dim ), &
-               int( wb_block_processes( blocks(sd%ib), i_dim ), SP ) )
+               wb_block_points( sd%local_block, i_dim ), &
+               int( wb_block_processes( sd%local_block, i_dim ), SP ) )
          end if
       end do
 
-      allocate( processes(0_MP:sd%world_size-1_MP) )
-      do world_rank = 0_MP, sd%world_size-1_MP
+      allocate( processes(0_MP:wb_subdomain_world_size(sd)-1_MP) )
+      do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          if ( world_rank .eq. sd%world_rank ) then
-            call wb_process_construct( processes(world_rank), sd%n_dim, &
-               block_assignments(world_rank), world_rank, &
-               wb_subdomain_block_rank(sd), sd%block_coords, sd%nx )
+            call wb_process_construct( processes(world_rank), &
+               wb_subdomain_dimensions(sd), block_assignments(world_rank), &
+               world_rank, wb_subdomain_block_rank(sd), sd%block_coords, &
+               sd%nx )
          else
-            call wb_process_construct( processes(world_rank), sd%n_dim, &
-               block_assignments(world_rank), world_rank )
+            call wb_process_construct( processes(world_rank), &
+               wb_subdomain_dimensions(sd), block_assignments(world_rank), &
+               world_rank )
          end if
       end do
 
@@ -859,6 +866,20 @@ contains
 
       points_in_state = product(sd%nx)
    end function wb_subdomain_total_points
+
+   function wb_subdomain_world_rank( sd ) result( world_rank )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(MP) :: world_rank
+
+      world_rank = sd%world_rank
+   end function wb_subdomain_world_rank
+
+   function wb_subdomain_world_size( sd ) result( world_size )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(MP) :: world_size
+
+      world_size = sd%world_size
+   end function wb_subdomain_world_size
 
    subroutine write_block_information( f, sd )
       integer, intent(in) :: f
