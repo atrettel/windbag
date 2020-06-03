@@ -220,7 +220,7 @@ contains
       call mpi_reduce( total_points(sd), points_in_processes, &
          int(wb_subdomain_dimensions(sd),MP), MPI_SP, MPI_SUM, BLOCK_MASTER, &
          sd%comm_block, ierr )
-      if ( wb_subdomain_block_rank(sd) .eq. BLOCK_MASTER .and. &
+      if ( wb_subdomain_is_block_master(sd) .and. &
          points_in_block .ne. points_in_processes ) then
          call wb_abort( "total points in block N1 (N2) does not match sum of &
                         &points in individual processes (N3)", &
@@ -817,6 +817,20 @@ contains
       n_dim = sd%n_dim
    end function wb_subdomain_dimensions
 
+   function wb_subdomain_is_block_master( sd ) result( is_block_master )
+      type(WB_Subdomain), intent(in) :: sd
+      logical :: is_block_master
+
+      is_block_master = sd%block_rank .eq. BLOCK_MASTER
+   end function wb_subdomain_is_block_master
+
+   function wb_subdomain_is_world_master( sd ) result( is_world_master )
+      type(WB_Subdomain), intent(in) :: sd
+      logical :: is_world_master
+
+      is_world_master = sd%world_rank .eq. WORLD_MASTER
+   end function wb_subdomain_is_world_master
+
    function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim, i_dir
@@ -853,7 +867,7 @@ contains
       integer(MP) :: ierr
       character(len=STRING_LENGTH) :: label
 
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Block information", level=2_SP )
 
          call write_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
@@ -887,7 +901,7 @@ contains
 
       do ib = 1_SP, sd%nb
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( ib .eq. sd%ib .and. sd%block_rank .eq. BLOCK_MASTER ) then
+         if ( ib .eq. sd%ib .and. wb_subdomain_is_block_master(sd) ) then
             call write_table_entry( f, sd%ib, IB_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_block_size(sd%local_block),SP), &
                SIZE_COLUMN_WIDTH )
@@ -905,7 +919,7 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_blank_line( f )
       end if
    end subroutine write_block_information
@@ -917,7 +931,7 @@ contains
          mpi_minor_version_number, version_length
       character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
 
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, PROGRAM_NAME )
 
          call write_log_heading( f, "Environment parameters", level=2_SP )
@@ -995,7 +1009,7 @@ contains
       character(len=STRING_LENGTH) :: label
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
 
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Subdomain information", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
@@ -1059,7 +1073,7 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_blank_line( f )
       end if
    end subroutine write_subdomain_information
@@ -1075,7 +1089,7 @@ contains
       face_count = 0_SP
       dirs = (/ LOWER_DIR, UPPER_DIR /)
 
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Subdomain neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
@@ -1132,7 +1146,7 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_blank_line( f )
       end if
    end subroutine write_subdomain_neighbors
@@ -1141,7 +1155,7 @@ contains
       integer, intent(in) :: f
       type(WB_Subdomain), intent(in) :: sd
 
-      if ( sd%world_rank .eq. WORLD_MASTER ) then
+      if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "State scalar variables", level=2_SP )
          call write_table_entry( f, "Property", PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, "Value", VALUE_COLUMN_WIDTH, end_row=.true. )
