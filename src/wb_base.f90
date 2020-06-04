@@ -987,14 +987,14 @@ contains
                IB_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_block_size(sd%local_block),SP), &
                SIZE_COLUMN_WIDTH )
-            do i_dim = 1_SP, sd%n_dim
+            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
                call write_table_entry( f, &
                int(wb_block_processes(sd%local_block,i_dim),SP), &
                   NP_COLUMN_WIDTH )
             end do
             call write_table_entry( f, total_points(sd%local_block), &
                POINTS_COLUMN_WIDTH )
-            do i_dim = 1_SP, sd%n_dim
+            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
                call write_table_entry( f, wb_block_points(sd%local_block,i_dim), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. &
                   wb_subdomain_dimensions(sd)) )
