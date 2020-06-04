@@ -854,6 +854,13 @@ contains
       n_dim = int(wb_subdomain_dimensions(sd),MP)
    end function wb_subdomain_dimensions_mp
 
+   function wb_subdomain_faces( sd ) result( n_faces )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: n_faces
+
+      n_faces = sd%n_dim * N_DIR
+   end function wb_subdomain_faces
+
    function wb_subdomain_is_block_master( sd ) result( is_block_master )
       type(WB_Subdomain), intent(in) :: sd
       logical :: is_block_master
@@ -1159,7 +1166,7 @@ contains
          call write_log_heading( f, "Subdomain neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
-         do i_dim = 1_SP, sd%n_dim
+         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
             do i_dir = 1_SP, N_DIR
                j_dir = dirs(i_dir)
                face_count = face_count + 1_SP
@@ -1169,30 +1176,30 @@ contains
                   write (label,"(I1, A)") i_dim, "U"
                end if
                call write_table_entry( f, label, RANK_COLUMN_WIDTH, &
-                  end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
+                  end_row=( face_count .eq. wb_subdomain_faces(sd) ) )
             end do
          end do
 
          face_count = 0_SP
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, sd%n_dim
+         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
             do i_dir = 1_SP, N_DIR
                face_count = face_count + 1_SP
                call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
                   alignment=RIGHT_ALIGNED, &
-                  end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
+                  end_row=( face_count .eq. wb_subdomain_faces(sd) ) )
             end do
          end do
       end if
 
-      do world_rank = 0_MP, sd%world_size-1_MP
+      do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          face_count = 0_SP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( sd%world_rank .eq. world_rank ) then
-            call write_table_entry( f, int(sd%world_rank,SP), &
+         if ( wb_subdomain_world_rank(sd) .eq. world_rank ) then
+            call write_table_entry( f, int(wb_subdomain_world_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
-            do i_dim = 1_SP, sd%n_dim
+            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
                do i_dir = 1_SP, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1_SP
@@ -1200,11 +1207,11 @@ contains
                   if ( sd_neighbor .eq. MPI_PROC_NULL ) then
                      call write_table_entry( f, "-", &
                         RANK_COLUMN_WIDTH, &
-                        end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
+                        end_row=( face_count .eq. wb_subdomain_faces(sd) ) )
                   else
                      call write_table_entry( f, int(sd_neighbor,SP), &
                         RANK_COLUMN_WIDTH, &
-                        end_row=( face_count .eq. int(sd%n_dim*N_DIR,MP) ) )
+                        end_row=( face_count .eq. wb_subdomain_faces(sd) ) )
                   end if
                end do
             end do
