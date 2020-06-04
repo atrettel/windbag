@@ -40,6 +40,7 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_IB             = 1_SP
    integer(SP), public, parameter :: DEFAULT_N_DIM          = 3_SP
    integer(SP), public, parameter :: DEFAULT_NB             = 1_SP
+   integer(SP), public, parameter :: DEFAULT_NC             = 1_SP
    integer(SP), public, parameter :: DEFAULT_NG             = 3_SP
    integer(SP), public, parameter :: DEFAULT_NX             = 0_SP
 
@@ -75,6 +76,7 @@ module wb_base
       integer(MP) :: world_rank, world_size
       integer(SP) :: ib, nb
       integer(SP) :: n_dim
+      integer(SP) :: nc
       integer(SP) :: nf
       integer(SP) :: ng
       integer(SP) :: nv
@@ -111,6 +113,10 @@ module wb_base
    interface total_blocks
       module procedure wb_subdomain_total_blocks
    end interface total_blocks
+
+   interface total_components
+      module procedure wb_subdomain_total_components
+   end interface total_components
 
    interface total_points
       module procedure wb_block_total_points, wb_subdomain_total_points
@@ -271,8 +277,8 @@ contains
       end if
    end subroutine check_block_world_size
 
-   subroutine check_general_variables( nb, n_dim, ng, world_size )
-      integer(SP), intent(in) :: nb, n_dim, ng
+   subroutine check_general_variables( nb, nc, n_dim, ng, world_size )
+      integer(SP), intent(in) :: nb, nc, n_dim, ng
       integer(MP), intent(in) :: world_size
 
       if ( nb .lt. 1_SP  .or. nb .gt. int(world_size,SP) ) then
@@ -283,6 +289,10 @@ contains
          call wb_abort( &
             "number of blocks must be in interval [N1, N2]", &
             EXIT_DATAERR, (/ 1_SP, int(world_size,SP) /) )
+      end if
+      if ( nc .lt. 1_SP ) then
+         call wb_abort( &
+            "number of components must be at least 1", EXIT_DATAERR )
       end if
       if ( ng .lt. 1_SP ) then
          call wb_abort( "number of ghost points is less than 1", &
@@ -544,16 +554,17 @@ contains
       deallocate( neighbors_u )
    end subroutine read_block_namelists
 
-   subroutine read_general_namelist( filename, case_name, nb, n_dim, ng )
+   subroutine read_general_namelist( filename, case_name, nb, nc, n_dim, ng )
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH), intent(out) :: case_name
-      integer(SP), intent(out) :: nb, n_dim, ng
+      integer(SP), intent(out) :: nb, nc, n_dim, ng
       integer :: file_unit
       integer(MP) :: ierr, world_rank
-      namelist /general/ case_name, nb, ng, n_dim
+      namelist /general/ case_name, nb, nc, ng, n_dim
 
       case_name = DEFAULT_CASE_NAME
       nb        = DEFAULT_NB
+      nc        = DEFAULT_NC
       n_dim     = DEFAULT_N_DIM
       ng        = DEFAULT_NG
 
@@ -568,12 +579,10 @@ contains
 
       call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
          WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( nb, 1_MP, MPI_SP, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-      call mpi_bcast( n_dim, 1_MP, MPI_SP, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
-      call mpi_bcast( ng, 1_MP, MPI_SP, WORLD_MASTER, &
-         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( nb,    1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( nc,    1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( n_dim, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( ng,    1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
    subroutine wb_block_construct( blk, n_dim, np, nx, neighbors_l, &
@@ -820,15 +829,15 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
-      integer(SP) :: ib, nb, n_dim, ng
+      integer(SP) :: ib, nb, nc, n_dim, ng
       integer(MP) :: ierr, world_rank, world_size
       type(WB_Block), dimension(:), allocatable :: blocks
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
-      call read_general_namelist( filename, case_name, nb, n_dim, ng )
+      call read_general_namelist( filename, case_name, nb, nc, n_dim, ng )
       if ( world_rank .eq. WORLD_MASTER ) then
-         call check_general_variables( nb, n_dim, ng, world_size )
+         call check_general_variables( nb, nc, n_dim, ng, world_size )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
       call read_block_namelists( filename, nb, n_dim, blocks )
@@ -838,7 +847,7 @@ contains
          call check_block_world_size( blocks, nb )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      call wb_subdomain_construct_variables( sd, nb, n_dim, ng, blocks, &
+      call wb_subdomain_construct_variables( sd, nb, nc, n_dim, ng, blocks, &
          case_name )
 
       do ib = 1_SP, nb
@@ -847,11 +856,11 @@ contains
       deallocate( blocks )
    end subroutine wb_subdomain_construct_namelist
 
-   subroutine wb_subdomain_construct_variables( sd, nb, n_dim, ng, blocks, &
-      case_name )
+   subroutine wb_subdomain_construct_variables( sd, nb, nc, n_dim, ng, &
+      blocks, case_name )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
-      integer(SP), intent(in) :: nb, n_dim, ng
+      integer(SP), intent(in) :: nb, nc, n_dim, ng
       integer(MP) :: ierr, world_rank
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable :: processes
@@ -863,6 +872,7 @@ contains
       end if
 
       sd%nb    = nb
+      sd%nc    = nc
       sd%n_dim = n_dim
       sd%ng    = ng
 
@@ -973,6 +983,13 @@ contains
 
       total_blocks = sd%nb
    end function wb_subdomain_total_blocks
+
+   function wb_subdomain_total_components( sd ) result( total_components )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: total_components
+
+      total_components = sd%nc
+   end function wb_subdomain_total_components
 
    function wb_subdomain_total_points( sd ) result( points_in_state )
       type(WB_Subdomain), intent(in) :: sd
@@ -1313,6 +1330,9 @@ contains
             end_row=.true. )
          call write_table_entry( f, "Number of blocks", PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, total_blocks(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Number of components", PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, total_components(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of dimensions", &
             PROPERTY_COLUMN_WIDTH )
