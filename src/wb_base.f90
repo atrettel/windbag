@@ -880,11 +880,11 @@ contains
       n_faces = sd%n_dim * N_DIR
    end function wb_subdomain_faces
 
-   function wb_subdomain_ghost_points( sd ) result( ghost_points )
+   function wb_subdomain_ghost_points( sd ) result( ng )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: ghost_points
+      integer(SP) :: ng
 
-      ghost_points = sd%ng
+      ng = sd%ng
    end function wb_subdomain_ghost_points
 
    function wb_subdomain_is_block_master( sd ) result( is_block_master )
