@@ -108,6 +108,10 @@ module wb_base
       module procedure wb_block_points, wb_subdomain_points
    end interface points
 
+   interface total_blocks
+      module procedure wb_subdomain_total_blocks
+   end interface total_blocks
+
    interface total_points
       module procedure wb_block_total_points, wb_subdomain_total_points
    end interface total_points
@@ -1010,7 +1014,7 @@ contains
          end do
       end if
 
-      do ib = 1_SP, wb_subdomain_total_blocks(sd)
+      do ib = 1_SP, total_blocks(sd)
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( ib .eq. wb_subdomain_block_number(sd) .and. &
             wb_subdomain_is_block_master(sd) ) then
@@ -1287,7 +1291,7 @@ contains
          call write_table_entry( f, case_name, VALUE_COLUMN_WIDTH, &
             end_row=.true. )
          call write_table_entry( f, "Number of blocks", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, wb_subdomain_total_blocks(sd), &
+         call write_table_entry( f, total_blocks(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of dimensions", &
             PROPERTY_COLUMN_WIDTH )
