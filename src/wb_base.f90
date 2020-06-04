@@ -88,6 +88,14 @@ module wb_base
       type(WB_Block) :: local_block
    end type WB_Subdomain
 
+   interface dimens
+      module procedure wb_subdomain_dimensions
+   end interface dimens
+
+   interface dimens_mp
+      module procedure wb_subdomain_dimensions_mp
+   end interface dimens_mp
+
    interface neighbor
       module procedure wb_block_neighbor, wb_subdomain_neighbor
    end interface neighbor
@@ -223,7 +231,7 @@ contains
       points_in_block = total_points(local_block)
       points_in_processes = 0_SP
       call mpi_reduce( total_points(sd), points_in_processes, &
-         wb_subdomain_dimensions_mp(sd), MPI_SP, MPI_SUM, BLOCK_MASTER, &
+         dimens_mp(sd), MPI_SP, MPI_SUM, BLOCK_MASTER, &
          comm_block, ierr )
       if ( wb_subdomain_is_block_master(sd) .and. &
          points_in_block .ne. points_in_processes ) then
@@ -296,11 +304,11 @@ contains
          wb_subdomain_world_size(sd) )
 
       sd%ib = block_assignments(wb_subdomain_world_rank(sd))
-      allocate( block_neighbors_l(wb_subdomain_dimensions(sd)), &
-                block_neighbors_u(wb_subdomain_dimensions(sd)), &
-                         block_np(wb_subdomain_dimensions(sd)), &
-                         block_nx(wb_subdomain_dimensions(sd)), &
-                    block_periods(wb_subdomain_dimensions(sd)) )
+      allocate( block_neighbors_l(dimens(sd)), &
+                block_neighbors_u(dimens(sd)), &
+                         block_np(dimens(sd)), &
+                         block_nx(dimens(sd)), &
+                    block_periods(dimens(sd)) )
       call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
          block_neighbors_l, LOWER_DIR )
       call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
@@ -311,23 +319,23 @@ contains
          block_nx )
       call wb_block_periods_vector( blocks(wb_subdomain_block_number(sd)), &
          block_periods )
-      call wb_block_construct( sd%local_block, wb_subdomain_dimensions(sd), &
+      call wb_block_construct( sd%local_block, dimens(sd), &
          block_np, block_nx, block_neighbors_l, block_neighbors_u, &
          wb_subdomain_block_number(sd) )
 
       call mpi_comm_split( MPI_COMM_WORLD, &
          wb_subdomain_block_number_mp(sd), 0_MP, comm_split, ierr )
-      call mpi_cart_create( comm_split, wb_subdomain_dimensions_mp(sd), &
+      call mpi_cart_create( comm_split, dimens_mp(sd), &
          block_np, block_periods, wb_block_reorder(sd%local_block), &
          sd%comm_block, ierr )
       call mpi_comm_free( comm_split, ierr )
       call mpi_comm_rank( sd%comm_block, sd%block_rank, ierr )
       call mpi_comm_size( sd%comm_block, sd%block_size, ierr )
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
-         wb_subdomain_dimensions_mp(sd), sd%block_coords, ierr )
+         dimens_mp(sd), sd%block_coords, ierr )
 
       sd%nx = block_nx / int(block_np,SP)
-      do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+      do i_dim = 1_SP, dimens(sd)
          if ( sd%block_coords(i_dim) .eq. &
             wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
@@ -340,12 +348,12 @@ contains
       do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          if ( world_rank .eq. wb_subdomain_world_rank(sd) ) then
             call wb_process_construct( processes(world_rank), &
-               wb_subdomain_dimensions(sd), block_assignments(world_rank), &
+               dimens(sd), block_assignments(world_rank), &
                world_rank, wb_subdomain_block_rank(sd), sd%block_coords, &
                sd%nx )
          else
             call wb_process_construct( processes(world_rank), &
-               wb_subdomain_dimensions(sd), block_assignments(world_rank), &
+               dimens(sd), block_assignments(world_rank), &
                world_rank )
          end if
       end do
@@ -389,9 +397,9 @@ contains
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable, intent(in) :: processes
 
-      allocate( block_coords(wb_subdomain_dimensions(sd)), &
-        process_block_coords(wb_subdomain_dimensions(sd)) )
-      do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+      allocate( block_coords(dimens(sd)), &
+        process_block_coords(dimens(sd)) )
+      do i_dim = 1_SP, dimens(sd)
          call mpi_cart_shift( sd%comm_block, int(i_dim,MP)-1_MP, 1_MP, &
             block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
          do i_dir = 1_SP, N_DIR
@@ -971,31 +979,30 @@ contains
 
          call write_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
          call write_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
             call write_table_entry( f, label, NP_COLUMN_WIDTH )
          end do
          call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
             call write_table_entry( f, label, NX_COLUMN_WIDTH, &
-               end_row=(i_dim .eq. wb_subdomain_dimensions(sd)) )
+               end_row=(i_dim .eq. dimens(sd)) )
          end do
 
          call write_table_rule_entry( f, IB_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, SIZE_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             call write_table_rule_entry( f, NP_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
          call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
-               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. &
-               wb_subdomain_dimensions(sd)) )
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. dimens(sd)) )
          end do
       end if
 
@@ -1008,17 +1015,16 @@ contains
                IB_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_block_size(local_block),SP), &
                SIZE_COLUMN_WIDTH )
-            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+            do i_dim = 1_SP, dimens(sd)
                call write_table_entry( f, &
                int(wb_block_processes(local_block,i_dim),SP), &
                   NP_COLUMN_WIDTH )
             end do
             call write_table_entry( f, total_points(local_block), &
                POINTS_COLUMN_WIDTH )
-            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+            do i_dim = 1_SP, dimens(sd)
                call write_table_entry( f, wb_block_points(local_block,i_dim), &
-                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. &
-                  wb_subdomain_dimensions(sd)) )
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. dimens(sd)) )
             end do
          end if
       end do
@@ -1121,15 +1127,15 @@ contains
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
          call write_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
          call write_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             write (label,"(A, I1, A)") "(", i_dim, ")"
             call write_table_entry( f, label, COORDS_COLUMN_WIDTH )
          end do
          call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
             call write_table_entry( f, label, NX_COLUMN_WIDTH, &
-               end_row=(i_dim .eq. wb_subdomain_dimensions(sd)) )
+               end_row=(i_dim .eq. dimens(sd)) )
          end do
 
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
@@ -1140,16 +1146,15 @@ contains
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             call write_table_rule_entry( f, COORDS_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
          call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
-               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. &
-               wb_subdomain_dimensions(sd)) )
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. dimens(sd)) )
          end do
       end if
 
@@ -1165,17 +1170,16 @@ contains
                IB_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_subdomain_block_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
-            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+            do i_dim = 1_SP, dimens(sd)
                call write_table_entry( f, &
                int(wb_subdomain_block_coord(sd,i_dim),SP), &
                COORDS_COLUMN_WIDTH )
             end do
             call write_table_entry( f, total_points(sd), &
                POINTS_COLUMN_WIDTH )
-            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+            do i_dim = 1_SP, dimens(sd)
                call write_table_entry( f, wb_subdomain_points(sd,i_dim), &
-                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. &
-                  wb_subdomain_dimensions(sd)) )
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. dimens(sd)) )
             end do
          end if
       end do
@@ -1201,7 +1205,7 @@ contains
          call write_log_heading( f, "Subdomain neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             do i_dir = 1_SP, N_DIR
                j_dir = dirs(i_dir)
                face_count = face_count + 1_SP
@@ -1218,7 +1222,7 @@ contains
          face_count = 0_SP
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+         do i_dim = 1_SP, dimens(sd)
             do i_dir = 1_SP, N_DIR
                face_count = face_count + 1_SP
                call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
@@ -1234,7 +1238,7 @@ contains
          if ( wb_subdomain_world_rank(sd) .eq. world_rank ) then
             call write_table_entry( f, int(wb_subdomain_world_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
-            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
+            do i_dim = 1_SP, dimens(sd)
                do i_dir = 1_SP, N_DIR
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1_SP
@@ -1283,7 +1287,7 @@ contains
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of dimensions", &
             PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, wb_subdomain_dimensions(sd), &
+         call write_table_entry( f, dimens(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of ghost points", &
             PROPERTY_COLUMN_WIDTH )
