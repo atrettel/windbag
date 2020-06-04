@@ -295,6 +295,26 @@ contains
       end if
    end subroutine check_general_variables
 
+   subroutine check_points( sd )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: i_dim
+      integer(MP) :: ierr, world_rank
+
+      do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         do i_dim = 1, dimens(sd)
+            if ( points(sd,i_dim) .lt. ghost_points(sd) .and. &
+               wb_subdomain_world_rank(sd) .eq. world_rank ) then
+            call wb_abort( &
+               "number of points N1 in dimension N2 is less than the number &
+               &of ghost points N3 for subdomain N4", &
+               EXIT_FAILURE, (/ points(sd,i_dim), i_dim, ghost_points(sd), &
+               int(wb_subdomain_world_rank(sd),SP) /) )
+            end if
+         end do
+      end do
+   end subroutine check_points
+
    subroutine decompose_domain( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: i_dim
@@ -854,6 +874,7 @@ contains
       allocate( sd%neighbors(sd%n_dim,N_DIR) )
 
       call decompose_domain( sd, blocks, processes )
+      call check_points( sd )
       call check_block_total_points( sd )
       call identify_process_neighbors( sd, blocks, processes )
 
