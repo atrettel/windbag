@@ -96,6 +96,10 @@ module wb_base
       module procedure wb_subdomain_dimensions_mp
    end interface dimens_mp
 
+   interface ghost_points
+      module procedure wb_subdomain_ghost_points
+   end interface ghost_points
+
    interface neighbor
       module procedure wb_block_neighbor, wb_subdomain_neighbor
    end interface neighbor
@@ -1291,7 +1295,7 @@ contains
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of ghost points", &
             PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, wb_subdomain_ghost_points(sd), &
+         call write_table_entry( f, ghost_points(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_blank_line( f )
       end if
