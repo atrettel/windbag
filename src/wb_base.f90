@@ -1079,15 +1079,15 @@ contains
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
          call write_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
          call write_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
-         do i_dim = 1_SP, sd%n_dim
+         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
             write (label,"(A, I1, A)") "(", i_dim, ")"
             call write_table_entry( f, label, COORDS_COLUMN_WIDTH )
          end do
          call write_table_entry( f, "points", POINTS_COLUMN_WIDTH )
-         do i_dim = 1_SP, sd%n_dim
+         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
             write (label,"(A, I1, A)") "`nx(", i_dim, ")`"
             call write_table_entry( f, label, NX_COLUMN_WIDTH, &
-               end_row=(i_dim .eq. sd%n_dim) )
+               end_row=(i_dim .eq. wb_subdomain_dimensions(sd)) )
          end do
 
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
@@ -1098,40 +1098,42 @@ contains
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, sd%n_dim
+         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
             call write_table_rule_entry( f, COORDS_COLUMN_WIDTH, &
                alignment=RIGHT_ALIGNED )
          end do
          call write_table_rule_entry( f, POINTS_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
-         do i_dim = 1_SP, sd%n_dim
+         do i_dim = 1_SP, wb_subdomain_dimensions(sd)
             call write_table_rule_entry( f, NX_COLUMN_WIDTH, &
-               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. sd%n_dim) )
+               alignment=RIGHT_ALIGNED, end_row=(i_dim .eq. &
+               wb_subdomain_dimensions(sd)) )
          end do
       end if
 
       call mpi_get_processor_name( processor_name, processor_length, ierr )
-      do world_rank = 0_MP, sd%world_size-1_MP
+      do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( sd%world_rank .eq. world_rank ) then
-            call write_table_entry( f, int(sd%world_rank,SP), &
+         if ( wb_subdomain_world_rank(sd) .eq. world_rank ) then
+            call write_table_entry( f, int(wb_subdomain_world_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
             call write_table_entry(  f, processor_name, &
                HOSTNAME_COLUMN_WIDTH )
-            call write_table_entry( f, sd%ib, &
+            call write_table_entry( f, wb_subdomain_block_number(sd), &
                IB_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_subdomain_block_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
-            do i_dim = 1_SP, sd%n_dim
+            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
                call write_table_entry( f, &
                int(wb_subdomain_block_coord(sd,i_dim),SP), &
                COORDS_COLUMN_WIDTH )
             end do
             call write_table_entry( f, total_points(sd), &
                POINTS_COLUMN_WIDTH )
-            do i_dim = 1_SP, sd%n_dim
+            do i_dim = 1_SP, wb_subdomain_dimensions(sd)
                call write_table_entry( f, wb_subdomain_points(sd,i_dim), &
-                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. sd%n_dim) )
+                  NX_COLUMN_WIDTH, end_row=(i_dim .eq. &
+                  wb_subdomain_dimensions(sd)) )
             end do
          end if
       end do
