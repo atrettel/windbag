@@ -214,12 +214,17 @@ contains
       integer(SP) :: points_in_block, points_in_processes
       integer(MP) :: ierr
       type(WB_Subdomain), intent(in) :: sd
+      type(MPI_Comm) :: comm_block
+      type(WB_Block) :: local_block
 
-      points_in_block = total_points(sd%local_block)
+      call wb_subdomain_block_communicator( sd, comm_block )
+      call wb_subdomain_local_block( sd, local_block )
+
+      points_in_block = total_points(local_block)
       points_in_processes = 0_SP
       call mpi_reduce( total_points(sd), points_in_processes, &
          wb_subdomain_dimensions_mp(sd), MPI_SP, MPI_SUM, BLOCK_MASTER, &
-         sd%comm_block, ierr )
+         comm_block, ierr )
       if ( wb_subdomain_is_block_master(sd) .and. &
          points_in_block .ne. points_in_processes ) then
          call wb_abort( "total points in block N1 (N2) does not match sum of &
@@ -724,6 +729,13 @@ contains
       deallocate( process%block_coords )
       deallocate( process%nx )
    end subroutine wb_process_destroy
+
+   subroutine wb_subdomain_block_communicator( sd, comm_block )
+      type(WB_Subdomain), intent(in) :: sd
+      type(MPI_Comm), intent(inout) :: comm_block
+
+      comm_block = sd%comm_block
+   end subroutine wb_subdomain_block_communicator
 
    function wb_subdomain_block_coord( sd, i_dim ) result( block_coord )
       type(WB_Subdomain), intent(in) :: sd
