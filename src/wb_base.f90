@@ -761,6 +761,13 @@ contains
       block_rank = sd%block_rank
    end function
 
+   subroutine wb_subdomain_case_name( sd, case_name )
+      type(WB_Subdomain), intent(in) :: sd
+      character(len=:), allocatable, intent(inout) :: case_name
+
+      case_name = sd%case_name
+   end subroutine wb_subdomain_case_name
+
    subroutine wb_subdomain_construct_namelist( sd, filename )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -860,6 +867,13 @@ contains
 
       n_faces = sd%n_dim * N_DIR
    end function wb_subdomain_faces
+
+   function wb_subdomain_ghost_points( sd ) result( ghost_points )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: ghost_points
+
+      ghost_points = sd%ng
+   end function wb_subdomain_ghost_points
 
    function wb_subdomain_is_block_master( sd ) result( is_block_master )
       type(WB_Subdomain), intent(in) :: sd
@@ -1227,27 +1241,36 @@ contains
    subroutine write_scalar_variables( f, sd )
       integer, intent(in) :: f
       type(WB_Subdomain), intent(in) :: sd
+      character(len=:), allocatable :: case_name
+
+      call wb_subdomain_case_name( sd, case_name )
 
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "State scalar variables", level=2_SP )
          call write_table_entry( f, "Property", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, "Value", VALUE_COLUMN_WIDTH, end_row=.true. )
-         call write_table_rule_entry( f, PROPERTY_COLUMN_WIDTH, alignment=LEFT_ALIGNED )
-         call write_table_rule_entry( f, VALUE_COLUMN_WIDTH, alignment=RIGHT_ALIGNED, &
+         call write_table_entry( f, "Value", VALUE_COLUMN_WIDTH, &
             end_row=.true. )
+         call write_table_rule_entry( f, PROPERTY_COLUMN_WIDTH, &
+            alignment=LEFT_ALIGNED )
+         call write_table_rule_entry( f, VALUE_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED, end_row=.true. )
          call write_table_entry( f, "Case name", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, sd%case_name, VALUE_COLUMN_WIDTH, &
+         call write_table_entry( f, case_name, VALUE_COLUMN_WIDTH, &
             end_row=.true. )
          call write_table_entry( f, "Number of blocks", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, sd%nb, VALUE_COLUMN_WIDTH, &
-            end_row=.true. )
-         call write_table_entry( f, "Number of dimensions", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, sd%n_dim, VALUE_COLUMN_WIDTH, &
-            end_row=.true. )
-         call write_table_entry( f, "Number of ghost points", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, sd%ng, VALUE_COLUMN_WIDTH, &
-            end_row=.true. )
+         call write_table_entry( f, wb_subdomain_total_blocks(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Number of dimensions", &
+            PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, wb_subdomain_dimensions(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Number of ghost points", &
+            PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, wb_subdomain_ghost_points(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_blank_line( f )
       end if
+
+      deallocate( case_name )
    end subroutine write_scalar_variables
 end module wb_base
