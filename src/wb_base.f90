@@ -283,7 +283,7 @@ contains
       type(WB_Process), dimension(:), allocatable, intent(out) :: processes
       integer(SP), dimension(:), allocatable :: block_nx, block_assignments, &
          block_neighbors_l, block_neighbors_u
-      integer(MP), dimension(:), allocatable :: block_coords, block_np
+      integer(MP), dimension(:), allocatable :: block_np
       logical, dimension(:), allocatable :: block_periods
 
       allocate( block_assignments(0_MP:wb_subdomain_world_size(sd)-1_MP) )
@@ -291,8 +291,7 @@ contains
          wb_subdomain_world_size(sd) )
 
       sd%ib = block_assignments(wb_subdomain_world_rank(sd))
-      allocate(      block_coords(wb_subdomain_dimensions(sd)), &
-                block_neighbors_l(wb_subdomain_dimensions(sd)), &
+      allocate( block_neighbors_l(wb_subdomain_dimensions(sd)), &
                 block_neighbors_u(wb_subdomain_dimensions(sd)), &
                          block_np(wb_subdomain_dimensions(sd)), &
                          block_nx(wb_subdomain_dimensions(sd)), &
@@ -322,10 +321,9 @@ contains
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
          wb_subdomain_dimensions_mp(sd), sd%block_coords, ierr )
 
-      call wb_subdomain_block_coords_vector( sd, block_coords )
       sd%nx = block_nx / int(block_np,SP)
       do i_dim = 1_SP, wb_subdomain_dimensions(sd)
-         if ( block_coords(i_dim) .eq. &
+         if ( sd%block_coords(i_dim) .eq. &
             wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
                wb_block_points( sd%local_block, i_dim ), &
@@ -338,7 +336,7 @@ contains
          if ( world_rank .eq. wb_subdomain_world_rank(sd) ) then
             call wb_process_construct( processes(world_rank), &
                wb_subdomain_dimensions(sd), block_assignments(world_rank), &
-               world_rank, wb_subdomain_block_rank(sd), block_coords, &
+               world_rank, wb_subdomain_block_rank(sd), sd%block_coords, &
                sd%nx )
          else
             call wb_process_construct( processes(world_rank), &
@@ -348,7 +346,6 @@ contains
       end do
 
       deallocate( block_assignments, &
-                  block_coords,      &
                   block_neighbors_l, &
                   block_neighbors_u, &
                   block_np,          &
