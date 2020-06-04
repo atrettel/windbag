@@ -889,6 +889,13 @@ contains
       is_world_master = sd%world_rank .eq. WORLD_MASTER
    end function wb_subdomain_is_world_master
 
+   subroutine wb_subdomain_local_block( sd, local_block )
+      type(WB_Subdomain), intent(in) :: sd
+      type(WB_Block), intent(inout) :: local_block
+
+      local_block = sd%local_block
+   end subroutine wb_subdomain_local_block
+
    function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim, i_dir
@@ -945,6 +952,7 @@ contains
       integer(SP) :: ib, i_dim
       integer(MP) :: ierr
       character(len=STRING_LENGTH) :: label
+      type(WB_Block) :: local_block
 
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Block information", level=2_SP )
@@ -983,19 +991,20 @@ contains
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( ib .eq. wb_subdomain_block_number(sd) .and. &
             wb_subdomain_is_block_master(sd) ) then
+            call wb_subdomain_local_block( sd, local_block )
             call write_table_entry( f, wb_subdomain_block_number(sd), &
                IB_COLUMN_WIDTH )
-            call write_table_entry( f, int(wb_block_size(sd%local_block),SP), &
+            call write_table_entry( f, int(wb_block_size(local_block),SP), &
                SIZE_COLUMN_WIDTH )
             do i_dim = 1_SP, wb_subdomain_dimensions(sd)
                call write_table_entry( f, &
-               int(wb_block_processes(sd%local_block,i_dim),SP), &
+               int(wb_block_processes(local_block,i_dim),SP), &
                   NP_COLUMN_WIDTH )
             end do
-            call write_table_entry( f, total_points(sd%local_block), &
+            call write_table_entry( f, total_points(local_block), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, wb_subdomain_dimensions(sd)
-               call write_table_entry( f, wb_block_points(sd%local_block,i_dim), &
+               call write_table_entry( f, wb_block_points(local_block,i_dim), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. &
                   wb_subdomain_dimensions(sd)) )
             end do
