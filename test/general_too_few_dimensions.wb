@@ -2,5 +2,6 @@
 case_name="general_too_few_dimensions",
 n_dim=0,
 nb=2,
+nc=1,
 ng=3,
 /

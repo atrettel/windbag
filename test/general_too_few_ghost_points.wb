@@ -2,5 +2,6 @@
 case_name="general_too_few_ghost_points",
 n_dim=3,
 nb=2,
+nc=1,
 ng=0,
 /
