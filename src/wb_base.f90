@@ -90,10 +90,6 @@ module wb_base
       type(WB_Block) :: local_block
    end type WB_Subdomain
 
-   interface ghost_points
-      module procedure wb_subdomain_ghost_points
-   end interface ghost_points
-
    interface neighbor
       module procedure wb_block_neighbor, wb_subdomain_neighbor
    end interface neighbor
@@ -109,6 +105,10 @@ module wb_base
    interface num_dim_mp
       module procedure wb_subdomain_dimensions_mp
    end interface num_dim_mp
+
+   interface num_ghost_points
+      module procedure wb_subdomain_ghost_points
+   end interface num_ghost_points
 
    interface points
       module procedure wb_block_points, wb_subdomain_points
@@ -313,13 +313,13 @@ contains
       do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          do i_dim = 1, num_dim(sd)
-            if ( points(sd,i_dim) .lt. ghost_points(sd) .and. &
+            if ( points(sd,i_dim) .lt. num_ghost_points(sd) .and. &
                wb_subdomain_world_rank(sd) .eq. world_rank ) then
             call wb_abort( &
                "number of points N1 in dimension N2 is less than the number &
                &of ghost points N3 for subdomain N4", &
-               EXIT_FAILURE, (/ points(sd,i_dim), i_dim, ghost_points(sd), &
-               int(wb_subdomain_world_rank(sd),SP) /) )
+               EXIT_FAILURE, (/ points(sd,i_dim), i_dim, &
+               num_ghost_points(sd), int(wb_subdomain_world_rank(sd),SP) /) )
             end if
          end do
       end do
@@ -1340,7 +1340,7 @@ contains
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of ghost points", &
             PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, ghost_points(sd), &
+         call write_table_entry( f, num_ghost_points(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_blank_line( f )
       end if
