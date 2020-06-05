@@ -22,7 +22,7 @@ module wb_base
    private
 
    public find_input_file, print_initial_information, wb_subdomain_construct, &
-      wb_subdomain_destroy, neighbor, points, total_points
+      wb_subdomain_destroy
 
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
@@ -114,9 +114,9 @@ module wb_base
       module procedure wb_subdomain_ghost_points
    end interface num_ghost_points
 
-   interface points
+   interface num_points
       module procedure wb_block_points, wb_subdomain_points
-   end interface points
+   end interface num_points
 
    interface total_points
       module procedure wb_block_total_points, wb_subdomain_total_points
@@ -313,12 +313,12 @@ contains
       do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          do i_dim = 1, num_dim(sd)
-            if ( points(sd,i_dim) .lt. num_ghost_points(sd) .and. &
+            if ( num_points(sd,i_dim) .lt. num_ghost_points(sd) .and. &
                wb_subdomain_world_rank(sd) .eq. world_rank ) then
             call wb_abort( &
                "number of points N1 in dimension N2 is less than the number &
                &of ghost points N3 for subdomain N4", &
-               EXIT_FAILURE, (/ points(sd,i_dim), i_dim, &
+               EXIT_FAILURE, (/ num_points(sd,i_dim), i_dim, &
                num_ghost_points(sd), int(wb_subdomain_world_rank(sd),SP) /) )
             end if
          end do
