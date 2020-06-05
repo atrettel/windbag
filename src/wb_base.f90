@@ -28,6 +28,7 @@ module wb_base
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
 
    integer(SP), public, parameter :: NO_BLOCK_NEIGHBOR = 0_SP
+   integer(SP), public, parameter :: NO_FIELD          = 0_SP
 
    integer(SP), public, parameter :: MIN_N_DIM = 1_SP
    integer(SP), public, parameter :: MAX_N_DIM = 3_SP
@@ -45,6 +46,8 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_NX             = 0_SP
 
    integer(MP), public, parameter :: DEFAULT_NP             = 0_MP
+
+   integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
 
    logical, public, parameter :: DEFAULT_REORDER = .false.
 
@@ -114,6 +117,10 @@ module wb_base
       module procedure wb_subdomain_ghost_points
    end interface num_ghost_points
 
+   interface num_variables
+      module procedure wb_subdomain_variables
+   end interface num_variables
+
    interface num_points
       module procedure wb_block_points, wb_subdomain_points
    end interface num_points
@@ -145,6 +152,13 @@ contains
          end if
       end do
    end subroutine assign_blocks
+
+   subroutine calculate_number_of_variables( sd )
+      type(WB_Subdomain), intent(inout) :: sd
+
+      sd%nv = phase_rule( num_components(sd), NUMBER_OF_PHASES ) + &
+              dimension_rule( num_dim(sd) )
+   end subroutine calculate_number_of_variables
 
    subroutine check_block_bounds( ib, nb )
       integer(SP), intent(in) :: ib, nb
@@ -404,6 +418,13 @@ contains
                   block_periods )
    end subroutine decompose_domain
 
+   pure function dimension_rule( n_dim ) result( f )
+      integer(SP), intent(in) :: n_dim
+      integer(SP) :: f
+
+      f = 2_SP * n_dim + n_dim**2_SP
+   end function dimension_rule
+
    subroutine find_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
       integer :: argc, filename_length, ierr
@@ -484,6 +505,13 @@ contains
       end do
       deallocate( block_coords, process_block_coords )
    end subroutine identify_process_neighbors
+
+   pure function phase_rule( c, p ) result( f )
+      integer(SP), intent(in) :: c, p
+      integer(SP) :: f
+
+      f = c - p + 2_SP
+   end function phase_rule
 
    subroutine print_initial_information( sd )
       type(WB_Subdomain), intent(in) :: sd
@@ -887,11 +915,12 @@ contains
       call check_points( sd )
       call check_block_total_points( sd )
       call identify_process_neighbors( sd, blocks, processes )
-
       do world_rank = 0_MP, sd%world_size-1_MP
          call wb_process_destroy( processes(world_rank) )
       end do
       deallocate( processes )
+
+      call calculate_number_of_variables( sd )
    end subroutine wb_subdomain_construct_variables
 
    subroutine wb_subdomain_destroy( sd )
@@ -997,6 +1026,13 @@ contains
 
       points_in_state = product(sd%nx)
    end function wb_subdomain_total_points
+
+   function wb_subdomain_variables( sd ) result( nv )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: nv
+
+      nv = sd%nv
+   end function wb_subdomain_variables
 
    function wb_subdomain_world_rank( sd ) result( world_rank )
       type(WB_Subdomain), intent(in) :: sd
@@ -1341,6 +1377,10 @@ contains
          call write_table_entry( f, "Number of ghost points", &
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, num_ghost_points(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Number of variables", &
+            PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, num_variables(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_blank_line( f )
       end if
