@@ -98,6 +98,10 @@ module wb_base
       module procedure wb_subdomain_total_blocks
    end interface num_blocks
 
+   interface num_components
+      module procedure wb_subdomain_components
+   end interface num_components
+
    interface num_dim
       module procedure wb_subdomain_dimensions
    end interface num_dim
@@ -113,10 +117,6 @@ module wb_base
    interface points
       module procedure wb_block_points, wb_subdomain_points
    end interface points
-
-   interface total_components
-      module procedure wb_subdomain_total_components
-   end interface total_components
 
    interface total_points
       module procedure wb_block_total_points, wb_subdomain_total_points
@@ -984,12 +984,12 @@ contains
       total_blocks = sd%nb
    end function wb_subdomain_total_blocks
 
-   function wb_subdomain_total_components( sd ) result( total_components )
+   function wb_subdomain_components( sd ) result( components )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: total_components
+      integer(SP) :: components
 
-      total_components = sd%nc
-   end function wb_subdomain_total_components
+      components = sd%nc
+   end function wb_subdomain_components
 
    function wb_subdomain_total_points( sd ) result( points_in_state )
       type(WB_Subdomain), intent(in) :: sd
@@ -1332,7 +1332,7 @@ contains
          call write_table_entry( f, num_blocks(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of components", PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, total_components(sd), &
+         call write_table_entry( f, num_components(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of dimensions", &
             PROPERTY_COLUMN_WIDTH )
