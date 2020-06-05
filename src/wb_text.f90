@@ -37,7 +37,7 @@ module wb_text
    integer(SP), public, parameter ::  QUESTION_COLUMN_WIDTH = 30_SP
    integer(SP), public, parameter ::      RANK_COLUMN_WIDTH = 12_SP
    integer(SP), public, parameter ::      SIZE_COLUMN_WIDTH = 12_SP
-   integer(SP), public, parameter ::     VALUE_COLUMN_WIDTH = 15_SP
+   integer(SP), public, parameter ::     VALUE_COLUMN_WIDTH = 20_SP
    integer(SP), public, parameter ::  VARIABLE_COLUMN_WIDTH = 15_SP
 
    interface write_table_entry
