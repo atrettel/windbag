@@ -167,7 +167,7 @@ contains
                               &block N2 is less than 1", &
                               EXIT_DATAERR, (/ i_dim, ib /) )
             end if
-            if ( wb_block_points( blocks(ib), i_dim ) .lt. ng ) then
+            if ( num_points( blocks(ib), i_dim ) .lt. ng ) then
                call wb_abort( "number of points in direction N1 of block &
                               &N2 is less than number of ghost points N3", &
                               EXIT_DATAERR, (/ i_dim, ib, ng /) )
@@ -217,8 +217,8 @@ contains
                            (/ i_dim, ib, neighbor_l, j_dim /) )
                      end if
                      if ( j_dim .ne. i_dim .and. &
-                        wb_block_points( blocks(ib),         j_dim ) .ne. &
-                        wb_block_points( blocks(neighbor_l), j_dim ) ) then
+                        num_points( blocks(ib),         j_dim ) .ne. &
+                        num_points( blocks(neighbor_l), j_dim ) ) then
                         call wb_abort( "face in direction N1 shared by &
                                        &blocks N2 and N3 does not match &
                                        &points in direction N4", &
@@ -377,7 +377,7 @@ contains
          if ( sd%block_coords(i_dim) .eq. &
             wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
-               wb_block_points( sd%local_block, i_dim ), &
+               num_points( sd%local_block, i_dim ), &
                int( wb_block_processes( sd%local_block, i_dim ), SP ) )
          end if
       end do
@@ -1069,7 +1069,7 @@ contains
             call write_table_entry( f, total_points(local_block), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, num_dim(sd)
-               call write_table_entry( f, wb_block_points(local_block,i_dim), &
+               call write_table_entry( f, num_points(local_block,i_dim), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. num_dim(sd)) )
             end do
          end if
@@ -1224,7 +1224,7 @@ contains
             call write_table_entry( f, total_points(sd), &
                POINTS_COLUMN_WIDTH )
             do i_dim = 1_SP, num_dim(sd)
-               call write_table_entry( f, wb_subdomain_points(sd,i_dim), &
+               call write_table_entry( f, num_points(sd,i_dim), &
                   NX_COLUMN_WIDTH, end_row=(i_dim .eq. num_dim(sd)) )
             end do
          end if
