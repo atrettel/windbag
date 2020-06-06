@@ -177,29 +177,33 @@ contains
       end if
    end subroutine check_block_bounds
 
-   subroutine check_block_dimension_arrays( blocks, nb, n_dim, ng )
-      integer(SP), intent(in) :: nb, n_dim, ng
+   subroutine check_block_dimension_arrays( blocks, number_of_blocks, &
+      number_of_dimensions, number_of_ghost_points )
+      integer(SP), intent(in) :: number_of_blocks, number_of_dimensions, &
+         number_of_ghost_points
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
-      integer(SP) :: ib, i_dir, i_dim
+      integer(SP) :: block_number, i_dir, i_dim
 
-      do ib = 1_SP, nb
-         do i_dim = 1_SP, n_dim
-            if ( wb_block_processes( blocks(ib), i_dim ) .lt. 1_MP ) then
+      do block_number = 1_SP, number_of_blocks
+         do i_dim = 1_SP, number_of_dimensions
+            if ( wb_block_processes( blocks(block_number), i_dim ) .lt. 1_MP ) then
                call wb_abort( "number of processes in direction N1 of &
                               &block N2 is less than 1", &
-                              EXIT_DATAERR, (/ i_dim, ib /) )
+                              EXIT_DATAERR, (/ i_dim, block_number /) )
             end if
-            if ( num_points( blocks(ib), i_dim ) .lt. ng ) then
+            if ( num_points( blocks(block_number), i_dim ) .lt. number_of_ghost_points ) then
                call wb_abort( "number of points in direction N1 of block &
                               &N2 is less than number of ghost points N3", &
-                              EXIT_DATAERR, (/ i_dim, ib, ng /) )
+                              EXIT_DATAERR, (/ i_dim, block_number, &
+                              number_of_ghost_points /) )
             end if
             do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
-               if ( neighbor( blocks(ib), i_dim, i_dir ) .lt. &
+               if ( neighbor( blocks(block_number), i_dim, i_dir ) .lt. &
                   NO_BLOCK_NEIGHBOR ) then
                   call wb_abort( "neighbor to block N1 in direction N2 and &
                                  &dimension N3 is negative", &
-                                 EXIT_DATAERR, (/ ib, i_dir, i_dim /) )
+                                 EXIT_DATAERR, &
+                                 (/ block_number, i_dir, i_dim /) )
                end if
             end do
          end do
