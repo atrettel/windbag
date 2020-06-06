@@ -50,11 +50,7 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
    integer(SP), public, parameter ::     MIN_NUMBER_OF_GHOST_POINTS = 1_SP
 
-   ! The code is not designed for multiphase flow, but these parameters exist
-   ! if I change my mind.
-   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_PHASES = 1_SP
-   integer(SP), public, parameter ::     MIN_NUMBER_OF_PHASES = 1_SP
-   integer(SP), public, parameter ::     MAX_NUMBER_OF_PHASES = 1_SP
+   integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
@@ -168,7 +164,7 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
 
       sd%number_of_variables = &
-         phase_rule( num_components(sd), DEFAULT_NUMBER_OF_PHASES ) + &
+         phase_rule( num_components(sd), NUMBER_OF_PHASES ) + &
          dimension_rule( num_dimensions(sd) )
    end subroutine calculate_number_of_variables
 
