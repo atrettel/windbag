@@ -35,6 +35,7 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_BLOCKS = 1_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_COMPONENTS = 1_SP
+   integer(SP), public, parameter ::     MIN_NUMBER_OF_COMPONENTS = 1_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_DIMENSIONS = 3_SP
    integer(SP), public, parameter ::     MIN_NUMBER_OF_DIMENSIONS = 1_SP
@@ -47,8 +48,13 @@ module wb_base
    integer(SP), public, parameter :: NO_FIELD = 0_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
+   integer(SP), public, parameter ::     MIN_NUMBER_OF_GHOST_POINTS = 1_SP
 
-   integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
+   ! The code is not designed for multiphase flow, but these parameters exist
+   ! if I change my mind.
+   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_PHASES = 1_SP
+   integer(SP), public, parameter ::     MIN_NUMBER_OF_PHASES = 1_SP
+   integer(SP), public, parameter ::     MAX_NUMBER_OF_PHASES = 1_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
@@ -162,7 +168,7 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
 
       sd%number_of_variables = &
-         phase_rule( num_components(sd), NUMBER_OF_PHASES ) + &
+         phase_rule( num_components(sd), DEFAULT_NUMBER_OF_PHASES ) + &
          dimension_rule( num_dimensions(sd) )
    end subroutine calculate_number_of_variables
 
@@ -304,29 +310,34 @@ contains
       end if
    end subroutine check_block_world_size
 
-   subroutine check_general_variables( nb, nc, n_dim, ng, world_size )
-      integer(SP), intent(in) :: nb, nc, n_dim, ng
+   subroutine check_general_variables( number_of_blocks, &
+      number_of_components, number_of_dimensions, number_of_ghost_points, &
+      world_size )
+      integer(SP), intent(in) :: number_of_blocks, number_of_components, &
+         number_of_dimensions, number_of_ghost_points
       integer(MP), intent(in) :: world_size
 
-      if ( nb .lt. 1_SP  .or. nb .gt. int(world_size,SP) ) then
+      if ( number_of_blocks .lt. MIN_BLOCK_NUMBER .or. &
+           number_of_blocks .gt. int(world_size,SP) ) then
          ! The second condition is a feature of the code and not a bug.  It
          ! allows the code to treat communication between blocks as the same
          ! as communication between processes, but that plan only works if
          ! each block uses at least one process.
          call wb_abort( &
             "number of blocks must be in interval [N1, N2]", &
-            EXIT_DATAERR, (/ 1_SP, int(world_size,SP) /) )
+            EXIT_DATAERR, (/ MIN_BLOCK_NUMBER, int(world_size,SP) /) )
       end if
-      if ( nc .lt. 1_SP ) then
+      if ( number_of_components .lt. MIN_NUMBER_OF_COMPONENTS ) then
          call wb_abort( &
-            "number of components must be at least 1", EXIT_DATAERR )
+            "number of components must be at least N1", EXIT_DATAERR, &
+            (/ MIN_NUMBER_OF_COMPONENTS /) )
       end if
-      if ( ng .lt. 1_SP ) then
-         call wb_abort( "number of ghost points is less than 1", &
-            EXIT_DATAERR )
+      if ( number_of_ghost_points .lt. MIN_NUMBER_OF_GHOST_POINTS ) then
+         call wb_abort( "number of ghost points is less than N1", &
+            EXIT_DATAERR, (/ MIN_NUMBER_OF_GHOST_POINTS /) )
       end if
-      if ( n_dim .lt. MIN_NUMBER_OF_DIMENSIONS .or. &
-           n_dim .gt. MAX_NUMBER_OF_DIMENSIONS ) then
+      if ( number_of_dimensions .lt. MIN_NUMBER_OF_DIMENSIONS .or. &
+           number_of_dimensions .gt. MAX_NUMBER_OF_DIMENSIONS ) then
          call wb_abort( &
             "number of dimensions must be in interval [N1, N2]", &
             EXIT_DATAERR, (/ MIN_NUMBER_OF_DIMENSIONS, &
