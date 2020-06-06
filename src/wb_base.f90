@@ -210,10 +210,11 @@ contains
       end do
    end subroutine check_block_dimension_arrays
 
-   subroutine check_block_neighbors( blocks, nb, n_dim )
+   subroutine check_block_neighbors( blocks, number_of_blocks, &
+      number_of_dimensions )
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
-      integer(SP), intent(in) :: nb, n_dim
-      integer(SP) :: ib, i_dim, j_dim, neighbor_l, neighbor_u
+      integer(SP), intent(in) :: number_of_blocks, number_of_dimensions
+      integer(SP) :: block_number, i_dim, j_dim, neighbor_l, neighbor_u
 
       ! Ensure that lower and upper pairs exist, and that their number of
       ! points and processes match.  Since this is just checking and not
@@ -221,35 +222,35 @@ contains
       ! have each block master check this for their own blocks since the block
       ! communicators do not exist yet.  If that were possible, it would
       ! eliminate the loop over all blocks.
-      do ib = 1_SP, nb
-         do i_dim = 1_SP, n_dim
-            neighbor_l = neighbor( blocks(ib), i_dim, LOWER_DIRECTION )
+      do block_number = 1_SP, number_of_blocks
+         do i_dim = 1_SP, number_of_dimensions
+            neighbor_l = neighbor( blocks(block_number), i_dim, LOWER_DIRECTION )
             if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
                neighbor_u = neighbor( blocks(neighbor_l), i_dim, UPPER_DIRECTION )
-               if ( ib .ne. neighbor_u ) then
+               if ( block_number .ne. neighbor_u ) then
                   call wb_abort( "lower face of block N1 does not neighbor &
                                  &upper face of block N2 in direction N3", &
                      EXIT_DATAERR, &
-                     (/ ib, neighbor_l, i_dim /) )
+                     (/ block_number, neighbor_l, i_dim /) )
                else
-                  do j_dim = 1_SP, n_dim
+                  do j_dim = 1_SP, number_of_dimensions
                      if ( j_dim .ne. i_dim .and. &
-                        wb_block_processes( blocks(ib),         j_dim ) .ne. &
-                        wb_block_processes( blocks(neighbor_l), j_dim ) ) then
+                        wb_block_processes( blocks(block_number), j_dim ) .ne. &
+                        wb_block_processes( blocks(neighbor_l),   j_dim ) ) then
                         call wb_abort( "face in direction N1 shared by &
                                        &blocks N2 and N3 does not match &
                                        &processes in direction N4", &
                            EXIT_DATAERR, &
-                           (/ i_dim, ib, neighbor_l, j_dim /) )
+                           (/ i_dim, block_number, neighbor_l, j_dim /) )
                      end if
                      if ( j_dim .ne. i_dim .and. &
-                        num_points( blocks(ib),         j_dim ) .ne. &
-                        num_points( blocks(neighbor_l), j_dim ) ) then
+                        num_points( blocks(block_number), j_dim ) .ne. &
+                        num_points( blocks(neighbor_l),   j_dim ) ) then
                         call wb_abort( "face in direction N1 shared by &
                                        &blocks N2 and N3 does not match &
                                        &points in direction N4", &
                            EXIT_DATAERR, &
-                           (/ i_dim, ib, neighbor_l, j_dim /) )
+                           (/ i_dim, block_number, neighbor_l, j_dim /) )
                      end if
                   end do
                end if
