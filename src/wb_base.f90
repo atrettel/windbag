@@ -27,7 +27,10 @@ module wb_base
    integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
 
-   integer(SP), public, parameter :: NO_BLOCK_NEIGHBOR = 0_SP
+   integer(SP), public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1_SP
+   integer(SP), public, parameter ::      NO_BLOCK_NEIGHBOR = 0_SP
+   integer(SP), public, parameter :: DEFAULT_BLOCK_NUMBER   = 1_SP
+
    integer(SP), public, parameter :: NO_FIELD          = 0_SP
 
    integer(SP), public, parameter :: MIN_N_DIM = 1_SP
@@ -37,8 +40,6 @@ module wb_base
    integer(SP), public, parameter :: LOWER_DIR = 1_SP
    integer(SP), public, parameter :: UPPER_DIR = 2_SP
 
-   integer(SP), public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1_SP
-   integer(SP), public, parameter :: DEFAULT_IB             = 1_SP
    integer(SP), public, parameter :: DEFAULT_N_DIM          = 3_SP
    integer(SP), public, parameter :: DEFAULT_NB             = 1_SP
    integer(SP), public, parameter :: DEFAULT_NC             = 1_SP
@@ -539,7 +540,7 @@ contains
       allocate( neighbors_l(n_dim) )
       allocate( neighbors_u(n_dim) )
 
-      ib             = DEFAULT_IB
+      ib             = DEFAULT_BLOCK_NUMBER
       np(:)          = DEFAULT_NP
       nx(:)          = DEFAULT_NX
       neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
