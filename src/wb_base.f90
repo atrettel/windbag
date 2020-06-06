@@ -29,6 +29,7 @@ module wb_base
 
    integer(SP), public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1_SP
    integer(SP), public, parameter :: DEFAULT_BLOCK_NUMBER   = 1_SP
+   integer(SP), public, parameter ::     MIN_BLOCK_NUMBER   = 1_SP
    integer(SP), public, parameter ::      NO_BLOCK_NEIGHBOR = 0_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_BLOCKS = 1_SP
@@ -165,12 +166,14 @@ contains
          dimension_rule( num_dimensions(sd) )
    end subroutine calculate_number_of_variables
 
-   subroutine check_block_bounds( ib, nb )
-      integer(SP), intent(in) :: ib, nb
+   subroutine check_block_bounds( block_number, number_of_blocks )
+      integer(SP), intent(in) :: block_number, number_of_blocks
 
-      if ( ib .lt. 1_SP .or. ib .gt. nb ) then
+      if ( block_number .lt. MIN_BLOCK_NUMBER .or. &
+           block_number .gt. number_of_blocks ) then
          call wb_abort( "block N1 is out of acceptable range [N2, N3]", &
-            EXIT_DATAERR, (/ ib, 1_SP, nb /) )
+            EXIT_DATAERR, &
+            (/ block_number, MIN_BLOCK_NUMBER, number_of_blocks /) )
       end if
    end subroutine check_block_bounds
 
