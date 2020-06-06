@@ -61,9 +61,9 @@ module wb_base
 
    type, private :: WB_Block
       private
-      integer(MP), dimension(:), allocatable :: np
-      integer(SP), dimension(:), allocatable :: nx
       integer(SP), dimension(:,:), allocatable :: neighbors
+      integer(SP), dimension(:), allocatable :: number_of_points
+      integer(MP), dimension(:), allocatable :: number_of_processes
       logical, dimension(:), allocatable :: periods
       logical :: reorder
    end type WB_Block
@@ -625,59 +625,46 @@ contains
       call mpi_bcast( number_of_ghost_points, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
-   subroutine wb_block_construct( blk, n_dim, np, nx, neighbors_l, &
-      neighbors_u, ib )
+   subroutine wb_block_construct( blk, number_of_dimensions, &
+      number_of_processes, number_of_points, lower_neighbors, &
+      upper_neighbors, block_number )
       type(WB_Block), intent(inout) :: blk
-      integer(SP), intent(in) :: n_dim
-      integer(MP), dimension(:), allocatable, optional, intent(in) :: np
-      integer(SP), dimension(:), allocatable, optional, intent(in) :: nx, &
-         neighbors_l, neighbors_u
-      integer(SP), optional, intent(in) :: ib
+      integer(SP), intent(in) :: number_of_dimensions
+      integer(MP), dimension(:), allocatable, intent(in) :: &
+         number_of_processes
+      integer(SP), dimension(:), allocatable, intent(in) :: number_of_points, &
+         lower_neighbors, upper_neighbors
+      integer(SP), intent(in) :: block_number
       integer(SP) :: i_dim
 
-      allocate( blk%np(n_dim) )
-      allocate( blk%nx(n_dim) )
-      allocate( blk%neighbors(n_dim,NUMBER_OF_DIRECTIONS) )
-      allocate( blk%periods(n_dim) )
+      allocate( blk%number_of_processes(number_of_dimensions), &
+                   blk%number_of_points(number_of_dimensions), &
+                            blk%periods(number_of_dimensions) )
+      allocate( blk%neighbors(number_of_dimensions,NUMBER_OF_DIRECTIONS) )
 
-      blk%nx(:)          = DEFAULT_NUMBER_OF_POINTS
-      blk%np(:)          = DEFAULT_NUMBER_OF_PROCESSES
-      blk%neighbors(:,:) = DEFAULT_BLOCK_NEIGHBOR
-      blk%periods(:)     = .false.
+      blk%neighbors(:,LOWER_DIRECTION) = lower_neighbors
+      blk%neighbors(:,UPPER_DIRECTION) = upper_neighbors
+      blk%number_of_points             = number_of_points
+      blk%number_of_processes          = number_of_processes
+      blk%reorder                      = DEFAULT_REORDER
 
-      if ( present(np) ) then
-         blk%np         = np
-      end if
-      if ( present(nx) ) then
-         blk%nx = nx
-      end if
-      if ( present(neighbors_l) ) then
-         blk%neighbors(:,LOWER_DIRECTION) = neighbors_l
-      end if
-      if ( present(neighbors_u) ) then
-         blk%neighbors(:,UPPER_DIRECTION) = neighbors_u
-      end if
-      blk%reorder = DEFAULT_REORDER
-
-      if ( present(ib) ) then
-         do i_dim = 1_SP, n_dim
-            if ( blk%neighbors(i_dim,LOWER_DIRECTION) .eq. ib .and. &
-                 blk%neighbors(i_dim,UPPER_DIRECTION) .eq. ib ) then
-               blk%periods(i_dim) = .true.
-            else
-               blk%periods(i_dim) = .false.
-            end if
-         end do
-      end if
+      do i_dim = 1_SP, number_of_dimensions
+         if ( blk%neighbors(i_dim,LOWER_DIRECTION) .eq. block_number .and. &
+              blk%neighbors(i_dim,UPPER_DIRECTION) .eq. block_number ) then
+            blk%periods(i_dim) = .true.
+         else
+            blk%periods(i_dim) = .false.
+         end if
+      end do
    end subroutine wb_block_construct
 
    subroutine wb_block_destroy( blk )
       type(WB_Block), intent(inout) :: blk
 
-      deallocate( blk%np )
-      deallocate( blk%nx )
-      deallocate( blk%neighbors )
-      deallocate( blk%periods )
+      deallocate( blk%neighbors,           &
+                  blk%number_of_points,    &
+                  blk%number_of_processes, &
+                  blk%periods )
    end subroutine wb_block_destroy
 
    function wb_block_neighbor( blk, i_dim, i_dir ) result( neighbor )
@@ -708,14 +695,14 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(SP) :: nx
 
-      nx = blk%nx(i_dim)
+      nx = blk%number_of_points(i_dim)
    end function wb_block_points
 
    subroutine wb_block_points_vector( blk, nx )
       type(WB_Block), intent(in) :: blk
       integer(SP), dimension(:), allocatable, intent(inout) :: nx
 
-      nx = blk%nx
+      nx = blk%number_of_points
    end subroutine wb_block_points_vector
 
    function wb_block_processes( blk, i_dim ) result( np )
@@ -723,14 +710,14 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(MP) :: np
 
-      np = blk%np(i_dim)
+      np = blk%number_of_processes(i_dim)
    end function wb_block_processes
 
    subroutine wb_block_processes_vector( blk, np )
       type(WB_Block), intent(in) :: blk
       integer(MP), dimension(:), allocatable, intent(inout) :: np
 
-      np = blk%np
+      np = blk%number_of_processes
    end subroutine wb_block_processes_vector
 
    function wb_block_reorder( blk ) result( reorder )
@@ -744,14 +731,14 @@ contains
       type(WB_Block), intent(in) :: blk
       integer(MP) :: block_size
 
-      block_size = product(blk%np)
+      block_size = product(blk%number_of_processes)
    end function wb_block_size
 
    function wb_block_total_points( blk ) result( points_in_block )
       type(WB_Block), intent(in) :: blk
       integer(SP) :: points_in_block
 
-      points_in_block = product(blk%nx)
+      points_in_block = product(blk%number_of_points)
    end function wb_block_total_points
 
    function wb_process_block_number( process ) result( block_number )
