@@ -28,17 +28,17 @@ module wb_base
    integer(MP), public, parameter :: WORLD_MASTER = 0_MP
 
    integer(SP), public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1_SP
-   integer(SP), public, parameter ::      NO_BLOCK_NEIGHBOR = 0_SP
    integer(SP), public, parameter :: DEFAULT_BLOCK_NUMBER   = 1_SP
+   integer(SP), public, parameter ::      NO_BLOCK_NEIGHBOR = 0_SP
 
    integer(SP), public, parameter :: NO_FIELD          = 0_SP
 
    integer(SP), public, parameter :: MIN_N_DIM = 1_SP
    integer(SP), public, parameter :: MAX_N_DIM = 3_SP
 
-   integer(SP), public, parameter ::     N_DIR = 2_SP
-   integer(SP), public, parameter :: LOWER_DIR = 1_SP
-   integer(SP), public, parameter :: UPPER_DIR = 2_SP
+   integer(SP), public, parameter :: NUMBER_OF_DIRECTIONS = 2_SP
+   integer(SP), public, parameter ::     LOWER_DIRECTION  = 1_SP
+   integer(SP), public, parameter ::     UPPER_DIRECTION  = 2_SP
 
    integer(SP), public, parameter :: DEFAULT_N_DIM          = 3_SP
    integer(SP), public, parameter :: DEFAULT_NB             = 1_SP
@@ -187,7 +187,7 @@ contains
                               &N2 is less than number of ghost points N3", &
                               EXIT_DATAERR, (/ i_dim, ib, ng /) )
             end if
-            do i_dir = 1_SP, N_DIR
+            do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
                if ( neighbor( blocks(ib), i_dim, i_dir ) .lt. &
                   NO_BLOCK_NEIGHBOR ) then
                   call wb_abort( "neighbor to block N1 in direction N2 and &
@@ -212,9 +212,9 @@ contains
       ! eliminate the loop over all blocks.
       do ib = 1_SP, nb
          do i_dim = 1_SP, n_dim
-            neighbor_l = neighbor( blocks(ib), i_dim, LOWER_DIR )
+            neighbor_l = neighbor( blocks(ib), i_dim, LOWER_DIRECTION )
             if ( neighbor_l .ne. NO_BLOCK_NEIGHBOR ) then
-               neighbor_u = neighbor( blocks(neighbor_l), i_dim, UPPER_DIR )
+               neighbor_u = neighbor( blocks(neighbor_l), i_dim, UPPER_DIRECTION )
                if ( ib .ne. neighbor_u ) then
                   call wb_abort( "lower face of block N1 does not neighbor &
                                  &upper face of block N2 in direction N3", &
@@ -363,9 +363,9 @@ contains
                          block_nx(num_dimensions(sd)), &
                     block_periods(num_dimensions(sd)) )
       call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
-         block_neighbors_l, LOWER_DIR )
+         block_neighbors_l, LOWER_DIRECTION )
       call wb_block_neighbors_vector( blocks(wb_subdomain_block_number(sd)), &
-         block_neighbors_u, UPPER_DIR )
+         block_neighbors_u, UPPER_DIRECTION )
       call wb_block_processes_vector( blocks(wb_subdomain_block_number(sd)), &
          block_np )
       call wb_block_points_vector( blocks(wb_subdomain_block_number(sd)), &
@@ -450,7 +450,7 @@ contains
    subroutine identify_process_neighbors( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: block_neighbor, i_dir, i_dim
-      integer(MP), dimension(N_DIR) :: block_ranks
+      integer(MP), dimension(NUMBER_OF_DIRECTIONS) :: block_ranks
       integer(MP), dimension(:), allocatable :: block_coords, &
          process_block_coords
       type(WB_Subdomain), intent(inout) :: sd
@@ -461,8 +461,8 @@ contains
         process_block_coords(num_dimensions(sd)) )
       do i_dim = 1_SP, num_dimensions(sd)
          call mpi_cart_shift( sd%comm_block, int(i_dim,MP)-1_MP, 1_MP, &
-            block_ranks(LOWER_DIR), block_ranks(UPPER_DIR), ierr )
-         do i_dir = 1_SP, N_DIR
+            block_ranks(LOWER_DIRECTION), block_ranks(UPPER_DIRECTION), ierr )
+         do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
             if ( block_ranks(i_dir) .ne. MPI_PROC_NULL ) then
                do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
                   if ( wb_process_block_number( processes(world_rank) ) .eq. &
@@ -484,7 +484,7 @@ contains
                   ! current spatial dimension i_dim.  The block coordinates for
                   ! dimension i_dim would be opposites for each.
                   call wb_subdomain_block_coords_vector( sd, block_coords )
-                  if ( i_dir .eq. LOWER_DIR ) then
+                  if ( i_dir .eq. LOWER_DIRECTION ) then
                      block_coords(i_dim) = &
                         wb_block_processes(blocks(block_neighbor),i_dim)-1_MP
                   else
@@ -626,7 +626,7 @@ contains
 
       allocate( blk%np(n_dim) )
       allocate( blk%nx(n_dim) )
-      allocate( blk%neighbors(n_dim,N_DIR) )
+      allocate( blk%neighbors(n_dim,NUMBER_OF_DIRECTIONS) )
       allocate( blk%periods(n_dim) )
 
       blk%np(:)          = DEFAULT_NP
@@ -641,17 +641,17 @@ contains
          blk%nx = nx
       end if
       if ( present(neighbors_l) ) then
-         blk%neighbors(:,LOWER_DIR) = neighbors_l
+         blk%neighbors(:,LOWER_DIRECTION) = neighbors_l
       end if
       if ( present(neighbors_u) ) then
-         blk%neighbors(:,UPPER_DIR) = neighbors_u
+         blk%neighbors(:,UPPER_DIRECTION) = neighbors_u
       end if
       blk%reorder = DEFAULT_REORDER
 
       if ( present(ib) ) then
          do i_dim = 1_SP, n_dim
-            if ( blk%neighbors(i_dim,LOWER_DIR) .eq. ib .and. &
-                 blk%neighbors(i_dim,UPPER_DIR) .eq. ib ) then
+            if ( blk%neighbors(i_dim,LOWER_DIRECTION) .eq. ib .and. &
+                 blk%neighbors(i_dim,UPPER_DIRECTION) .eq. ib ) then
                blk%periods(i_dim) = .true.
             else
                blk%periods(i_dim) = .false.
@@ -910,7 +910,7 @@ contains
 
       allocate( sd%nx(sd%n_dim) )
       allocate( sd%block_coords(sd%n_dim) )
-      allocate( sd%neighbors(sd%n_dim,N_DIR) )
+      allocate( sd%neighbors(sd%n_dim,NUMBER_OF_DIRECTIONS) )
 
       call decompose_domain( sd, blocks, processes )
       call check_points( sd )
@@ -954,7 +954,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: n_faces
 
-      n_faces = sd%n_dim * N_DIR
+      n_faces = sd%n_dim * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
    function wb_subdomain_ghost_points( sd ) result( ng )
@@ -1278,21 +1278,21 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: ierr, world_rank, sd_neighbor
       integer(SP) :: i_dim, i_dir, j_dir, face_count
-      integer(SP), dimension(N_DIR) :: dirs
+      integer(SP), dimension(NUMBER_OF_DIRECTIONS) :: dirs
       character(len=STRING_LENGTH) :: label
 
       face_count = 0_SP
-      dirs = (/ LOWER_DIR, UPPER_DIR /)
+      dirs = (/ LOWER_DIRECTION, UPPER_DIRECTION /)
 
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Subdomain neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, num_dimensions(sd)
-            do i_dir = 1_SP, N_DIR
+            do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
                j_dir = dirs(i_dir)
                face_count = face_count + 1_SP
-               if ( j_dir .eq. LOWER_DIR ) then
+               if ( j_dir .eq. LOWER_DIRECTION ) then
                   write (label,"(I1, A)") i_dim, "L"
                else
                   write (label,"(I1, A)") i_dim, "U"
@@ -1306,7 +1306,7 @@ contains
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          do i_dim = 1_SP, num_dimensions(sd)
-            do i_dir = 1_SP, N_DIR
+            do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
                face_count = face_count + 1_SP
                call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
                   alignment=RIGHT_ALIGNED, &
@@ -1322,7 +1322,7 @@ contains
             call write_table_entry( f, int(wb_subdomain_world_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, num_dimensions(sd)
-               do i_dir = 1_SP, N_DIR
+               do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
                   j_dir = dirs(i_dir)
                   face_count = face_count + 1_SP
                   sd_neighbor = neighbor( sd, i_dim, j_dir )
