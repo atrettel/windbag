@@ -25,20 +25,20 @@ module wb_text
    integer(SP), public, parameter ::  RIGHT_ALIGNED = 2_SP
    integer(SP), public, parameter :: CENTER_ALIGNED = 3_SP
 
-   integer(SP), public, parameter ::    ANSWER_COLUMN_WIDTH = 10_SP
-   integer(SP), public, parameter ::    COORDS_COLUMN_WIDTH =  6_SP
-   integer(SP), public, parameter :: DATA_TYPE_COLUMN_WIDTH = 20_SP
-   integer(SP), public, parameter ::  HOSTNAME_COLUMN_WIDTH = 16_SP
-   integer(SP), public, parameter ::        IB_COLUMN_WIDTH =  4_SP
-   integer(SP), public, parameter ::        NP_COLUMN_WIDTH =  7_SP
-   integer(SP), public, parameter ::        NX_COLUMN_WIDTH =  7_SP
-   integer(SP), public, parameter ::    POINTS_COLUMN_WIDTH = 16_SP
-   integer(SP), public, parameter ::  PROPERTY_COLUMN_WIDTH = 30_SP
-   integer(SP), public, parameter ::  QUESTION_COLUMN_WIDTH = 30_SP
-   integer(SP), public, parameter ::      RANK_COLUMN_WIDTH = 12_SP
-   integer(SP), public, parameter ::      SIZE_COLUMN_WIDTH = 12_SP
-   integer(SP), public, parameter ::     VALUE_COLUMN_WIDTH = 20_SP
-   integer(SP), public, parameter ::  VARIABLE_COLUMN_WIDTH = 15_SP
+   integer(SP), public, parameter ::       ANSWER_COLUMN_WIDTH = 10_SP
+   integer(SP), public, parameter :: BLOCK_NUMBER_COLUMN_WIDTH =  4_SP
+   integer(SP), public, parameter ::       COORDS_COLUMN_WIDTH =  6_SP
+   integer(SP), public, parameter ::    DATA_TYPE_COLUMN_WIDTH = 20_SP
+   integer(SP), public, parameter ::     HOSTNAME_COLUMN_WIDTH = 16_SP
+   integer(SP), public, parameter ::           NP_COLUMN_WIDTH =  7_SP
+   integer(SP), public, parameter ::           NX_COLUMN_WIDTH =  7_SP
+   integer(SP), public, parameter ::       POINTS_COLUMN_WIDTH = 16_SP
+   integer(SP), public, parameter ::     PROPERTY_COLUMN_WIDTH = 30_SP
+   integer(SP), public, parameter ::     QUESTION_COLUMN_WIDTH = 30_SP
+   integer(SP), public, parameter ::         RANK_COLUMN_WIDTH = 12_SP
+   integer(SP), public, parameter ::         SIZE_COLUMN_WIDTH = 12_SP
+   integer(SP), public, parameter ::        VALUE_COLUMN_WIDTH = 20_SP
+   integer(SP), public, parameter ::     VARIABLE_COLUMN_WIDTH = 15_SP
 
    interface write_table_entry
       module procedure write_table_entry_character, &

@@ -1090,7 +1090,7 @@ contains
    subroutine write_block_information( f, sd )
       integer, intent(in) :: f
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: ib, i_dim
+      integer(SP) :: block_number, i_dim
       integer(MP) :: ierr
       character(len=STRING_LENGTH) :: label
       type(WB_Block) :: local_block
@@ -1098,7 +1098,7 @@ contains
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Block information", level=2_SP )
 
-         call write_table_entry( f, "`ib`", IB_COLUMN_WIDTH )
+         call write_table_entry( f, "`ib`", BLOCK_NUMBER_COLUMN_WIDTH )
          call write_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
          do i_dim = 1_SP, num_dimensions(sd)
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
@@ -1111,7 +1111,7 @@ contains
                end_row=(i_dim .eq. num_dimensions(sd)) )
          end do
 
-         call write_table_rule_entry( f, IB_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, BLOCK_NUMBER_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, SIZE_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
@@ -1127,13 +1127,13 @@ contains
          end do
       end if
 
-      do ib = 1_SP, num_blocks(sd)
+      do block_number = 1_SP, num_blocks(sd)
          call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( ib .eq. wb_subdomain_block_number(sd) .and. &
+         if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
             wb_subdomain_is_block_master(sd) ) then
             call wb_subdomain_local_block( sd, local_block )
             call write_table_entry( f, wb_subdomain_block_number(sd), &
-               IB_COLUMN_WIDTH )
+               BLOCK_NUMBER_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_block_size(local_block),SP), &
                SIZE_COLUMN_WIDTH )
             do i_dim = 1_SP, num_dimensions(sd)
@@ -1246,7 +1246,7 @@ contains
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
-         call write_table_entry( f, "`ib`",           IB_COLUMN_WIDTH )
+         call write_table_entry( f, "`ib`", BLOCK_NUMBER_COLUMN_WIDTH )
          call write_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, num_dimensions(sd)
             write (label,"(A, I1, A)") "(", i_dim, ")"
@@ -1263,7 +1263,7 @@ contains
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, HOSTNAME_COLUMN_WIDTH, &
             alignment=LEFT_ALIGNED  )
-         call write_table_rule_entry( f, IB_COLUMN_WIDTH, &
+         call write_table_rule_entry( f, BLOCK_NUMBER_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
          call write_table_rule_entry( f, RANK_COLUMN_WIDTH, &
             alignment=RIGHT_ALIGNED )
@@ -1288,7 +1288,7 @@ contains
             call write_table_entry(  f, processor_name, &
                HOSTNAME_COLUMN_WIDTH )
             call write_table_entry( f, wb_subdomain_block_number(sd), &
-               IB_COLUMN_WIDTH )
+               BLOCK_NUMBER_COLUMN_WIDTH )
             call write_table_entry( f, int(wb_subdomain_block_rank(sd),SP), &
                RANK_COLUMN_WIDTH )
             do i_dim = 1_SP, num_dimensions(sd)
