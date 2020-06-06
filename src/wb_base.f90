@@ -81,18 +81,18 @@ module wb_base
       character(len=:), allocatable :: case_name
       integer(MP) :: block_rank, block_size
       integer(MP) :: world_rank, world_size
-      integer(SP) :: ib, nb
-      integer(SP) :: n_dim
-      integer(SP) :: nc
-      integer(SP) :: nf
-      integer(SP) :: ng
-      integer(SP) :: nv
-      integer(SP) :: i_iter
-      integer(SP), dimension(:), allocatable :: nx
+      integer(SP) :: block_number, number_of_blocks
+      integer(SP) :: number_of_components
+      integer(SP) :: number_of_dimensions
+      integer(SP) :: number_of_fields
+      integer(SP) :: number_of_ghost_points
+      integer(SP) :: number_of_variables
+      integer(SP) :: iteration_number
+      integer(SP), dimension(:), allocatable :: number_of_points
       integer(MP), dimension(:), allocatable :: block_coords
       integer(MP), dimension(:,:), allocatable :: neighbors
-      real(FP) :: t
-      real(FP), dimension(:,:,:,:), allocatable :: f
+      real(FP) :: time
+      real(FP), dimension(:,:,:,:), allocatable :: fields
       type(MPI_Comm) :: comm_block
       type(WB_Block) :: local_block
    end type WB_Subdomain
@@ -160,8 +160,9 @@ contains
    subroutine calculate_number_of_variables( sd )
       type(WB_Subdomain), intent(inout) :: sd
 
-      sd%nv = phase_rule( num_components(sd), NUMBER_OF_PHASES ) + &
-              dimension_rule( num_dimensions(sd) )
+      sd%number_of_variables = &
+         phase_rule( num_components(sd), NUMBER_OF_PHASES ) + &
+         dimension_rule( num_dimensions(sd) )
    end subroutine calculate_number_of_variables
 
    subroutine check_block_bounds( ib, nb )
@@ -361,7 +362,7 @@ contains
       call assign_blocks( blocks, block_assignments, &
          wb_subdomain_world_size(sd) )
 
-      sd%ib = block_assignments(wb_subdomain_world_rank(sd))
+      sd%block_number = block_assignments(wb_subdomain_world_rank(sd))
       allocate( block_neighbors_l(num_dimensions(sd)), &
                 block_neighbors_u(num_dimensions(sd)), &
                          block_np(num_dimensions(sd)), &
@@ -392,13 +393,15 @@ contains
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
          num_dimensions_mp(sd), sd%block_coords, ierr )
 
-      sd%nx = block_nx / int(block_np,SP)
+      sd%number_of_points = block_nx / int(block_np,SP)
       do i_dim = 1_SP, num_dimensions(sd)
          if ( sd%block_coords(i_dim) .eq. &
             wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
-            sd%nx(i_dim) = sd%nx(i_dim) + modulo( &
-               num_points( sd%local_block, i_dim ), &
-               int( wb_block_processes( sd%local_block, i_dim ), SP ) )
+            sd%number_of_points(i_dim) = sd%number_of_points(i_dim) + &
+               modulo( &
+                  num_points( sd%local_block, i_dim ), &
+                  int( wb_block_processes( sd%local_block, i_dim ), SP ) &
+               )
          end if
       end do
 
@@ -408,7 +411,7 @@ contains
             call wb_process_construct( processes(world_rank), &
                num_dimensions(sd), block_assignments(world_rank), &
                world_rank, wb_subdomain_block_rank(sd), sd%block_coords, &
-               sd%nx )
+               sd%number_of_points )
          else
             call wb_process_construct( processes(world_rank), &
                num_dimensions(sd), block_assignments(world_rank), &
@@ -829,7 +832,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: ib
 
-      ib = sd%ib
+      ib = sd%block_number
    end function wb_subdomain_block_number
 
    function wb_subdomain_block_number_mp( sd ) result( ib )
@@ -857,38 +860,48 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
-      integer(SP) :: ib, nb, nc, n_dim, ng
+      integer(SP) :: loop_block_number, number_of_blocks, &
+         number_of_components, number_of_dimensions, number_of_ghost_points
       integer(MP) :: ierr, world_rank, world_size
       type(WB_Block), dimension(:), allocatable :: blocks
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
-      call read_general_namelist( filename, case_name, nb, nc, n_dim, ng )
+      call read_general_namelist( filename, case_name, number_of_blocks, &
+         number_of_components, number_of_dimensions, number_of_ghost_points )
       if ( world_rank .eq. WORLD_MASTER ) then
-         call check_general_variables( nb, nc, n_dim, ng, world_size )
+         call check_general_variables( number_of_blocks, &
+            number_of_components, number_of_dimensions, &
+            number_of_ghost_points, world_size )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      call read_block_namelists( filename, nb, n_dim, blocks )
+      call read_block_namelists( filename, number_of_blocks, &
+         number_of_dimensions, blocks )
       if ( world_rank .eq. WORLD_MASTER ) then
-         call check_block_dimension_arrays( blocks, nb, n_dim, ng )
-         call check_block_neighbors( blocks, nb, n_dim )
-         call check_block_world_size( blocks, nb )
+         call check_block_dimension_arrays( blocks, number_of_blocks, &
+            number_of_dimensions, number_of_ghost_points )
+         call check_block_neighbors( blocks, number_of_blocks, &
+            number_of_dimensions )
+         call check_block_world_size( blocks, number_of_blocks )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      call wb_subdomain_construct_variables( sd, nb, nc, n_dim, ng, blocks, &
-         case_name )
+      call wb_subdomain_construct_variables( sd, number_of_blocks, &
+         number_of_components, number_of_dimensions, number_of_ghost_points, &
+         blocks, case_name )
 
-      do ib = 1_SP, nb
-         call wb_block_destroy( blocks(ib) )
+      do loop_block_number = 1_SP, number_of_blocks
+         call wb_block_destroy( blocks(loop_block_number) )
       end do
       deallocate( blocks )
    end subroutine wb_subdomain_construct_namelist
 
-   subroutine wb_subdomain_construct_variables( sd, nb, nc, n_dim, ng, &
+   subroutine wb_subdomain_construct_variables( sd, number_of_blocks, &
+      number_of_components, number_of_dimensions, number_of_ghost_points, &
       blocks, case_name )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
-      integer(SP), intent(in) :: nb, nc, n_dim, ng
+      integer(SP), intent(in) :: number_of_blocks, number_of_components, &
+         number_of_dimensions, number_of_ghost_points
       integer(MP) :: ierr, world_rank
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable :: processes
@@ -899,17 +912,17 @@ contains
          sd%case_name = trim(DEFAULT_CASE_NAME)
       end if
 
-      sd%nb    = nb
-      sd%nc    = nc
-      sd%n_dim = n_dim
-      sd%ng    = ng
+      sd%number_of_blocks       = number_of_blocks
+      sd%number_of_components   = number_of_components
+      sd%number_of_dimensions   = number_of_dimensions
+      sd%number_of_ghost_points = number_of_ghost_points
 
       call mpi_comm_rank( MPI_COMM_WORLD, sd%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, sd%world_size, ierr )
 
-      allocate( sd%nx(sd%n_dim) )
-      allocate( sd%block_coords(sd%n_dim) )
-      allocate( sd%neighbors(sd%n_dim,NUMBER_OF_DIRECTIONS) )
+      allocate( sd%number_of_points(num_dimensions(sd)), &
+                    sd%block_coords(num_dimensions(sd)), &
+                       sd%neighbors(num_dimensions(sd),NUMBER_OF_DIRECTIONS) )
 
       call decompose_domain( sd, blocks, processes )
       call check_points( sd )
@@ -927,10 +940,10 @@ contains
       integer(MP) :: ierr
       type(WB_Subdomain), intent(inout) :: sd
 
-      deallocate( sd%case_name )
-      deallocate( sd%nx )
-      deallocate( sd%block_coords )
-      deallocate( sd%neighbors )
+      deallocate( sd%case_name,    &
+                  sd%block_coords, &
+                  sd%neighbors,    &
+                  sd%number_of_points )
       call mpi_comm_free( sd%comm_block, ierr )
       call wb_block_destroy( sd%local_block )
    end subroutine wb_subdomain_destroy
@@ -939,7 +952,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: n_dim
 
-      n_dim = sd%n_dim
+      n_dim = sd%number_of_dimensions
    end function wb_subdomain_dimensions
 
    function wb_subdomain_dimensions_mp( sd ) result( n_dim )
@@ -953,14 +966,14 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: n_faces
 
-      n_faces = sd%n_dim * NUMBER_OF_DIRECTIONS
+      n_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
    function wb_subdomain_ghost_points( sd ) result( ng )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: ng
 
-      ng = sd%ng
+      ng = sd%number_of_ghost_points
    end function wb_subdomain_ghost_points
 
    function wb_subdomain_is_block_master( sd ) result( is_block_master )
@@ -1000,10 +1013,10 @@ contains
       if ( i_dim .lt. MIN_NUMBER_OF_DIMENSIONS .or. &
            i_dim .gt. MAX_NUMBER_OF_DIMENSIONS ) then
          points = 0_SP
-      else if ( i_dim .gt. sd%n_dim ) then
+      else if ( i_dim .gt. num_dimensions(sd) ) then
          points = 1_SP
       else
-         points = sd%nx(i_dim)
+         points = sd%number_of_points(i_dim)
       end if
    end function wb_subdomain_points
 
@@ -1011,28 +1024,28 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: total_blocks
 
-      total_blocks = sd%nb
+      total_blocks = sd%number_of_blocks
    end function wb_subdomain_total_blocks
 
    function wb_subdomain_components( sd ) result( components )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: components
 
-      components = sd%nc
+      components = sd%number_of_components
    end function wb_subdomain_components
 
    function wb_subdomain_total_points( sd ) result( points_in_state )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: points_in_state
 
-      points_in_state = product(sd%nx)
+      points_in_state = product(sd%number_of_points)
    end function wb_subdomain_total_points
 
    function wb_subdomain_variables( sd ) result( nv )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: nv
 
-      nv = sd%nv
+      nv = sd%number_of_variables
    end function wb_subdomain_variables
 
    function wb_subdomain_world_rank( sd ) result( world_rank )
