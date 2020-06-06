@@ -393,13 +393,15 @@ contains
       call mpi_cart_coords( sd%comm_block, wb_subdomain_block_rank(sd), &
          num_dimensions_mp(sd), sd%block_coords, ierr )
 
-      sd%number_of_points = block_nx / int(block_np,SP)
       do i_dim = 1_SP, num_dimensions(sd)
+         sd%number_of_points(i_dim) =             &
+            num_points( sd%local_block, i_dim ) / &
+            int( wb_block_processes( sd%local_block, i_dim ), SP )
          if ( sd%block_coords(i_dim) .eq. &
-            wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
-            sd%number_of_points(i_dim) = sd%number_of_points(i_dim) + &
-               modulo( &
-                  num_points( sd%local_block, i_dim ), &
+              wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
+            sd%number_of_points(i_dim) = sd%number_of_points(i_dim) +    &
+               modulo(                                                   &
+                  num_points( sd%local_block, i_dim ),                   &
                   int( wb_block_processes( sd%local_block, i_dim ), SP ) &
                )
          end if
