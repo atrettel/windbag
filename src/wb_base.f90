@@ -31,22 +31,22 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_BLOCK_NUMBER   = 1_SP
    integer(SP), public, parameter ::      NO_BLOCK_NEIGHBOR = 0_SP
 
-   integer(SP), public, parameter :: NO_FIELD          = 0_SP
-
-   integer(SP), public, parameter :: MIN_N_DIM = 1_SP
-   integer(SP), public, parameter :: MAX_N_DIM = 3_SP
+   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_DIMENSIONS = 3_SP
+   integer(SP), public, parameter ::     MIN_NUMBER_OF_DIMENSIONS = 1_SP
+   integer(SP), public, parameter ::     MAX_NUMBER_OF_DIMENSIONS = 3_SP
 
    integer(SP), public, parameter :: NUMBER_OF_DIRECTIONS = 2_SP
    integer(SP), public, parameter ::     LOWER_DIRECTION  = 1_SP
    integer(SP), public, parameter ::     UPPER_DIRECTION  = 2_SP
 
-   integer(SP), public, parameter :: DEFAULT_N_DIM          = 3_SP
-   integer(SP), public, parameter :: DEFAULT_NB             = 1_SP
-   integer(SP), public, parameter :: DEFAULT_NC             = 1_SP
-   integer(SP), public, parameter :: DEFAULT_NG             = 3_SP
-   integer(SP), public, parameter :: DEFAULT_NX             = 0_SP
+   integer(SP), public, parameter :: NO_FIELD = 0_SP
 
-   integer(MP), public, parameter :: DEFAULT_NP             = 0_MP
+   integer(SP), public, parameter :: DEFAULT_NB = 1_SP
+   integer(SP), public, parameter :: DEFAULT_NC = 1_SP
+   integer(SP), public, parameter :: DEFAULT_NG = 3_SP
+   integer(SP), public, parameter :: DEFAULT_NX = 0_SP
+
+   integer(MP), public, parameter :: DEFAULT_NP = 0_MP
 
    integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
 
@@ -313,10 +313,12 @@ contains
          call wb_abort( "number of ghost points is less than 1", &
             EXIT_DATAERR )
       end if
-      if ( n_dim .lt. MIN_N_DIM .or. n_dim .gt. MAX_N_DIM ) then
+      if ( n_dim .lt. MIN_NUMBER_OF_DIMENSIONS .or. &
+           n_dim .gt. MAX_NUMBER_OF_DIMENSIONS ) then
          call wb_abort( &
             "number of dimensions must be in interval [N1, N2]", &
-            EXIT_DATAERR, (/ MIN_N_DIM, MAX_N_DIM /) )
+            EXIT_DATAERR, (/ MIN_NUMBER_OF_DIMENSIONS, &
+                             MAX_NUMBER_OF_DIMENSIONS /) )
       end if
    end subroutine check_general_variables
 
@@ -594,7 +596,7 @@ contains
       case_name = DEFAULT_CASE_NAME
       nb        = DEFAULT_NB
       nc        = DEFAULT_NC
-      n_dim     = DEFAULT_N_DIM
+      n_dim     = DEFAULT_NUMBER_OF_DIMENSIONS
       ng        = DEFAULT_NG
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
@@ -998,7 +1000,8 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(SP) :: points
 
-      if ( i_dim .lt. MIN_N_DIM .or. i_dim .gt. MAX_N_DIM ) then
+      if ( i_dim .lt. MIN_NUMBER_OF_DIMENSIONS .or. &
+           i_dim .gt. MAX_NUMBER_OF_DIMENSIONS ) then
          points = 0_SP
       else if ( i_dim .gt. sd%n_dim ) then
          points = 1_SP
