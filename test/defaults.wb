@@ -1,6 +1,6 @@
 &general
 /
 &block
-np=4,2,2,
-nx=256,256,256,
+number_of_processes=4,2,2,
+number_of_points=256,256,256,
 /

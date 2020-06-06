@@ -1,7 +1,7 @@
 &general
 case_name="general_too_few_dimensions",
-n_dim=0,
-nb=2,
-nc=1,
-ng=3,
+number_of_dimensions=0,
+number_of_blocks=2,
+number_of_components=1,
+number_of_ghost_points=3,
 /
