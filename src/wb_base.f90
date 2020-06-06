@@ -717,34 +717,35 @@ contains
       periods = blk%periods
    end subroutine wb_block_periods_vector
 
-   function wb_block_points( blk, i_dim ) result( nx )
+   function wb_block_points( blk, i_dim ) result( number_of_points )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
-      integer(SP) :: nx
+      integer(SP) :: number_of_points
 
-      nx = blk%number_of_points(i_dim)
+      number_of_points = blk%number_of_points(i_dim)
    end function wb_block_points
 
-   subroutine wb_block_points_vector( blk, nx )
+   subroutine wb_block_points_vector( blk, number_of_points )
       type(WB_Block), intent(in) :: blk
-      integer(SP), dimension(:), allocatable, intent(inout) :: nx
+      integer(SP), dimension(:), allocatable, intent(inout) :: number_of_points
 
-      nx = blk%number_of_points
+      number_of_points = blk%number_of_points
    end subroutine wb_block_points_vector
 
-   function wb_block_processes( blk, i_dim ) result( np )
+   function wb_block_processes( blk, i_dim ) result( number_of_processes )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
-      integer(MP) :: np
+      integer(MP) :: number_of_processes
 
-      np = blk%number_of_processes(i_dim)
+      number_of_processes = blk%number_of_processes(i_dim)
    end function wb_block_processes
 
-   subroutine wb_block_processes_vector( blk, np )
+   subroutine wb_block_processes_vector( blk, number_of_processes )
       type(WB_Block), intent(in) :: blk
-      integer(MP), dimension(:), allocatable, intent(inout) :: np
+      integer(MP), dimension(:), allocatable, intent(inout) :: &
+         number_of_processes
 
-      np = blk%number_of_processes
+      number_of_processes = blk%number_of_processes
    end subroutine wb_block_processes_vector
 
    function wb_block_reorder( blk ) result( reorder )
