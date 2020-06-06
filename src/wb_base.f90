@@ -1037,11 +1037,11 @@ contains
       components = sd%number_of_components
    end function wb_subdomain_components
 
-   function wb_subdomain_total_points( sd ) result( points_in_state )
+   function wb_subdomain_total_points( sd ) result( points_in_subdomain )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: points_in_state
+      integer(SP) :: points_in_subdomain
 
-      points_in_state = product(sd%number_of_points)
+      points_in_subdomain = product(sd%number_of_points)
    end function wb_subdomain_total_points
 
    function wb_subdomain_variables( sd ) result( nv )
