@@ -427,11 +427,13 @@ contains
                   block_periods )
    end subroutine decompose_domain
 
-   pure function dimension_rule( n_dim ) result( f )
-      integer(SP), intent(in) :: n_dim
-      integer(SP) :: f
+   pure function dimension_rule( number_of_dimensions ) &
+      result( number_of_fields )
+      integer(SP), intent(in) :: number_of_dimensions
+      integer(SP) :: number_of_fields
 
-      f = 2_SP * n_dim + n_dim**2_SP
+      number_of_fields = 2_SP * number_of_dimensions + &
+         number_of_dimensions**2_SP
    end function dimension_rule
 
    subroutine find_input_file( filename )
@@ -515,11 +517,12 @@ contains
       deallocate( block_coords, process_block_coords )
    end subroutine identify_process_neighbors
 
-   pure function phase_rule( c, p ) result( f )
-      integer(SP), intent(in) :: c, p
-      integer(SP) :: f
+   pure function phase_rule( number_of_components, number_of_phases ) &
+      result( degrees_of_freedom )
+      integer(SP), intent(in) :: number_of_components, number_of_phases
+      integer(SP) :: degrees_of_freedom
 
-      f = c - p + 2_SP
+      degrees_of_freedom = number_of_components - number_of_phases + 2_SP
    end function phase_rule
 
    subroutine print_initial_information( sd )
