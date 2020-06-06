@@ -45,9 +45,10 @@ module wb_base
 
    integer(SP), public, parameter :: NO_FIELD = 0_SP
 
+   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
+
    integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
 
-   integer(SP), public, parameter :: DEFAULT_NG = 3_SP
    integer(SP), public, parameter :: DEFAULT_NX = 0_SP
 
    integer(MP), public, parameter :: DEFAULT_NP = 0_MP
@@ -599,7 +600,7 @@ contains
       nb        = DEFAULT_NUMBER_OF_BLOCKS
       nc        = DEFAULT_NUMBER_OF_COMPONENTS
       n_dim     = DEFAULT_NUMBER_OF_DIMENSIONS
-      ng        = DEFAULT_NG
+      ng        = DEFAULT_NUMBER_OF_GHOST_POINTS
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       if ( world_rank .eq. WORLD_MASTER ) then
@@ -607,7 +608,6 @@ contains
             action="read" )
          read( unit=file_unit, nml=general )
          close( unit=file_unit )
-
       end if
 
       call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
