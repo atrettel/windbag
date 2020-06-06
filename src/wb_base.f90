@@ -58,6 +58,9 @@ module wb_base
 
    logical, public, parameter :: DEFAULT_REORDER = .false.
 
+   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_TEMPORARY_FIELDS = 0_SP
+   integer(SP), public, parameter ::     MIN_NUMBER_OF_TEMPORARY_FIELDS = 0_SP
+
    character(len=*), public, parameter ::      PROGRAM_NAME = "windbag"
    character(len=*), public, parameter ::           VERSION = "0.0.0"
    character(len=*), public, parameter :: DEFAULT_CASE_NAME = "casename"
@@ -89,6 +92,7 @@ module wb_base
       integer(SP) :: number_of_dimensions
       integer(SP) :: number_of_fields
       integer(SP) :: number_of_ghost_points
+      integer(SP) :: number_of_temporary_fields
       integer(SP) :: number_of_variables
       integer(SP) :: iteration_number
       integer(SP), dimension(:), allocatable :: number_of_points
@@ -308,9 +312,10 @@ contains
 
    subroutine check_general_variables( number_of_blocks, &
       number_of_components, number_of_dimensions, number_of_ghost_points, &
-      world_size )
+      number_of_temporary_fields, world_size )
       integer(SP), intent(in) :: number_of_blocks, number_of_components, &
-         number_of_dimensions, number_of_ghost_points
+         number_of_dimensions, number_of_ghost_points, &
+         number_of_temporary_fields
       integer(MP), intent(in) :: world_size
 
       if ( number_of_blocks .lt. MIN_BLOCK_NUMBER .or. &
@@ -338,6 +343,11 @@ contains
             "number of dimensions must be in interval [N1, N2]", &
             EXIT_DATAERR, (/ MIN_NUMBER_OF_DIMENSIONS, &
                              MAX_NUMBER_OF_DIMENSIONS /) )
+      end if
+      if ( number_of_temporary_fields .lt. &
+           MIN_NUMBER_OF_TEMPORARY_FIELDS ) then
+         call wb_abort( "number of temporary fields is less than N1", &
+            EXIT_DATAERR, (/ MIN_NUMBER_OF_TEMPORARY_FIELDS /) )
       end if
    end subroutine check_general_variables
 
@@ -630,21 +640,25 @@ contains
    end subroutine read_block_namelists
 
    subroutine read_general_namelist( filename, case_name, number_of_blocks, &
-      number_of_components, number_of_dimensions, number_of_ghost_points )
+      number_of_components, number_of_dimensions, number_of_ghost_points, &
+      number_of_temporary_fields )
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH), intent(out) :: case_name
       integer(SP), intent(out) :: number_of_blocks, number_of_components, &
-         number_of_dimensions, number_of_ghost_points
+         number_of_dimensions, number_of_ghost_points, &
+         number_of_temporary_fields
       integer :: file_unit
       integer(MP) :: ierr, world_rank
       namelist /general/ case_name, number_of_blocks, number_of_components, &
-         number_of_dimensions, number_of_ghost_points
+         number_of_dimensions, number_of_ghost_points, &
+         number_of_temporary_fields
 
-      case_name              = DEFAULT_CASE_NAME
-      number_of_blocks       = DEFAULT_NUMBER_OF_BLOCKS
-      number_of_components   = DEFAULT_NUMBER_OF_COMPONENTS
-      number_of_dimensions   = DEFAULT_NUMBER_OF_DIMENSIONS
-      number_of_ghost_points = DEFAULT_NUMBER_OF_GHOST_POINTS
+      case_name                  = DEFAULT_CASE_NAME
+      number_of_blocks           = DEFAULT_NUMBER_OF_BLOCKS
+      number_of_components       = DEFAULT_NUMBER_OF_COMPONENTS
+      number_of_dimensions       = DEFAULT_NUMBER_OF_DIMENSIONS
+      number_of_ghost_points     = DEFAULT_NUMBER_OF_GHOST_POINTS
+      number_of_temporary_fields = DEFAULT_NUMBER_OF_TEMPORARY_FIELDS
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       if ( world_rank .eq. WORLD_MASTER ) then
@@ -660,6 +674,7 @@ contains
       call mpi_bcast( number_of_components, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
       call mpi_bcast( number_of_dimensions, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
       call mpi_bcast( number_of_ghost_points, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_temporary_fields, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
    subroutine wb_block_construct( blk, number_of_dimensions, &
@@ -891,23 +906,32 @@ contains
       case_name = sd%case_name
    end subroutine wb_subdomain_case_name
 
+   function wb_subdomain_components( sd ) result( number_of_components )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: number_of_components
+
+      number_of_components = sd%number_of_components
+   end function wb_subdomain_components
+
    subroutine wb_subdomain_construct_namelist( sd, filename )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH) :: case_name
       integer(SP) :: loop_block_number, number_of_blocks, &
-         number_of_components, number_of_dimensions, number_of_ghost_points
+         number_of_components, number_of_dimensions, number_of_ghost_points, &
+         number_of_temporary_fields
       integer(MP) :: ierr, world_rank, world_size
       type(WB_Block), dimension(:), allocatable :: blocks
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
       call read_general_namelist( filename, case_name, number_of_blocks, &
-         number_of_components, number_of_dimensions, number_of_ghost_points )
+         number_of_components, number_of_dimensions, number_of_ghost_points, &
+         number_of_temporary_fields )
       if ( world_rank .eq. WORLD_MASTER ) then
          call check_general_variables( number_of_blocks, &
             number_of_components, number_of_dimensions, &
-            number_of_ghost_points, world_size )
+            number_of_ghost_points, number_of_temporary_fields, world_size )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
       call read_block_namelists( filename, number_of_blocks, &
@@ -922,7 +946,7 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
       call wb_subdomain_construct_variables( sd, number_of_blocks, &
          number_of_components, number_of_dimensions, number_of_ghost_points, &
-         blocks, case_name )
+         number_of_temporary_fields, blocks, case_name )
 
       do loop_block_number = 1_SP, number_of_blocks
          call wb_block_destroy( blocks(loop_block_number) )
@@ -932,11 +956,12 @@ contains
 
    subroutine wb_subdomain_construct_variables( sd, number_of_blocks, &
       number_of_components, number_of_dimensions, number_of_ghost_points, &
-      blocks, case_name )
+      number_of_temporary_fields, blocks, case_name )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), optional, intent(in) :: case_name
       integer(SP), intent(in) :: number_of_blocks, number_of_components, &
-         number_of_dimensions, number_of_ghost_points
+         number_of_dimensions, number_of_ghost_points, &
+         number_of_temporary_fields
       integer(MP) :: ierr, world_rank
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
       type(WB_Process), dimension(:), allocatable :: processes
@@ -947,10 +972,11 @@ contains
          sd%case_name = trim(DEFAULT_CASE_NAME)
       end if
 
-      sd%number_of_blocks       = number_of_blocks
-      sd%number_of_components   = number_of_components
-      sd%number_of_dimensions   = number_of_dimensions
-      sd%number_of_ghost_points = number_of_ghost_points
+      sd%number_of_blocks           = number_of_blocks
+      sd%number_of_components       = number_of_components
+      sd%number_of_dimensions       = number_of_dimensions
+      sd%number_of_ghost_points     = number_of_ghost_points
+      sd%number_of_temporary_fields = number_of_temporary_fields
 
       call mpi_comm_rank( MPI_COMM_WORLD, sd%world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, sd%world_size, ierr )
@@ -1062,12 +1088,13 @@ contains
       total_blocks = sd%number_of_blocks
    end function wb_subdomain_total_blocks
 
-   function wb_subdomain_components( sd ) result( number_of_components )
+   function wb_subdomain_temporary_fields( sd ) &
+      result( number_of_temporary_fields )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: number_of_components
+      integer(SP) :: number_of_temporary_fields
 
-      number_of_components = sd%number_of_components
-   end function wb_subdomain_components
+      number_of_temporary_fields = sd%number_of_temporary_fields
+   end function wb_subdomain_temporary_fields
 
    function wb_subdomain_total_points( sd ) result( points_in_subdomain )
       type(WB_Subdomain), intent(in) :: sd
@@ -1426,6 +1453,10 @@ contains
          call write_table_entry( f, "Number of ghost points", &
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, num_ghost_points(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Number of temporary fields", &
+            PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, wb_subdomain_temporary_fields(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of variables", &
             PROPERTY_COLUMN_WIDTH )
