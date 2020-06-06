@@ -529,63 +529,67 @@ contains
       call write_subdomain_neighbors(     output_unit, sd )
    end subroutine print_initial_information
 
-   subroutine read_block_namelists( filename, nb, n_dim, blocks )
+   subroutine read_block_namelists( filename, number_of_blocks, &
+      number_of_dimensions, blocks )
       character(len=STRING_LENGTH), intent(in) :: filename
       type(WB_Block), dimension(:), allocatable, intent(out) :: blocks
-      integer(SP), intent(in) :: nb, n_dim
+      integer(SP), intent(in) :: number_of_blocks, number_of_dimensions
       integer :: file_unit
       integer(MP) :: ierr, world_rank, world_size
-      integer(SP) :: ib, jb
-      integer(MP), dimension(:), allocatable :: np
-      integer(SP), dimension(:), allocatable :: nx, neighbors_l, neighbors_u
-      namelist /block/ ib, np, nx, neighbors_l, neighbors_u
+      integer(SP) :: block_number, loop_block_number
+      integer(MP), dimension(:), allocatable :: number_of_processes
+      integer(SP), dimension(:), allocatable :: number_of_points, &
+         lower_neighbors, upper_neighbors
+      namelist /block/ block_number, number_of_processes, number_of_points, &
+         lower_neighbors, upper_neighbors
 
-      allocate( np(n_dim) )
-      allocate( nx(n_dim) )
-      allocate( neighbors_l(n_dim) )
-      allocate( neighbors_u(n_dim) )
+      allocate(    number_of_points(number_of_dimensions), &
+                number_of_processes(number_of_dimensions), &
+                    lower_neighbors(number_of_dimensions), &
+                    upper_neighbors(number_of_dimensions) )
 
-      ib             = DEFAULT_BLOCK_NUMBER
-      nx(:)          = DEFAULT_NUMBER_OF_POINTS
-      np(:)          = DEFAULT_NUMBER_OF_PROCESSES
-      neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
-      neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
+      block_number           = DEFAULT_BLOCK_NUMBER
+      number_of_points(:)    = DEFAULT_NUMBER_OF_POINTS
+      number_of_processes(:) = DEFAULT_NUMBER_OF_PROCESSES
+      lower_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
+      upper_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
 
-      allocate( blocks(nb) )
+      allocate( blocks(number_of_blocks) )
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
       if ( world_rank .eq. WORLD_MASTER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
       end if
-      do jb = 1_SP, nb
+      do loop_block_number = 1_SP, number_of_blocks
          if ( world_rank .eq. WORLD_MASTER ) then
             read( unit=file_unit, nml=block )
-            call check_block_bounds( ib, nb )
+            call check_block_bounds( block_number, number_of_blocks )
          end if
 
-         call mpi_bcast( ib, 1_MP, MPI_INTEGER, WORLD_MASTER, &
+         call mpi_bcast( block_number, 1_MP, MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( np, int(n_dim,MP), MPI_INTEGER, WORLD_MASTER, &
+         call mpi_bcast( number_of_points, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( nx, int(n_dim,MP), MPI_SP, WORLD_MASTER, &
+         call mpi_bcast( number_of_processes, int(number_of_dimensions,MP), MPI_INTEGER, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( neighbors_l, int(n_dim,MP), MPI_SP, WORLD_MASTER, &
+         call mpi_bcast( lower_neighbors, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( neighbors_u, int(n_dim,MP), MPI_SP, WORLD_MASTER, &
+         call mpi_bcast( upper_neighbors, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
 
-         call wb_block_construct( blocks(ib), n_dim, np, nx, neighbors_l, &
-            neighbors_u, ib )
+         call wb_block_construct( blocks(block_number), number_of_dimensions, &
+            number_of_processes, number_of_points, lower_neighbors, &
+            upper_neighbors, block_number )
       end do
       if ( world_rank .eq. WORLD_MASTER ) then
          close( unit=file_unit )
       end if
 
-      deallocate( np )
-      deallocate( nx )
-      deallocate( neighbors_l )
-      deallocate( neighbors_u )
+      deallocate( number_of_points,    &
+                  number_of_processes, &
+                  lower_neighbors,     &
+                  upper_neighbors )
    end subroutine read_block_namelists
 
    subroutine read_general_namelist( filename, case_name, number_of_blocks, &
