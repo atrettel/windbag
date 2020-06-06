@@ -31,6 +31,8 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_BLOCK_NUMBER   = 1_SP
    integer(SP), public, parameter ::      NO_BLOCK_NEIGHBOR = 0_SP
 
+   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_BLOCKS = 1_SP
+
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_COMPONENTS = 1_SP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_DIMENSIONS = 3_SP
@@ -45,7 +47,6 @@ module wb_base
 
    integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
 
-   integer(SP), public, parameter :: DEFAULT_NB = 1_SP
    integer(SP), public, parameter :: DEFAULT_NG = 3_SP
    integer(SP), public, parameter :: DEFAULT_NX = 0_SP
 
@@ -595,7 +596,7 @@ contains
       namelist /general/ case_name, nb, nc, ng, n_dim
 
       case_name = DEFAULT_CASE_NAME
-      nb        = DEFAULT_NB
+      nb        = DEFAULT_NUMBER_OF_BLOCKS
       nc        = DEFAULT_NUMBER_OF_COMPONENTS
       n_dim     = DEFAULT_NUMBER_OF_DIMENSIONS
       ng        = DEFAULT_NG
