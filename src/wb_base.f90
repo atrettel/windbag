@@ -567,19 +567,17 @@ contains
       integer(MP), dimension(:), allocatable :: number_of_processes
       integer(SP), dimension(:), allocatable :: number_of_points, &
          lower_neighbors, upper_neighbors
+      logical, dimension(:), allocatable :: block_is_defined
       namelist /block/ block_number, number_of_processes, number_of_points, &
          lower_neighbors, upper_neighbors
 
-      allocate(    number_of_points(number_of_dimensions), &
+      allocate(    block_is_defined(number_of_dimensions), &
+                   number_of_points(number_of_dimensions), &
                 number_of_processes(number_of_dimensions), &
                     lower_neighbors(number_of_dimensions), &
                     upper_neighbors(number_of_dimensions) )
 
-      block_number           = DEFAULT_BLOCK_NUMBER
-      number_of_points(:)    = DEFAULT_NUMBER_OF_POINTS
-      number_of_processes(:) = DEFAULT_NUMBER_OF_PROCESSES
-      lower_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
-      upper_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
+      block_is_defined(:) = .false.
 
       allocate( blocks(number_of_blocks) )
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
@@ -589,6 +587,12 @@ contains
             action="read" )
       end if
       do loop_block_number = 1_SP, number_of_blocks
+         block_number           = DEFAULT_BLOCK_NUMBER
+         number_of_points(:)    = DEFAULT_NUMBER_OF_POINTS
+         number_of_processes(:) = DEFAULT_NUMBER_OF_PROCESSES
+         lower_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
+         upper_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
+
          if ( world_rank .eq. WORLD_MASTER ) then
             read( unit=file_unit, nml=block )
             call check_block_bounds( block_number, number_of_blocks )
@@ -605,6 +609,15 @@ contains
          call mpi_bcast( upper_neighbors, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
             MPI_COMM_WORLD, ierr )
 
+         if ( block_is_defined(block_number) .and. &
+              world_rank .eq. WORLD_MASTER ) then
+            call wb_abort( "block N1 is defined multiple times", EXIT_DATAERR, &
+               (/ block_number /) )
+         else
+            block_is_defined(block_number) = .true.
+         end if
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+
          call wb_block_construct( blocks(block_number), number_of_dimensions, &
             number_of_processes, number_of_points, lower_neighbors, &
             upper_neighbors, block_number )
@@ -613,7 +626,8 @@ contains
          close( unit=file_unit )
       end if
 
-      deallocate( number_of_points,    &
+      deallocate( block_is_defined,    &
+                  number_of_points,    &
                   number_of_processes, &
                   lower_neighbors,     &
                   upper_neighbors )
