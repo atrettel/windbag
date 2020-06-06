@@ -284,16 +284,16 @@ contains
       end if
    end subroutine check_block_total_points
 
-   subroutine check_block_world_size( blocks, nb )
+   subroutine check_block_world_size( blocks, number_of_blocks )
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
-      integer(SP), intent(in) :: nb
-      integer(SP) :: ib
+      integer(SP), intent(in) :: number_of_blocks
+      integer(SP) :: block_number
       integer(MP) :: ierr, world_size, world_size_from_blocks
 
       world_size_from_blocks = 0_MP
-      do ib = 1_SP, nb
+      do block_number = 1_SP, number_of_blocks
          world_size_from_blocks = world_size_from_blocks + &
-            wb_block_size( blocks(ib) )
+            wb_block_size( blocks(block_number) )
       end do
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
       if ( world_size_from_blocks .ne. world_size ) then
