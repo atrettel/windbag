@@ -1098,7 +1098,7 @@ contains
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_log_heading( f, "Block information", level=2_SP )
 
-         call write_table_entry( f, "`ib`", BLOCK_NUMBER_COLUMN_WIDTH )
+         call write_table_entry( f, "`blkno`", BLOCK_NUMBER_COLUMN_WIDTH )
          call write_table_entry( f, "`block_size`", SIZE_COLUMN_WIDTH )
          do i_dim = 1_SP, num_dimensions(sd)
             write (label,"(A, I1, A)") "`np(", i_dim, ")`"
@@ -1246,7 +1246,7 @@ contains
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
          call write_table_entry( f, "hostname", HOSTNAME_COLUMN_WIDTH )
-         call write_table_entry( f, "`ib`", BLOCK_NUMBER_COLUMN_WIDTH )
+         call write_table_entry( f, "`blkno`", BLOCK_NUMBER_COLUMN_WIDTH )
          call write_table_entry( f, "`block_rank`", RANK_COLUMN_WIDTH )
          do i_dim = 1_SP, num_dimensions(sd)
             write (label,"(A, I1, A)") "(", i_dim, ")"

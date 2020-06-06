@@ -26,7 +26,7 @@ module wb_text
    integer(SP), public, parameter :: CENTER_ALIGNED = 3_SP
 
    integer(SP), public, parameter ::       ANSWER_COLUMN_WIDTH = 10_SP
-   integer(SP), public, parameter :: BLOCK_NUMBER_COLUMN_WIDTH =  4_SP
+   integer(SP), public, parameter :: BLOCK_NUMBER_COLUMN_WIDTH =  7_SP
    integer(SP), public, parameter ::       COORDS_COLUMN_WIDTH =  6_SP
    integer(SP), public, parameter ::    DATA_TYPE_COLUMN_WIDTH = 20_SP
    integer(SP), public, parameter ::     HOSTNAME_COLUMN_WIDTH = 16_SP
