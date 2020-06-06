@@ -588,19 +588,22 @@ contains
       deallocate( neighbors_u )
    end subroutine read_block_namelists
 
-   subroutine read_general_namelist( filename, case_name, nb, nc, n_dim, ng )
+   subroutine read_general_namelist( filename, case_name, number_of_blocks, &
+      number_of_components, number_of_dimensions, number_of_ghost_points )
       character(len=STRING_LENGTH), intent(in) :: filename
       character(len=STRING_LENGTH), intent(out) :: case_name
-      integer(SP), intent(out) :: nb, nc, n_dim, ng
+      integer(SP), intent(out) :: number_of_blocks, number_of_components, &
+         number_of_dimensions, number_of_ghost_points
       integer :: file_unit
       integer(MP) :: ierr, world_rank
-      namelist /general/ case_name, nb, nc, ng, n_dim
+      namelist /general/ case_name, number_of_blocks, number_of_components, &
+         number_of_dimensions, number_of_ghost_points
 
-      case_name = DEFAULT_CASE_NAME
-      nb        = DEFAULT_NUMBER_OF_BLOCKS
-      nc        = DEFAULT_NUMBER_OF_COMPONENTS
-      n_dim     = DEFAULT_NUMBER_OF_DIMENSIONS
-      ng        = DEFAULT_NUMBER_OF_GHOST_POINTS
+      case_name              = DEFAULT_CASE_NAME
+      number_of_blocks       = DEFAULT_NUMBER_OF_BLOCKS
+      number_of_components   = DEFAULT_NUMBER_OF_COMPONENTS
+      number_of_dimensions   = DEFAULT_NUMBER_OF_DIMENSIONS
+      number_of_ghost_points = DEFAULT_NUMBER_OF_GHOST_POINTS
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       if ( world_rank .eq. WORLD_MASTER ) then
@@ -612,10 +615,10 @@ contains
 
       call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
          WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( nb,    1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( nc,    1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( n_dim, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( ng,    1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_blocks, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_components, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_dimensions, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_ghost_points, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
    subroutine wb_block_construct( blk, n_dim, np, nx, neighbors_l, &
