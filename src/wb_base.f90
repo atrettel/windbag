@@ -51,7 +51,7 @@ module wb_base
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
-   integer(MP), public, parameter :: DEFAULT_NP = 0_MP
+   integer(MP), public, parameter :: DEFAULT_NUMBER_OF_PROCESSES = 0_MP
 
    logical, public, parameter :: DEFAULT_REORDER = .false.
 
@@ -546,8 +546,8 @@ contains
       allocate( neighbors_u(n_dim) )
 
       ib             = DEFAULT_BLOCK_NUMBER
-      np(:)          = DEFAULT_NP
       nx(:)          = DEFAULT_NUMBER_OF_POINTS
+      np(:)          = DEFAULT_NUMBER_OF_PROCESSES
       neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
       neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
 
@@ -633,8 +633,8 @@ contains
       allocate( blk%neighbors(n_dim,NUMBER_OF_DIRECTIONS) )
       allocate( blk%periods(n_dim) )
 
-      blk%np(:)          = DEFAULT_NP
       blk%nx(:)          = DEFAULT_NUMBER_OF_POINTS
+      blk%np(:)          = DEFAULT_NUMBER_OF_PROCESSES
       blk%neighbors(:,:) = DEFAULT_BLOCK_NEIGHBOR
       blk%periods(:)     = .false.
 
