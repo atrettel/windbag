@@ -853,18 +853,18 @@ contains
       block_coords = sd%block_coords
    end subroutine wb_subdomain_block_coords_vector
 
-   function wb_subdomain_block_number( sd ) result( ib )
+   function wb_subdomain_block_number( sd ) result( block_number )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: ib
+      integer(SP) :: block_number
 
-      ib = sd%block_number
+      block_number = sd%block_number
    end function wb_subdomain_block_number
 
-   function wb_subdomain_block_number_mp( sd ) result( ib )
+   function wb_subdomain_block_number_mp( sd ) result( block_number )
       type(WB_Subdomain), intent(in) :: sd
-      integer(MP) :: ib
+      integer(MP) :: block_number
 
-      ib = int(wb_subdomain_block_number(sd),MP)
+      block_number = int(wb_subdomain_block_number(sd),MP)
    end function wb_subdomain_block_number_mp
 
    function wb_subdomain_block_rank( sd ) result( block_rank )
@@ -973,32 +973,32 @@ contains
       call wb_block_destroy( sd%local_block )
    end subroutine wb_subdomain_destroy
 
-   function wb_subdomain_dimensions( sd ) result( n_dim )
+   function wb_subdomain_dimensions( sd ) result( number_of_dimensions )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: n_dim
+      integer(SP) :: number_of_dimensions
 
-      n_dim = sd%number_of_dimensions
+      number_of_dimensions = sd%number_of_dimensions
    end function wb_subdomain_dimensions
 
-   function wb_subdomain_dimensions_mp( sd ) result( n_dim )
+   function wb_subdomain_dimensions_mp( sd ) result( number_of_dimensions )
       type(WB_Subdomain), intent(in) :: sd
-      integer(MP) :: n_dim
+      integer(MP) :: number_of_dimensions
 
-      n_dim = int(wb_subdomain_dimensions(sd),MP)
+      number_of_dimensions = int(wb_subdomain_dimensions(sd),MP)
    end function wb_subdomain_dimensions_mp
 
-   function wb_subdomain_faces( sd ) result( n_faces )
+   function wb_subdomain_faces( sd ) result( number_of_faces )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: n_faces
+      integer(SP) :: number_of_faces
 
-      n_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
+      number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
-   function wb_subdomain_ghost_points( sd ) result( ng )
+   function wb_subdomain_ghost_points( sd ) result( number_of_ghost_points )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: ng
+      integer(SP) :: number_of_ghost_points
 
-      ng = sd%number_of_ghost_points
+      number_of_ghost_points = sd%number_of_ghost_points
    end function wb_subdomain_ghost_points
 
    function wb_subdomain_is_block_master( sd ) result( is_block_master )
@@ -1052,11 +1052,11 @@ contains
       total_blocks = sd%number_of_blocks
    end function wb_subdomain_total_blocks
 
-   function wb_subdomain_components( sd ) result( components )
+   function wb_subdomain_components( sd ) result( number_of_components )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: components
+      integer(SP) :: number_of_components
 
-      components = sd%number_of_components
+      number_of_components = sd%number_of_components
    end function wb_subdomain_components
 
    function wb_subdomain_total_points( sd ) result( points_in_subdomain )
@@ -1066,11 +1066,11 @@ contains
       points_in_subdomain = product(sd%number_of_points)
    end function wb_subdomain_total_points
 
-   function wb_subdomain_variables( sd ) result( nv )
+   function wb_subdomain_variables( sd ) result( number_of_variables )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: nv
+      integer(SP) :: number_of_variables
 
-      nv = sd%number_of_variables
+      number_of_variables = sd%number_of_variables
    end function wb_subdomain_variables
 
    function wb_subdomain_world_rank( sd ) result( world_rank )
