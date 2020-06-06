@@ -70,10 +70,10 @@ module wb_base
 
    type, private :: WB_Process
       private
+      integer(SP) :: block_number
       integer(MP) :: block_rank
       integer(MP), dimension(:), allocatable :: block_coords
-      integer(SP), dimension(:), allocatable :: nx
-      integer(SP) :: ib
+      integer(SP), dimension(:), allocatable :: number_of_points
    end type WB_Process
 
    type, public :: WB_Subdomain
@@ -745,7 +745,7 @@ contains
       type(WB_Process), intent(in) :: process
       integer(SP) :: block_number
 
-      block_number = process%ib
+      block_number = process%block_number
    end function wb_process_block_number
 
    function wb_process_block_rank( process ) result( block_rank )
@@ -762,44 +762,45 @@ contains
       block_coords = process%block_coords
    end subroutine wb_process_block_coords
 
-   subroutine wb_process_construct( process, n_dim, ib, world_rank, &
-      block_rank, block_coords, nx  )
+   subroutine wb_process_construct( process, number_of_dimensions, &
+      block_number, world_rank, block_rank, block_coords, number_of_points )
       type(WB_Process), intent(inout) :: process
-      integer(SP), intent(in) :: n_dim, ib
+      integer(SP), intent(in) :: block_number, number_of_dimensions
       integer(MP), intent(in) :: world_rank
       integer(MP), optional, intent(in) :: block_rank
       integer(MP), dimension(:), allocatable, optional, intent(in) :: &
          block_coords
-      integer(SP), dimension(:), allocatable, optional, intent(in) :: nx
+      integer(SP), dimension(:), allocatable, optional, intent(in) :: &
+         number_of_points
       integer(MP) :: ierr
 
-      allocate( process%block_coords(n_dim) )
-      allocate( process%nx(n_dim) )
+      allocate(     process%block_coords(number_of_dimensions), &
+                process%number_of_points(number_of_dimensions) )
 
-      process%ib = ib
+      process%block_number = block_number
       if ( present(block_rank) ) then
          process%block_rank = block_rank
       end if
       if ( present(block_coords) ) then
          process%block_coords = block_coords
       end if
-      if ( present(nx) ) then
-         process%nx = nx
+      if ( present(number_of_points) ) then
+         process%number_of_points = number_of_points
       end if
 
       call mpi_bcast( process%block_rank, 1_MP, MPI_INTEGER, world_rank, &
          MPI_COMM_WORLD, ierr )
-      call mpi_bcast( process%block_coords, int(n_dim,MP), MPI_INTEGER, &
+      call mpi_bcast( process%block_coords, int(number_of_dimensions,MP), MPI_INTEGER, &
          world_rank, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( process%nx, int(n_dim,MP), MPI_SP, world_rank, &
+      call mpi_bcast( process%number_of_points, int(number_of_dimensions,MP), MPI_SP, world_rank, &
          MPI_COMM_WORLD, ierr )
    end subroutine wb_process_construct
 
    subroutine wb_process_destroy( process )
       type(WB_Process), intent(inout) :: process
 
-      deallocate( process%block_coords )
-      deallocate( process%nx )
+      deallocate( process%block_coords, &
+                  process%number_of_points )
    end subroutine wb_process_destroy
 
    subroutine wb_subdomain_block_communicator( sd, comm_block )
