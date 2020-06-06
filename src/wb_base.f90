@@ -143,16 +143,16 @@ contains
       integer(SP), dimension(:), allocatable, intent(inout) :: &
          block_assignments
       integer(MP) :: assigned_processes, world_rank, world_size
-      integer(SP) :: ib
+      integer(SP) :: block_number
 
-      ib = 1_SP
+      block_number = 1_SP
       assigned_processes = 0_MP
       do world_rank = 0_MP, world_size-1_MP
-         block_assignments(world_rank) = ib
+         block_assignments(world_rank) = block_number
          assigned_processes = assigned_processes + 1_MP
-         if ( assigned_processes .eq. wb_block_size( blocks(ib) ) ) then
+         if (assigned_processes .eq. wb_block_size(blocks(block_number))) then
             assigned_processes = 0_MP
-            ib = ib + 1_SP
+            block_number = block_number + 1_SP
          end if
       end do
    end subroutine assign_blocks
