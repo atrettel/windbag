@@ -49,7 +49,7 @@ module wb_base
 
    integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
 
-   integer(SP), public, parameter :: DEFAULT_NX = 0_SP
+   integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
    integer(MP), public, parameter :: DEFAULT_NP = 0_MP
 
@@ -547,7 +547,7 @@ contains
 
       ib             = DEFAULT_BLOCK_NUMBER
       np(:)          = DEFAULT_NP
-      nx(:)          = DEFAULT_NX
+      nx(:)          = DEFAULT_NUMBER_OF_POINTS
       neighbors_l(:) = DEFAULT_BLOCK_NEIGHBOR
       neighbors_u(:) = DEFAULT_BLOCK_NEIGHBOR
 
@@ -634,7 +634,7 @@ contains
       allocate( blk%periods(n_dim) )
 
       blk%np(:)          = DEFAULT_NP
-      blk%nx(:)          = DEFAULT_NX
+      blk%nx(:)          = DEFAULT_NUMBER_OF_POINTS
       blk%neighbors(:,:) = DEFAULT_BLOCK_NEIGHBOR
       blk%periods(:)     = .false.
 
