@@ -4,4 +4,5 @@ number_of_dimensions=3,
 number_of_blocks=3,
 number_of_components=1,
 number_of_ghost_points=3,
+number_of_temporary_fields=0,
 /
