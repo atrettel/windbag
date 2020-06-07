@@ -5,10 +5,3 @@ number_of_blocks=1,
 number_of_components=0,
 number_of_ghost_points=3,
 /
-&block
-block_number=1,
-number_of_processes=2,1,1,
-lower_neighbors=1,0,1,
-upper_neighbors=1,0,1,
-number_of_points=256,128,64,
-/
