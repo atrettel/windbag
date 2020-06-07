@@ -325,29 +325,33 @@ contains
          ! as communication between processes, but that plan only works if
          ! each block uses at least one process.
          call wb_abort( &
-            "number of blocks must be in interval [N1, N2]", &
-            EXIT_DATAERR, (/ MIN_BLOCK_NUMBER, int(world_size,SP) /) )
+            "number of blocks N1 must be in interval [N2, N3]", &
+            EXIT_DATAERR, (/ number_of_blocks, MIN_BLOCK_NUMBER, &
+               int(world_size,SP) /) )
       end if
       if ( number_of_components .lt. MIN_NUMBER_OF_COMPONENTS ) then
-         call wb_abort( &
-            "number of components must be at least N1", EXIT_DATAERR, &
-            (/ MIN_NUMBER_OF_COMPONENTS /) )
+         call wb_abort( "number of components N1 must be at least N2", &
+            EXIT_DATAERR, (/     number_of_components, &
+                             MIN_NUMBER_OF_COMPONENTS /) )
       end if
       if ( number_of_ghost_points .lt. MIN_NUMBER_OF_GHOST_POINTS ) then
-         call wb_abort( "number of ghost points is less than N1", &
-            EXIT_DATAERR, (/ MIN_NUMBER_OF_GHOST_POINTS /) )
+         call wb_abort( "number of ghost points N1 is less than N2", &
+            EXIT_DATAERR, (/     number_of_ghost_points, &
+                             MIN_NUMBER_OF_GHOST_POINTS /) )
       end if
       if ( number_of_dimensions .lt. MIN_NUMBER_OF_DIMENSIONS .or. &
            number_of_dimensions .gt. MAX_NUMBER_OF_DIMENSIONS ) then
          call wb_abort( &
-            "number of dimensions must be in interval [N1, N2]", &
-            EXIT_DATAERR, (/ MIN_NUMBER_OF_DIMENSIONS, &
+            "number of dimensions N1 must be in interval [N2, N3]", &
+            EXIT_DATAERR, (/     number_of_dimensions, &
+                             MIN_NUMBER_OF_DIMENSIONS, &
                              MAX_NUMBER_OF_DIMENSIONS /) )
       end if
       if ( number_of_temporary_fields .lt. &
            MIN_NUMBER_OF_TEMPORARY_FIELDS ) then
-         call wb_abort( "number of temporary fields is less than N1", &
-            EXIT_DATAERR, (/ MIN_NUMBER_OF_TEMPORARY_FIELDS /) )
+         call wb_abort( "number of temporary fields N1 is less than N2", &
+            EXIT_DATAERR, (/     number_of_temporary_fields, &
+                             MIN_NUMBER_OF_TEMPORARY_FIELDS /) )
       end if
    end subroutine check_general_variables
 
