@@ -67,10 +67,11 @@ module wb_base
 
    type, private :: WB_Block
       private
+      integer(SP) :: block_number
+      integer(SP) :: number_of_dimensions
       integer(SP), dimension(:,:), allocatable :: neighbors
       integer(SP), dimension(:), allocatable :: number_of_points
       integer(MP), dimension(:), allocatable :: number_of_processes
-      logical, dimension(:), allocatable :: periods
       logical :: reorder
    end type WB_Block
 
@@ -117,7 +118,7 @@ module wb_base
    end interface num_components
 
    interface num_dimensions
-      module procedure wb_subdomain_dimensions
+      module procedure wb_block_dimensions, wb_subdomain_dimensions
    end interface num_dimensions
 
    interface num_dimensions_mp
@@ -681,6 +682,13 @@ contains
       call mpi_bcast( number_of_temporary_fields, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
+   function wb_block_number( blk ) result( block_number )
+      type(WB_Block), intent(in) :: blk
+      integer(SP) :: block_number
+
+      block_number = blk%block_number
+   end function wb_block_number
+
    subroutine wb_block_construct( blk, number_of_dimensions, &
       number_of_processes, number_of_points, lower_neighbors, &
       upper_neighbors, block_number )
@@ -691,37 +699,34 @@ contains
       integer(SP), dimension(:), allocatable, intent(in) :: number_of_points, &
          lower_neighbors, upper_neighbors
       integer(SP), intent(in) :: block_number
-      integer(SP) :: i_dim
 
       allocate( blk%number_of_processes(number_of_dimensions), &
-                   blk%number_of_points(number_of_dimensions), &
-                            blk%periods(number_of_dimensions) )
+                   blk%number_of_points(number_of_dimensions) )
       allocate( blk%neighbors(number_of_dimensions,NUMBER_OF_DIRECTIONS) )
 
+      blk%block_number                 = block_number
+      blk%number_of_dimensions         = number_of_dimensions
       blk%neighbors(:,LOWER_DIRECTION) = lower_neighbors
       blk%neighbors(:,UPPER_DIRECTION) = upper_neighbors
       blk%number_of_points             = number_of_points
       blk%number_of_processes          = number_of_processes
       blk%reorder                      = DEFAULT_REORDER
-
-      do i_dim = 1_SP, number_of_dimensions
-         if ( blk%neighbors(i_dim,LOWER_DIRECTION) .eq. block_number .and. &
-              blk%neighbors(i_dim,UPPER_DIRECTION) .eq. block_number ) then
-            blk%periods(i_dim) = .true.
-         else
-            blk%periods(i_dim) = .false.
-         end if
-      end do
    end subroutine wb_block_construct
 
    subroutine wb_block_destroy( blk )
       type(WB_Block), intent(inout) :: blk
 
-      deallocate( blk%neighbors,           &
-                  blk%number_of_points,    &
-                  blk%number_of_processes, &
-                  blk%periods )
+      deallocate( blk%neighbors,        &
+                  blk%number_of_points, &
+                  blk%number_of_processes )
    end subroutine wb_block_destroy
+
+   function wb_block_dimensions( blk ) result( number_of_dimensions )
+      type(WB_Block), intent(in) :: blk
+      integer(SP) :: number_of_dimensions
+
+      number_of_dimensions = blk%number_of_dimensions
+   end function wb_block_dimensions
 
    function wb_block_neighbor( blk, i_dim, i_dir ) result( neighbor )
       type(WB_Block), intent(in) :: blk
@@ -742,8 +747,17 @@ contains
    subroutine wb_block_periods_vector( blk, periods )
       type(WB_Block), intent(in) :: blk
       logical, dimension(:), allocatable, intent(inout) :: periods
+      integer(SP) :: i_dim, block_number
 
-      periods = blk%periods
+      block_number = wb_block_number(blk)
+      do i_dim = 1_SP, num_dimensions(blk)
+         if ( blk%neighbors(i_dim,LOWER_DIRECTION) .eq. block_number .and. &
+              blk%neighbors(i_dim,UPPER_DIRECTION) .eq. block_number ) then
+            periods(i_dim) = .true.
+         else
+            periods(i_dim) = .false.
+         end if
+      end do
    end subroutine wb_block_periods_vector
 
    function wb_block_points( blk, i_dim ) result( number_of_points )
