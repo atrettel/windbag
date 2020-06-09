@@ -36,6 +36,8 @@ Planned features and goals
 
 - architecture based on series of operations acting on a single set of fields
 
+- dependency graph to calculate additional fields
+
 - output files natively readable by Paraview
 
 - open formats for post-processed output files (CSV)
