@@ -28,7 +28,7 @@ module wb_variables
    type, public :: WB_Variable_List
       private
       integer(SP) :: next_variable_number
-      logical, dimension(:), allocatable :: is_required
+      logical, dimension(:), allocatable :: is_a_required_variable
       logical, dimension(:,:), allocatable :: adjacency_matrix
       integer(SP), dimension(:), allocatable :: order_of_evaluation
       character(len=STRING_LENGTH), dimension(:), allocatable :: variable_names
@@ -37,25 +37,25 @@ contains
    subroutine wb_variable_list_construct( vl )
       type(WB_Variable_List) :: vl
 
-      allocate( vl%is_required(MAX_NUMBER_OF_VARIABLES), &
-           vl%adjacency_matrix(MAX_NUMBER_OF_VARIABLES,  &
-                               MAX_NUMBER_OF_VARIABLES), &
-        vl%order_of_evaluation(MAX_NUMBER_OF_VARIABLES), &
-             vl%variable_names(MAX_NUMBER_OF_VARIABLES) )
+      allocate( vl%is_a_required_variable(MAX_NUMBER_OF_VARIABLES), &
+                      vl%adjacency_matrix(MAX_NUMBER_OF_VARIABLES,  &
+                                          MAX_NUMBER_OF_VARIABLES), &
+                   vl%order_of_evaluation(MAX_NUMBER_OF_VARIABLES), &
+                        vl%variable_names(MAX_NUMBER_OF_VARIABLES) )
 
-      vl%next_variable_number   = 1_SP
-      vl%is_required(:)         = .false.
-      vl%adjacency_matrix(:,:)  = .false.
-      vl%order_of_evaluation(:) = VACANT_VARIABLE_NUMBER
-      vl%variable_names(:)      = DEFAULT_VARIABLE_NAME
+      vl%next_variable_number      = 1_SP
+      vl%is_a_required_variable(:) = .false.
+      vl%adjacency_matrix(:,:)     = .false.
+      vl%order_of_evaluation(:)    = VACANT_VARIABLE_NUMBER
+      vl%variable_names(:)         = DEFAULT_VARIABLE_NAME
    end subroutine wb_variable_list_construct
 
    subroutine wb_variable_list_destroy( vl )
       type(WB_Variable_List) :: vl
 
-      deallocate( vl%is_required,         &
-                  vl%adjacency_matrix,    &
-                  vl%order_of_evaluation, &
+      deallocate( vl%is_a_required_variable, &
+                  vl%adjacency_matrix,       &
+                  vl%order_of_evaluation,    &
                   vl%variable_names )
    end subroutine wb_variable_list_destroy
 end module wb_variables
