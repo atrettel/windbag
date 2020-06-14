@@ -171,6 +171,9 @@ contains
       type(WB_Variable_List) :: vl
 
       call wb_variable_list_construct( vl )
+
+      sd%number_of_variables = wb_variable_list_number(vl)
+
       call wb_variable_list_destroy( vl )
    end subroutine setup_variables
 

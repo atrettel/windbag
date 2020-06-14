@@ -18,7 +18,7 @@ module wb_variables
    private
 
    public WB_Variable_List, wb_variable_list_construct, &
-      wb_variable_list_destroy
+      wb_variable_list_destroy, wb_variable_list_number
 
    integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  128_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =   -1_SP
@@ -35,7 +35,7 @@ module wb_variables
    end type WB_Variable_List
 contains
    subroutine wb_variable_list_construct( vl )
-      type(WB_Variable_List) :: vl
+      type(WB_Variable_List), intent(inout) :: vl
 
       allocate( vl%is_a_required_variable(MAX_NUMBER_OF_VARIABLES), &
                       vl%adjacency_matrix(MAX_NUMBER_OF_VARIABLES,  &
@@ -51,11 +51,18 @@ contains
    end subroutine wb_variable_list_construct
 
    subroutine wb_variable_list_destroy( vl )
-      type(WB_Variable_List) :: vl
+      type(WB_Variable_List), intent(inout) :: vl
 
       deallocate( vl%is_a_required_variable, &
                   vl%adjacency_matrix,       &
                   vl%order_of_evaluation,    &
                   vl%variable_names )
    end subroutine wb_variable_list_destroy
+
+   function wb_variable_list_number( vl ) result( number_of_variables )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: number_of_variables
+
+      number_of_variables = vl%next_variable_number - 1_SP
+   end function wb_variable_list_number
 end module wb_variables
