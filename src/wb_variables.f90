@@ -27,7 +27,7 @@ module wb_variables
 
    type, public :: WB_Variable_List
       private
-      integer(SP) :: next_variable_number
+      integer(SP) :: number_of_variables
       logical, dimension(:), allocatable :: is_a_required_variable
       logical, dimension(:,:), allocatable :: adjacency_matrix
       integer(SP), dimension(:), allocatable :: order_of_evaluation
@@ -43,7 +43,7 @@ contains
                    vl%order_of_evaluation(MAX_NUMBER_OF_VARIABLES), &
                         vl%variable_names(MAX_NUMBER_OF_VARIABLES) )
 
-      vl%next_variable_number      = 1_SP
+      vl%number_of_variables       = 0_SP
       vl%is_a_required_variable(:) = .false.
       vl%adjacency_matrix(:,:)     = .false.
       vl%order_of_evaluation(:)    = VACANT_VARIABLE_NUMBER
@@ -63,6 +63,6 @@ contains
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: number_of_variables
 
-      number_of_variables = vl%next_variable_number - 1_SP
+      number_of_variables = vl%number_of_variables
    end function wb_variable_list_number
 end module wb_variables
