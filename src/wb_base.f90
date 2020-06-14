@@ -17,6 +17,7 @@ module wb_base
    use wb_representation
    use wb_exit
    use wb_text
+   use wb_variables
    implicit none
 
    private
@@ -165,13 +166,13 @@ contains
       end do
    end subroutine assign_blocks
 
-   subroutine calculate_number_of_variables( sd )
+   subroutine setup_variables( sd )
       type(WB_Subdomain), intent(inout) :: sd
+      type(WB_Variable_List) :: vl
 
-      sd%number_of_variables = &
-         phase_rule( num_components(sd), NUMBER_OF_PHASES ) + &
-         dimension_rule( num_dimensions(sd) )
-   end subroutine calculate_number_of_variables
+      call wb_variable_list_construct( vl )
+      call wb_variable_list_destroy( vl )
+   end subroutine setup_variables
 
    subroutine check_block_bounds( block_number, number_of_blocks )
       integer(SP), intent(in) :: block_number, number_of_blocks
@@ -459,15 +460,6 @@ contains
                   block_periods )
    end subroutine decompose_domain
 
-   pure function dimension_rule( number_of_dimensions ) &
-      result( number_of_fields )
-      integer(SP), intent(in) :: number_of_dimensions
-      integer(SP) :: number_of_fields
-
-      number_of_fields = 2_SP * number_of_dimensions + &
-         number_of_dimensions**2_SP
-   end function dimension_rule
-
    subroutine find_input_file( filename )
       character(len=STRING_LENGTH), intent(out)  :: filename
       integer :: argc, filename_length, ierr
@@ -548,14 +540,6 @@ contains
       end do
       deallocate( block_coords, process_block_coords )
    end subroutine identify_process_neighbors
-
-   pure function phase_rule( number_of_components, number_of_phases ) &
-      result( degrees_of_freedom )
-      integer(SP), intent(in) :: number_of_components, number_of_phases
-      integer(SP) :: degrees_of_freedom
-
-      degrees_of_freedom = number_of_components - number_of_phases + 2_SP
-   end function phase_rule
 
    subroutine print_initial_information( sd )
       type(WB_Subdomain), intent(in) :: sd
@@ -1012,7 +996,7 @@ contains
       end do
       deallocate( processes )
 
-      call calculate_number_of_variables( sd )
+      call setup_variables( sd )
    end subroutine wb_subdomain_construct_variables
 
    subroutine wb_subdomain_destroy( sd )
