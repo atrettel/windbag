@@ -172,7 +172,12 @@ contains
 
       call wb_variable_list_construct( vl )
 
-      sd%number_of_variables = wb_variable_list_number(vl)
+      call wb_variable_list_mark_as_required( vl, 1_SP )
+      call wb_variable_list_mark_as_required( vl, 2_SP )
+      call wb_variable_list_mark_as_required( vl, 3_SP )
+      call wb_variable_list_mark_as_required( vl, 4_SP )
+
+      sd%number_of_variables = wb_variable_list_required_number(vl)
 
       call wb_variable_list_destroy( vl )
    end subroutine setup_variables

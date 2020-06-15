@@ -18,10 +18,11 @@ module wb_variables
    private
 
    public WB_Variable_List, wb_variable_list_construct, &
-      wb_variable_list_destroy, wb_variable_list_number
+      wb_variable_list_destroy, wb_variable_list_required_number, &
+      wb_variable_list_mark_as_required
 
-   integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  128_SP
-   integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =   -1_SP
+   integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  16_SP
+   integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
 
    character(len=*), public, parameter :: DEFAULT_VARIABLE_NAME = "Variable"
 
@@ -65,4 +66,23 @@ contains
 
       number_of_variables = vl%number_of_variables
    end function wb_variable_list_number
+
+   subroutine wb_variable_list_mark_as_required( vl, variable_number )
+      type(WB_Variable_List), intent(inout) :: vl
+      integer(SP), intent(in) :: variable_number
+
+      if ( vl%is_a_required_variable(variable_number) .eqv. .false. ) then
+         vl%is_a_required_variable(variable_number) = .true.
+         vl%order_of_evaluation(wb_variable_list_required_number(vl)+1_SP) = &
+            variable_number
+      end if
+   end subroutine wb_variable_list_mark_as_required
+
+   function wb_variable_list_required_number( vl ) &
+      result( number_of_required_variables )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: number_of_required_variables
+
+      number_of_required_variables = int(count(vl%is_a_required_variable),SP)
+   end function wb_variable_list_required_number
 end module wb_variables
