@@ -20,7 +20,8 @@ module wb_variables
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
       wb_variable_list_mark_as_required, wb_variable_list_add_variable, &
-      wb_variable_list_add_vector, wb_variable_list_add_dependency
+      wb_variable_list_add_vector, wb_variable_list_add_dependency, &
+      wb_variable_list_require
 
    integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  32_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
@@ -108,12 +109,23 @@ contains
                   vl%variable_names )
    end subroutine wb_variable_list_destroy
 
-   function wb_variable_list_number( vl ) result( number_of_variables )
+   function wb_variable_list_is_dependent( vl, source_number, target_number ) &
+      result( is_dependent )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP) :: number_of_variables
+      integer(SP), intent(in) :: source_number, target_number
+      logical :: is_dependent
+      
+      is_dependent = vl%adjacency_matrix(source_number,target_number)
+   end function wb_variable_list_is_dependent
 
-      number_of_variables = vl%number_of_variables
-   end function wb_variable_list_number
+   function wb_variable_list_is_unrequired( vl, variable_number ) &
+      result( is_unrequired )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP), intent(in) :: variable_number
+      logical :: is_unrequired
+      
+      is_unrequired = vl%is_a_required_variable(variable_number) .eqv. .false.
+   end function wb_variable_list_is_unrequired
 
    subroutine wb_variable_list_mark_as_required( vl, variable_number )
       type(WB_Variable_List), intent(inout) :: vl
@@ -125,6 +137,31 @@ contains
             variable_number
       end if
    end subroutine wb_variable_list_mark_as_required
+
+   function wb_variable_list_number( vl ) result( number_of_variables )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: number_of_variables
+
+      number_of_variables = vl%number_of_variables
+   end function wb_variable_list_number
+
+   recursive subroutine wb_variable_list_require( vl, target_number )
+      type(WB_Variable_List), intent(inout) :: vl
+      integer(SP), intent(in) :: target_number
+      integer(SP) :: source_number
+
+      if ( vl%is_a_required_variable(target_number) .eqv. .false. ) then
+         do source_number = 1, wb_variable_list_required_number(vl)
+            if ( wb_variable_list_is_dependent( vl, &
+                 source_number, target_number ) .and. &
+                 wb_variable_list_is_unrequired( vl, source_number ) ) then
+               call wb_variable_list_require( vl, source_number )
+            end if
+         end do
+
+         call wb_variable_list_mark_as_required( vl, target_number )
+      end if
+   end subroutine wb_variable_list_require
 
    function wb_variable_list_required_number( vl ) &
       result( number_of_required_variables )

@@ -202,6 +202,8 @@ contains
       call wb_variable_list_add_dependency( vl, l_mass_density, &
          l_specific_volume )
 
+      call wb_variable_list_require( vl, l_specific_volume )
+
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
       call wb_variable_list_destroy( vl )
