@@ -22,6 +22,7 @@ module wb_variables
       construct_compressible_conservative_variables
 
    integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  32_SP
+   integer(SP), public, parameter :: NUMBER_OF_PHASES        = 1_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
 
    character(len=*), public, parameter :: DEFAULT_VARIABLE_NAME = "Variable"
@@ -36,46 +37,62 @@ module wb_variables
    end type WB_Variable_List
 contains
    subroutine construct_compressible_conservative_variables( vl, &
-      number_of_dimensions )
+      number_of_dimensions, number_of_components )
       type(WB_Variable_List), intent(inout) :: vl
-      integer(SP) :: number_of_dimensions
-      integer(SP) :: l_mass_density, l_specific_total_internal_energy, &
-         l_speed, l_pressure, l_temperature, l_specific_volume, &
-         l_specific_internal_energy, l_specific_enthalpy
-      integer(SP), dimension(:), allocatable :: l_coordinates, &
-         l_momentum_densities, l_velocities
-      integer(SP) :: i_dim
+      integer(SP) :: number_of_components, number_of_dimensions
+      integer(SP) :: l_dilatational_viscosity,         &
+                     l_dynamic_viscosity,              &
+                     l_mach_number,                    &
+                     l_mass_density,                   &
+                     l_pressure,                       &
+                     l_specific_enthalpy,              &
+                     l_specific_entropy,               &
+                     l_specific_internal_energy,       &
+                     l_specific_total_enthalpy,        &
+                     l_specific_total_internal_energy, &
+                     l_specific_volume,                &
+                     l_speed,                          &
+                     l_speed_of_sound,                 &
+                     l_temperature
+      integer(SP), dimension(:), allocatable :: &
+         l_amount_fractions,   &
+         l_coordinates,        &
+         l_mass_fractions,     &
+         l_momentum_densities, &
+         l_velocities
+      integer(SP) :: i_dim, thermodynamic_degrees_of_freedom
 
-      allocate( l_coordinates(number_of_dimensions), &
-         l_momentum_densities(number_of_dimensions), &
-                 l_velocities(number_of_dimensions) )
+      thermodynamic_degrees_of_freedom = phase_rule( &
+         number_of_components, NUMBER_OF_PHASES )
 
-      call wb_variable_list_add_vector( vl, &
-         "Coordinate", number_of_dimensions, .true., l_coordinates )
-      call wb_variable_list_add_variable( vl, &
-         "Mass density", .true., l_mass_density )
-      call wb_variable_list_add_vector( vl, &
-         "Momentum density", number_of_dimensions, .true., l_momentum_densities )
-      call wb_variable_list_add_variable( vl, &
-         "Specific total internal energy", .true., &
-         l_specific_total_internal_energy )
-      call wb_variable_list_add_vector( vl, &
-         "Velocity", number_of_dimensions, .false., l_velocities )
-      call wb_variable_list_add_variable( vl, &
-         "Speed", .false., l_speed )
-      call wb_variable_list_add_variable( vl, &
-         "Pressure", .false., l_pressure )
-      call wb_variable_list_add_variable( vl, &
-         "Temperature", .false., l_temperature )
-      call wb_variable_list_add_variable( vl, &
-         "Specific volume", .false., l_specific_volume )
-      call wb_variable_list_add_variable( vl, &
-         "Specific internal energy", .false., &
-         l_specific_internal_energy )
-      call wb_variable_list_add_variable( vl, &
-         "Specific enthalpy", .false., &
-         l_specific_enthalpy )
+      allocate( l_amount_fractions(number_of_components), &
+                     l_coordinates(number_of_dimensions), &
+                  l_mass_fractions(number_of_components), &
+              l_momentum_densities(number_of_dimensions), &
+                      l_velocities(number_of_dimensions)  )
 
+      ! Declarations
+      call wb_variable_list_add_vector(   vl, "Amount fraction",  number_of_components, .false., l_amount_fractions               )
+      call wb_variable_list_add_vector(   vl, "Coordinate",       number_of_dimensions,  .true., l_coordinates                    )
+      call wb_variable_list_add_variable( vl, "Dilatational viscosity",                 .false., l_dilatational_viscosity         )
+      call wb_variable_list_add_variable( vl, "Dynamic viscosity",                      .false., l_dynamic_viscosity              )
+      call wb_variable_list_add_variable( vl, "Mach number",                            .false., l_mach_number                    )
+      call wb_variable_list_add_variable( vl, "Mass density",                            .true., l_mass_density                   )
+      call wb_variable_list_add_vector(   vl, "Mass fraction",    number_of_components, .false., l_mass_fractions                 )
+      call wb_variable_list_add_vector(   vl, "Momentum density", number_of_dimensions,  .true., l_momentum_densities             )
+      call wb_variable_list_add_variable( vl, "Pressure",                               .false., l_pressure                       )
+      call wb_variable_list_add_variable( vl, "Specific enthalpy",                      .false., l_specific_enthalpy              )
+      call wb_variable_list_add_variable( vl, "Specific entropy",                       .false., l_specific_entropy               )
+      call wb_variable_list_add_variable( vl, "Specific internal energy",               .false., l_specific_internal_energy       )
+      call wb_variable_list_add_variable( vl, "Specific total enthalpy",                .false., l_specific_total_enthalpy        )
+      call wb_variable_list_add_variable( vl, "Specific total internal energy",          .true., l_specific_total_internal_energy )
+      call wb_variable_list_add_variable( vl, "Specific volume",                        .false., l_specific_volume                )
+      call wb_variable_list_add_variable( vl, "Speed",                                  .false., l_speed                          )
+      call wb_variable_list_add_variable( vl, "Speed of sound",                         .false., l_speed_of_sound                 )
+      call wb_variable_list_add_variable( vl, "Temperature",                            .false., l_temperature                    )
+      call wb_variable_list_add_vector(   vl, "Velocity",         number_of_dimensions, .false., l_velocities                     )
+
+      ! Dependencies
       call wb_variable_list_add_dependency( vl, l_mass_density, &
          l_specific_volume )
 
@@ -88,10 +105,23 @@ contains
             l_velocities(i_dim), l_speed )
       end do
 
+      ! Requirements
       call wb_variable_list_require( vl, l_speed )
 
-      deallocate( l_coordinates, l_momentum_densities, l_velocities )
+      deallocate( l_amount_fractions,   &
+                  l_coordinates,        &
+                  l_mass_fractions,     &
+                  l_momentum_densities, &
+                  l_velocities          )
    end subroutine construct_compressible_conservative_variables
+
+   pure function phase_rule( number_of_components, number_of_phases ) &
+      result( degrees_of_freedom )
+      integer(SP), intent(in) :: number_of_components, number_of_phases
+      integer(SP) :: degrees_of_freedom
+
+      degrees_of_freedom = number_of_components - number_of_phases - 2_SP
+   end function phase_rule
 
    subroutine wb_variable_list_add_dependency( vl, source_number, &
       target_number )

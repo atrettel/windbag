@@ -51,8 +51,6 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
    integer(SP), public, parameter ::     MIN_NUMBER_OF_GHOST_POINTS = 1_SP
 
-   integer(SP), public, parameter :: NUMBER_OF_PHASES = 1_SP
-
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
    integer(MP), public, parameter :: DEFAULT_NUMBER_OF_PROCESSES = 0_MP
@@ -173,7 +171,7 @@ contains
       call wb_variable_list_construct( vl )
 
       call construct_compressible_conservative_variables( vl, &
-         num_dimensions(sd) )
+         num_dimensions(sd), num_components(sd) )
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
       call wb_variable_list_destroy( vl )
