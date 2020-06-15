@@ -151,7 +151,7 @@ contains
       integer(SP) :: source_number
 
       if ( vl%is_a_required_variable(target_number) .eqv. .false. ) then
-         do source_number = 1, wb_variable_list_required_number(vl)
+         do source_number = 1, wb_variable_list_number(vl)
             if ( wb_variable_list_is_dependent( vl, &
                  source_number, target_number ) .and. &
                  wb_variable_list_is_unrequired( vl, source_number ) ) then
