@@ -19,9 +19,7 @@ module wb_variables
 
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
-      wb_variable_list_mark_as_required, wb_variable_list_add_variable, &
-      wb_variable_list_add_vector, wb_variable_list_add_dependency, &
-      wb_variable_list_require
+      construct_compressible_conservative_variables
 
    integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  32_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
@@ -37,6 +35,64 @@ module wb_variables
       character(len=STRING_LENGTH), dimension(:), allocatable :: variable_names
    end type WB_Variable_List
 contains
+   subroutine construct_compressible_conservative_variables( vl, &
+      number_of_dimensions )
+      type(WB_Variable_List), intent(inout) :: vl
+      integer(SP) :: number_of_dimensions
+      integer(SP) :: l_mass_density, l_specific_total_internal_energy, &
+         l_speed, l_pressure, l_temperature, l_specific_volume, &
+         l_specific_internal_energy, l_specific_enthalpy
+      integer(SP), dimension(:), allocatable :: l_coordinates, &
+         l_momentum_densities, l_velocities
+      integer(SP) :: i_dim
+
+      allocate( l_coordinates(number_of_dimensions), &
+         l_momentum_densities(number_of_dimensions), &
+                 l_velocities(number_of_dimensions) )
+
+      call wb_variable_list_add_vector( vl, &
+         "Coordinate", number_of_dimensions, .true., l_coordinates )
+      call wb_variable_list_add_variable( vl, &
+         "Mass density", .true., l_mass_density )
+      call wb_variable_list_add_vector( vl, &
+         "Momentum density", number_of_dimensions, .true., l_momentum_densities )
+      call wb_variable_list_add_variable( vl, &
+         "Specific total internal energy", .true., &
+         l_specific_total_internal_energy )
+      call wb_variable_list_add_vector( vl, &
+         "Velocity", number_of_dimensions, .false., l_velocities )
+      call wb_variable_list_add_variable( vl, &
+         "Speed", .false., l_speed )
+      call wb_variable_list_add_variable( vl, &
+         "Pressure", .false., l_pressure )
+      call wb_variable_list_add_variable( vl, &
+         "Temperature", .false., l_temperature )
+      call wb_variable_list_add_variable( vl, &
+         "Specific volume", .false., l_specific_volume )
+      call wb_variable_list_add_variable( vl, &
+         "Specific internal energy", .false., &
+         l_specific_internal_energy )
+      call wb_variable_list_add_variable( vl, &
+         "Specific enthalpy", .false., &
+         l_specific_enthalpy )
+
+      call wb_variable_list_add_dependency( vl, l_mass_density, &
+         l_specific_volume )
+
+      do i_dim = 1, number_of_dimensions
+         call wb_variable_list_add_dependency( vl, &
+            l_mass_density, l_velocities(i_dim) )
+         call wb_variable_list_add_dependency( vl, &
+            l_momentum_densities(i_dim), l_velocities(i_dim) )
+         call wb_variable_list_add_dependency( vl, &
+            l_velocities(i_dim), l_speed )
+      end do
+
+      call wb_variable_list_require( vl, l_speed )
+
+      deallocate( l_coordinates, l_momentum_densities, l_velocities )
+   end subroutine construct_compressible_conservative_variables
+
    subroutine wb_variable_list_add_dependency( vl, source_number, &
       target_number )
       type(WB_Variable_List), intent(inout) :: vl
