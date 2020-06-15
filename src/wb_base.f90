@@ -212,7 +212,7 @@ contains
             l_velocities(i_dim), l_speed )
       end do
 
-      !call wb_variable_list_require( vl, l_specific_volume )
+      call wb_variable_list_require( vl, l_speed )
 
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
