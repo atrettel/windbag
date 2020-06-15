@@ -173,6 +173,7 @@ contains
          l_speed, l_pressure, l_temperature, l_specific_volume
       integer(SP), dimension(:), allocatable :: l_coordinates, &
          l_momentum_densities, l_velocities
+      integer(SP) :: i_dim
 
       call wb_variable_list_construct( vl )
       allocate( l_coordinates(num_dimensions(sd)), &
@@ -202,7 +203,16 @@ contains
       call wb_variable_list_add_dependency( vl, l_mass_density, &
          l_specific_volume )
 
-      call wb_variable_list_require( vl, l_specific_volume )
+      do i_dim = 1, num_dimensions(sd)
+         call wb_variable_list_add_dependency( vl, &
+            l_mass_density, l_velocities(i_dim) )
+         call wb_variable_list_add_dependency( vl, &
+            l_momentum_densities(i_dim), l_velocities(i_dim) )
+         call wb_variable_list_add_dependency( vl, &
+            l_velocities(i_dim), l_speed )
+      end do
+
+      !call wb_variable_list_require( vl, l_specific_volume )
 
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
