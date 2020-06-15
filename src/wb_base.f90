@@ -169,17 +169,34 @@ contains
    subroutine setup_variables( sd )
       type(WB_Subdomain), intent(inout) :: sd
       type(WB_Variable_List) :: vl
+      integer(SP) :: l_mass_density, l_specific_total_internal_energy
+      integer(SP), dimension(:), allocatable :: l_coordinates, &
+         l_momentum_densities
 
       call wb_variable_list_construct( vl )
+      allocate( l_coordinates(num_dimensions(sd)), &
+         l_momentum_densities(num_dimensions(sd)) )
 
-      call wb_variable_list_mark_as_required( vl, 1_SP )
-      call wb_variable_list_mark_as_required( vl, 2_SP )
-      call wb_variable_list_mark_as_required( vl, 3_SP )
-      call wb_variable_list_mark_as_required( vl, 4_SP )
+      call wb_variable_list_add( vl, "Coordinate 1", .true., &
+         l_coordinates(1) )
+      call wb_variable_list_add( vl, "Coordinate 2", .true., &
+         l_coordinates(2) )
+      call wb_variable_list_add( vl, "Coordinate 3", .true., &
+         l_coordinates(3) )
+      call wb_variable_list_add( vl, "Mass density", .true., l_mass_density )
+      call wb_variable_list_add( vl, "Momentum density 1", .true., &
+         l_momentum_densities(1) )
+      call wb_variable_list_add( vl, "Momentum density 2", .true., &
+         l_momentum_densities(2) )
+      call wb_variable_list_add( vl, "Momentum density 3", .true., &
+         l_momentum_densities(3) )
+      call wb_variable_list_add( vl, "Specific total internal energy", &
+         .true., l_specific_total_internal_energy )
 
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
       call wb_variable_list_destroy( vl )
+      deallocate( l_coordinates, l_momentum_densities )
    end subroutine setup_variables
 
    subroutine check_block_bounds( block_number, number_of_blocks )
