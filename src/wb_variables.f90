@@ -19,7 +19,7 @@ module wb_variables
 
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
-      wb_variable_list_mark_as_required, wb_variable_list_add
+      wb_variable_list_mark_as_required, wb_variable_list_add_variable
 
    integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  16_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
@@ -35,7 +35,7 @@ module wb_variables
       character(len=STRING_LENGTH), dimension(:), allocatable :: variable_names
    end type WB_Variable_List
 contains
-   subroutine wb_variable_list_add( vl, variable_name, is_required, &
+   subroutine wb_variable_list_add_variable( vl, variable_name, is_required, &
       variable_number )
       type(WB_Variable_List), intent(inout) :: vl
       character(len=*), intent(in) :: variable_name
@@ -52,7 +52,7 @@ contains
          end if
          vl%number_of_variables = wb_variable_list_number(vl) + 1_SP
       end if
-   end subroutine wb_variable_list_add
+   end subroutine wb_variable_list_add_variable
 
    subroutine wb_variable_list_construct( vl )
       type(WB_Variable_List), intent(inout) :: vl

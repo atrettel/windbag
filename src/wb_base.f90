@@ -177,21 +177,23 @@ contains
       allocate( l_coordinates(num_dimensions(sd)), &
          l_momentum_densities(num_dimensions(sd)) )
 
-      call wb_variable_list_add( vl, "Coordinate 1", .true., &
-         l_coordinates(1) )
-      call wb_variable_list_add( vl, "Coordinate 2", .true., &
-         l_coordinates(2) )
-      call wb_variable_list_add( vl, "Coordinate 3", .true., &
-         l_coordinates(3) )
-      call wb_variable_list_add( vl, "Mass density", .true., l_mass_density )
-      call wb_variable_list_add( vl, "Momentum density 1", .true., &
-         l_momentum_densities(1) )
-      call wb_variable_list_add( vl, "Momentum density 2", .true., &
-         l_momentum_densities(2) )
-      call wb_variable_list_add( vl, "Momentum density 3", .true., &
-         l_momentum_densities(3) )
-      call wb_variable_list_add( vl, "Specific total internal energy", &
-         .true., l_specific_total_internal_energy )
+      call wb_variable_list_add_variable( vl, &
+         "Coordinate 1", .true., l_coordinates(1) )
+      call wb_variable_list_add_variable( vl, &
+         "Coordinate 2", .true., l_coordinates(2) )
+      call wb_variable_list_add_variable( vl, &
+         "Coordinate 3", .true., l_coordinates(3) )
+      call wb_variable_list_add_variable( vl, &
+         "Mass density", .true., l_mass_density )
+      call wb_variable_list_add_variable( vl, &
+         "Momentum density 1", .true., l_momentum_densities(1) )
+      call wb_variable_list_add_variable( vl, &
+         "Momentum density 2", .true., l_momentum_densities(2) )
+      call wb_variable_list_add_variable( vl, &
+         "Momentum density 3", .true., l_momentum_densities(3) )
+      call wb_variable_list_add_variable( vl, &
+         "Specific total internal energy", .true., &
+         l_specific_total_internal_energy )
 
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
