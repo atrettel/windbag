@@ -169,13 +169,15 @@ contains
    subroutine setup_variables( sd )
       type(WB_Subdomain), intent(inout) :: sd
       type(WB_Variable_List) :: vl
-      integer(SP) :: l_mass_density, l_specific_total_internal_energy
+      integer(SP) :: l_mass_density, l_specific_total_internal_energy, &
+         l_speed, l_pressure, l_temperature, l_specific_volume
       integer(SP), dimension(:), allocatable :: l_coordinates, &
-         l_momentum_densities
+         l_momentum_densities, l_velocities
 
       call wb_variable_list_construct( vl )
       allocate( l_coordinates(num_dimensions(sd)), &
-         l_momentum_densities(num_dimensions(sd)) )
+         l_momentum_densities(num_dimensions(sd)), &
+                 l_velocities(num_dimensions(sd)) )
 
       call wb_variable_list_add_vector( vl, &
          "Coordinate", num_dimensions(sd), .true., l_coordinates )
@@ -186,11 +188,24 @@ contains
       call wb_variable_list_add_variable( vl, &
          "Specific total internal energy", .true., &
          l_specific_total_internal_energy )
+      call wb_variable_list_add_vector( vl, &
+         "Velocity", num_dimensions(sd), .false., l_velocities )
+      call wb_variable_list_add_variable( vl, &
+         "Speed", .false., l_speed )
+      call wb_variable_list_add_variable( vl, &
+         "Pressure", .false., l_pressure )
+      call wb_variable_list_add_variable( vl, &
+         "Temperature", .false., l_temperature )
+      call wb_variable_list_add_variable( vl, &
+         "Specific volume", .false., l_specific_volume )
+
+      call wb_variable_list_add_dependency( vl, l_mass_density, &
+         l_specific_volume )
 
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
       call wb_variable_list_destroy( vl )
-      deallocate( l_coordinates, l_momentum_densities )
+      deallocate( l_coordinates, l_momentum_densities, l_velocities )
    end subroutine setup_variables
 
    subroutine check_block_bounds( block_number, number_of_blocks )
