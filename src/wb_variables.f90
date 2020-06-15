@@ -19,7 +19,8 @@ module wb_variables
 
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
-      wb_variable_list_mark_as_required, wb_variable_list_add_variable
+      wb_variable_list_mark_as_required, wb_variable_list_add_variable, &
+      wb_variable_list_add_vector
 
    integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  16_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
@@ -40,7 +41,7 @@ contains
       type(WB_Variable_List), intent(inout) :: vl
       character(len=*), intent(in) :: variable_name
       logical, intent(in) :: is_required
-      integer(SP), optional, intent(out) :: variable_number
+      integer(SP), intent(out) :: variable_number
 
       variable_number = VACANT_VARIABLE_NUMBER
 
@@ -53,6 +54,26 @@ contains
          vl%number_of_variables = wb_variable_list_number(vl) + 1_SP
       end if
    end subroutine wb_variable_list_add_variable
+
+   subroutine wb_variable_list_add_vector( vl, variable_base_name, n, &
+      is_required, variable_numbers )
+      type(WB_Variable_List), intent(inout) :: vl
+      character(len=*), intent(in) :: variable_base_name
+      integer(SP), intent(in) :: n
+      logical, intent(in) :: is_required
+      integer(SP), dimension(:), allocatable, intent(inout) :: &
+         variable_numbers
+      integer(SP) :: i, variable_number
+      character(len=STRING_LENGTH) :: variable_name
+
+      variable_numbers(:) = VACANT_VARIABLE_NUMBER
+      do i = 1, n
+         write (variable_name,"(A, A, I2.1)") trim(variable_base_name), " ", i
+         call wb_variable_list_add_variable( vl, &
+            variable_name, is_required, variable_number )
+         variable_numbers(i) = variable_number
+      end do
+   end subroutine wb_variable_list_add_vector
 
    subroutine wb_variable_list_construct( vl )
       type(WB_Variable_List), intent(inout) :: vl
