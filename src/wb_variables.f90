@@ -156,7 +156,7 @@ contains
       integer(SP), intent(in) :: number_of_components, number_of_phases
       integer(SP) :: degrees_of_freedom
 
-      degrees_of_freedom = number_of_components - number_of_phases - 2_SP
+      degrees_of_freedom = number_of_components - number_of_phases + 2_SP
    end function phase_rule
 
    subroutine wb_variable_list_add_dependency( vl, source_number, &
