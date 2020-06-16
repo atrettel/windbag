@@ -134,6 +134,12 @@ contains
 
       ! Dependencies
 
+      ! Givens
+      ! rho (mass density)
+      ! Y (mass fractions)
+      ! rho u (momentum densities)
+      ! e_tot (specific total internal energy)
+
       ! zeta (bulk viscosity)
       ! lambda = zeta - (2/3) * mu
       call wb_variable_list_add_dependency( vl, l_bulk_viscosity,    l_dilatational_viscosity )
@@ -186,22 +192,36 @@ contains
          call wb_variable_list_add_dependency( vl, l_momentum_densities(i_dim), l_velocities(i_dim) )
       end do
 
-      ! Given
-      ! rho (mass density)
-      ! Y (mass fractions)
-      ! rho u (momentum densities)
-      ! e_tot (specific total internal energy) 
-
       ! Calculated from specific volume, specific internal energy, and mass
-      ! fractions
-      ! zeta (bulk viscosity)
-      ! mu (dynamic viscosity)
-      ! p (pressure)
-      ! h (specific enthalpy)
-      ! s (specific entropy)
-      ! a (speed of sound)
-      ! T (temperature)
-      ! k (thermal conductivity)
+      ! fractions.
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_bulk_viscosity       )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_dynamic_viscosity    )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_pressure             )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_enthalpy    )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_entropy     )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_speed_of_sound       )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_temperature          )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_thermal_conductivity )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_bulk_viscosity       )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_dynamic_viscosity    )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_pressure             )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_enthalpy    )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_entropy     )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_speed_of_sound       )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_temperature          )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_thermal_conductivity )
+      if ( nc .gt. 1_SP ) then
+         do ic = 1, nc
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_bulk_viscosity       )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_dynamic_viscosity    )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_pressure             )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_specific_enthalpy    )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_specific_entropy     )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_speed_of_sound       )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_temperature          )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_thermal_conductivity )
+         end do
+      end if
 
       ! Requirements
       call wb_variable_list_require( vl, l_speed )
