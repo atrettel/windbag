@@ -134,6 +134,11 @@ contains
 
       ! Dependencies
 
+      ! zeta (bulk viscosity)
+      ! lambda = zeta - (2/3) * mu
+      call wb_variable_list_add_dependency( vl, l_bulk_viscosity,    l_dilatational_viscosity )
+      call wb_variable_list_add_dependency( vl, l_dynamic_viscosity, l_dilatational_viscosity )
+      ! mu (dynamic viscosity)
       ! gamma = c_p / c_v
       call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
       call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_heat_capacity_ratio )
@@ -143,15 +148,34 @@ contains
       ! M = V / a
       call wb_variable_list_add_dependency( vl, l_speed,          l_mach_number )
       call wb_variable_list_add_dependency( vl, l_speed_of_sound, l_mach_number )
+      ! rho (mass density)
+      ! Y_nc = 1 - Y_1 - Y_2 ...
+      do ic = 1, number_of_required_mass_fractions
+         call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_mass_fractions(nc) )
+      end do
+      ! rho u (momentum density)
       ! Pr = nu / alpha
       call wb_variable_list_add_dependency( vl, l_kinematic_viscosity, l_prandtl_number )
       call wb_variable_list_add_dependency( vl, l_thermal_diffusivity, l_prandtl_number )
+      ! p (pressure)
+      ! e = e_tot - 0.5 * V**2
+      call wb_variable_list_add_dependency( vl, l_specific_total_internal_energy, l_specific_internal_energy )
+      call wb_variable_list_add_dependency( vl, l_specific_total_internal_energy, l_speed                    )
+      ! c_p (specific isobaric heat capacity)
+      ! c_v (specific isochoric heat capacity)
+      ! h_tot = h + 0.5 * V**2
+      call wb_variable_list_add_dependency( vl, l_specific_enthalpy, l_specific_total_enthalpy )
+      call wb_variable_list_add_dependency( vl, l_speed,             l_specific_total_enthalpy )
+      ! e_tot (specific total internal energy) 
       ! v = 1 / rho
       call wb_variable_list_add_dependency( vl, l_mass_density, l_specific_volume )
-      ! V = sqrt( u^2 + v^2 + w^2 )
+      ! V = sqrt( u**2 + v**2 + w**2 )
       do i_dim = 1, nd
          call wb_variable_list_add_dependency( vl, l_velocities(i_dim), l_speed )
       end do
+      ! a (speed of sound)
+      ! T (temperature)
+      ! k (thermal conductivity)
       ! alpha = k / ( c_p rho )
       call wb_variable_list_add_dependency( vl, l_mass_density,                    l_thermal_diffusivity )
       call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity, l_thermal_diffusivity )
@@ -161,6 +185,23 @@ contains
          call wb_variable_list_add_dependency( vl, l_mass_density,              l_velocities(i_dim) )
          call wb_variable_list_add_dependency( vl, l_momentum_densities(i_dim), l_velocities(i_dim) )
       end do
+
+      ! Given
+      ! rho (mass density)
+      ! Y (mass fractions)
+      ! rho u (momentum densities)
+      ! e_tot (specific total internal energy) 
+
+      ! Calculated from specific volume, specific internal energy, and mass
+      ! fractions
+      ! zeta (bulk viscosity)
+      ! mu (dynamic viscosity)
+      ! p (pressure)
+      ! h (specific enthalpy)
+      ! s (specific entropy)
+      ! a (speed of sound)
+      ! T (temperature)
+      ! k (thermal conductivity)
 
       ! Requirements
       call wb_variable_list_require( vl, l_speed )
