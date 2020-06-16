@@ -102,6 +102,7 @@ module wb_base
       real(FP), dimension(:,:,:,:), allocatable :: fields
       type(MPI_Comm) :: comm_block
       type(WB_Block) :: local_block
+      type(WB_Variable_List) :: field_list
    end type WB_Subdomain
 
    interface neighbor
@@ -166,20 +167,15 @@ contains
 
    subroutine setup_variables( sd )
       type(WB_Subdomain), intent(inout) :: sd
-      type(WB_Variable_List) :: vl
 
       ! TODO: Change the hardcoded maximum number of variables.
-      call wb_variable_list_construct( vl, 64_SP+2_SP*num_components(sd) )
+      call wb_variable_list_construct( sd%field_list, &
+         64_SP+2_SP*num_components(sd) )
 
-      call construct_compressible_conservative_variables( vl, &
+      call construct_compressible_conservative_variables( sd%field_list, &
          num_dimensions(sd), num_components(sd) )
-      sd%number_of_variables = wb_variable_list_required_number(vl)
-
-      if ( wb_subdomain_is_world_master(sd) ) then
-         call write_variable_list_information( output_unit, vl )
-      end if
-
-      call wb_variable_list_destroy( vl )
+      sd%number_of_variables = &
+         wb_variable_list_required_number(sd%field_list)
    end subroutine setup_variables
 
    subroutine check_block_bounds( block_number, number_of_blocks )
@@ -554,6 +550,9 @@ contains
 
       call write_environment_information( output_unit, sd )
       call write_scalar_variables(        output_unit, sd )
+      if ( wb_subdomain_is_world_master(sd) ) then
+         call write_variable_list_information( output_unit, sd%field_list )
+      end if
       call write_block_information(       output_unit, sd )
       call write_subdomain_information(   output_unit, sd )
       call write_subdomain_neighbors(     output_unit, sd )
@@ -1017,6 +1016,7 @@ contains
                   sd%number_of_points )
       call mpi_comm_free( sd%comm_block, ierr )
       call wb_block_destroy( sd%local_block )
+      call wb_variable_list_destroy( sd%field_list )
    end subroutine wb_subdomain_destroy
 
    function wb_subdomain_dimensions( sd ) result( number_of_dimensions )
