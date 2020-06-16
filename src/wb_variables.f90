@@ -220,7 +220,7 @@ contains
 
       variable_numbers(:) = UNUSED_VARIABLE_NUMBER
       do i = 1, n
-         write (variable_name,"(A, A, I2.1)") trim(variable_base_name), " ", i
+         write (variable_name,"(A, A, I0)") trim(variable_base_name), " ", i
          call wb_variable_list_add_variable( vl, &
             variable_name, is_required, variable_number )
          variable_numbers(i) = variable_number
