@@ -21,8 +21,8 @@ module wb_variables
       wb_variable_list_destroy, wb_variable_list_required_number, &
       construct_compressible_conservative_variables
 
-   integer(SP), public, parameter :: NUMBER_OF_PHASES        = 1_SP
-   integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
+   integer(SP), public, parameter :: NUMBER_OF_PHASES        =  1_SP
+   integer(SP), public, parameter :: UNUSED_VARIABLE_NUMBER  = -1_SP
 
    character(len=*), public, parameter :: DEFAULT_VARIABLE_NAME = "Variable"
 
@@ -140,7 +140,7 @@ contains
       logical, intent(in) :: is_required
       integer(SP), intent(out) :: variable_number
 
-      variable_number = VACANT_VARIABLE_NUMBER
+      variable_number = UNUSED_VARIABLE_NUMBER
 
       if ( wb_variable_list_number(vl) .lt. wb_variable_list_max_number(vl) ) then
          variable_number = wb_variable_list_number(vl) + 1_SP
@@ -163,7 +163,7 @@ contains
       integer(SP) :: i, variable_number
       character(len=STRING_LENGTH) :: variable_name
 
-      variable_numbers(:) = VACANT_VARIABLE_NUMBER
+      variable_numbers(:) = UNUSED_VARIABLE_NUMBER
       do i = 1, n
          write (variable_name,"(A, A, I2.1)") trim(variable_base_name), " ", i
          call wb_variable_list_add_variable( vl, &
@@ -186,7 +186,7 @@ contains
       vl%max_number_of_variables   = max_number_of_variables
       vl%is_a_required_variable(:) = .false.
       vl%adjacency_matrix(:,:)     = .false.
-      vl%order_of_evaluation(:)    = VACANT_VARIABLE_NUMBER
+      vl%order_of_evaluation(:)    =  UNUSED_VARIABLE_NUMBER
       vl%variable_names(:)         = DEFAULT_VARIABLE_NAME
    end subroutine wb_variable_list_construct
 
