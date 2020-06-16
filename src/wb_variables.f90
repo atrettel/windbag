@@ -278,7 +278,7 @@ contains
 
       if ( vl%is_a_required_variable(variable_number) .eqv. .false. ) then
          vl%is_a_required_variable(variable_number) = .true.
-         vl%order_of_evaluation(wb_variable_list_required_number(vl)+1_SP) = &
+         vl%order_of_evaluation(wb_variable_list_required_number(vl)) = &
             variable_number
       end if
    end subroutine wb_variable_list_mark_as_required
