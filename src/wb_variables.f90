@@ -46,12 +46,12 @@ contains
       integer(SP) :: l_bulk_viscosity,                   &
                      l_dilatational_viscosity,           &
                      l_dynamic_viscosity,                &
+                     l_heat_capacity_ratio,              &
                      l_kinematic_viscosity,              &
                      l_mach_number,                      &
                      l_mass_density,                     &
                      l_prandtl_number,                   &
                      l_pressure,                         &
-                     l_ratio_of_heat_capacities,         &
                      l_specific_enthalpy,                &
                      l_specific_entropy,                 &
                      l_specific_internal_energy,         &
@@ -103,6 +103,7 @@ contains
       call wb_variable_list_add( vl, "Coordinate",                            nd,  .true., l_coordinates                      )
       call wb_variable_list_add( vl, "Dilatational viscosity",                    .false., l_dilatational_viscosity           )
       call wb_variable_list_add( vl, "Dynamic viscosity",                         .false., l_dynamic_viscosity                )
+      call wb_variable_list_add( vl, "Heat capacity ratio",                       .false., l_heat_capacity_ratio              )
       call wb_variable_list_add( vl, "Kinematic viscosity",                       .false., l_kinematic_viscosity              )
       call wb_variable_list_add( vl, "Mach number",                               .false., l_mach_number                      )
       call wb_variable_list_add( vl, "Mass density",                  density_is_required, l_mass_density                     )
@@ -110,7 +111,6 @@ contains
       call wb_variable_list_add( vl, "Momentum density",                      nd,  .true., l_momentum_densities               )
       call wb_variable_list_add( vl, "Prandtl number",                            .false., l_prandtl_number                   )
       call wb_variable_list_add( vl, "Pressure",                                  .false., l_pressure                         )
-      call wb_variable_list_add( vl, "Ratio of heat capacities",                  .false., l_ratio_of_heat_capacities         )
       call wb_variable_list_add( vl, "Specific enthalpy",                         .false., l_specific_enthalpy                )
       call wb_variable_list_add( vl, "Specific entropy",                          .false., l_specific_entropy                 )
       call wb_variable_list_add( vl, "Specific internal energy",                  .false., l_specific_internal_energy         )
@@ -132,6 +132,9 @@ contains
 
       ! Dependencies
 
+      ! gamma = c_p / c_v
+      call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
+      call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_heat_capacity_ratio )
       ! nu = mu / rho
       call wb_variable_list_add_dependency( vl, l_dynamic_viscosity, l_kinematic_viscosity )
       call wb_variable_list_add_dependency( vl, l_mass_density,      l_kinematic_viscosity )
@@ -141,9 +144,6 @@ contains
       ! Pr = nu / alpha
       call wb_variable_list_add_dependency( vl, l_kinematic_viscosity, l_prandtl_number )
       call wb_variable_list_add_dependency( vl, l_thermal_diffusivity, l_prandtl_number )
-      ! gamma = c_p / c_v
-      call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_ratio_of_heat_capacities )
-      call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_ratio_of_heat_capacities )
       ! v = 1 / rho
       call wb_variable_list_add_dependency( vl, l_mass_density, l_specific_volume )
       ! V = sqrt( u^2 + v^2 + w^2 )
