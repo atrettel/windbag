@@ -30,6 +30,7 @@ module wb_text
    integer(SP), public, parameter ::       COORDS_COLUMN_WIDTH =  6_SP
    integer(SP), public, parameter ::    DATA_TYPE_COLUMN_WIDTH = 20_SP
    integer(SP), public, parameter ::     HOSTNAME_COLUMN_WIDTH = 16_SP
+   integer(SP), public, parameter ::         NAME_COLUMN_WIDTH = 40_SP
    integer(SP), public, parameter ::           NP_COLUMN_WIDTH =  7_SP
    integer(SP), public, parameter ::           NX_COLUMN_WIDTH =  7_SP
    integer(SP), public, parameter ::       POINTS_COLUMN_WIDTH = 16_SP

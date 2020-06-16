@@ -329,19 +329,22 @@ contains
       integer(SP) :: i_field, i_var
 
       call write_log_heading( f, "List of fields", level=2_SP )
-      call write_table_entry( f, "Field no.",    15_SP )
-      call write_table_entry( f, "Variable no.", 15_SP )
-      call write_table_entry( f, "Name",         30_SP, end_row=.true. )
-      call write_table_rule_entry( f, 15_SP, alignment=RIGHT_ALIGNED )
-      call write_table_rule_entry( f, 15_SP, alignment=RIGHT_ALIGNED )
-      call write_table_rule_entry( f, 30_SP, alignment=LEFT_ALIGNED, &
+      call write_table_entry( f, "Field no.",    VARIABLE_COLUMN_WIDTH )
+      call write_table_entry( f, "Variable no.", VARIABLE_COLUMN_WIDTH )
+      call write_table_entry( f, "Name",         NAME_COLUMN_WIDTH, &
          end_row=.true. )
+      call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH, &
+         alignment=RIGHT_ALIGNED )
+      call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH, &
+         alignment=RIGHT_ALIGNED )
+      call write_table_rule_entry( f, NAME_COLUMN_WIDTH, &
+         alignment=LEFT_ALIGNED, end_row=.true. )
       do i_field = 1, wb_variable_list_required_number(vl)
          i_var = vl%order_of_evaluation(i_field)
-         call write_table_entry( f, i_field, 15_SP )
-         call write_table_entry( f, i_var, 15_SP )
-         call write_table_entry( f, trim(vl%variable_names(i_var)), 30_SP, &
-            end_row=.true. )
+         call write_table_entry( f, i_field, VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, i_var,   VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, vl%variable_names(i_var), &
+            NAME_COLUMN_WIDTH, end_row=.true. )
       end do
       call write_blank_line( f )
    end subroutine write_variable_list_information
