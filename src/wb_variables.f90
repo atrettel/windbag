@@ -13,13 +13,15 @@
 ! Windbag.  If not, see <https://www.gnu.org/licenses/>.
 module wb_variables
    use wb_representation
+   use wb_text
    implicit none
 
    private
 
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
-      construct_compressible_conservative_variables
+      construct_compressible_conservative_variables, &
+      write_variable_list_information
 
    integer(SP), public, parameter :: NUMBER_OF_PHASES        =  1_SP
    integer(SP), public, parameter :: UNUSED_VARIABLE_NUMBER  = -1_SP
@@ -320,4 +322,27 @@ contains
 
       number_of_required_variables = int(count(vl%is_a_required_variable),SP)
    end function wb_variable_list_required_number
+
+   subroutine write_variable_list_information( f, vl )
+      integer, intent(in) :: f
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: i_field, i_var
+
+      call write_log_heading( f, "List of fields", level=2_SP )
+      call write_table_entry( f, "Field no.",    15_SP )
+      call write_table_entry( f, "Variable no.", 15_SP )
+      call write_table_entry( f, "Name",         30_SP, end_row=.true. )
+      call write_table_rule_entry( f, 15_SP, alignment=RIGHT_ALIGNED )
+      call write_table_rule_entry( f, 15_SP, alignment=RIGHT_ALIGNED )
+      call write_table_rule_entry( f, 30_SP, alignment=LEFT_ALIGNED, &
+         end_row=.true. )
+      do i_field = 1, wb_variable_list_required_number(vl)
+         i_var = vl%order_of_evaluation(i_field)
+         call write_table_entry( f, i_field, 15_SP )
+         call write_table_entry( f, i_var, 15_SP )
+         call write_table_entry( f, trim(vl%variable_names(i_var)), 30_SP, &
+            end_row=.true. )
+      end do
+      call write_blank_line( f )
+   end subroutine write_variable_list_information
 end module wb_variables

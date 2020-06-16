@@ -175,6 +175,10 @@ contains
          num_dimensions(sd), num_components(sd) )
       sd%number_of_variables = wb_variable_list_required_number(vl)
 
+      if ( wb_subdomain_is_world_master(sd) ) then
+         call write_variable_list_information( output_unit, vl )
+      end if
+
       call wb_variable_list_destroy( vl )
    end subroutine setup_variables
 
