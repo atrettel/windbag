@@ -71,10 +71,9 @@ contains
          l_mass_fractions,     &
          l_momentum_densities, &
          l_velocities
-      integer(SP) :: i_dim, thermodynamic_degrees_of_freedom
-
-      thermodynamic_degrees_of_freedom = phase_rule( &
-         nc, NUMBER_OF_PHASES )
+      integer(SP) :: i_dim, ic, thermodynamic_degrees_of_freedom, &
+         number_of_required_mass_fractions
+      logical :: density_is_required, energy_is_required
 
       allocate( l_amount_fractions(nc), &
                      l_coordinates(nd), &
@@ -82,34 +81,54 @@ contains
               l_momentum_densities(nd), &
                       l_velocities(nd)  )
 
+      thermodynamic_degrees_of_freedom = phase_rule( nc, NUMBER_OF_PHASES )
+
+      density_is_required               = .false.
+      energy_is_required                = .false.
+      number_of_required_mass_fractions = 0_SP
+      if ( thermodynamic_degrees_of_freedom .gt. 0_SP ) then
+         density_is_required = .true.
+      end if
+      if ( thermodynamic_degrees_of_freedom .gt. 1_SP ) then
+         energy_is_required = .true.
+      end if
+      if ( thermodynamic_degrees_of_freedom .gt. 2_SP ) then
+         number_of_required_mass_fractions = &
+            thermodynamic_degrees_of_freedom - 2_SP
+      end if
+
       ! Declarations
-      call wb_variable_list_add( vl, "Amount fraction",                nc, .false., l_amount_fractions                 )
-      call wb_variable_list_add( vl, "Bulk viscosity",                     .false., l_bulk_viscosity                   )
-      call wb_variable_list_add( vl, "Coordinate",                     nd,  .true., l_coordinates                      )
-      call wb_variable_list_add( vl, "Dilatational viscosity",             .false., l_dilatational_viscosity           )
-      call wb_variable_list_add( vl, "Dynamic viscosity",                  .false., l_dynamic_viscosity                )
-      call wb_variable_list_add( vl, "Kinematic viscosity",                .false., l_kinematic_viscosity              )
-      call wb_variable_list_add( vl, "Mach number",                        .false., l_mach_number                      )
-      call wb_variable_list_add( vl, "Mass density",                        .true., l_mass_density                     )
-      call wb_variable_list_add( vl, "Mass fraction",                  nc, .false., l_mass_fractions                   )
-      call wb_variable_list_add( vl, "Momentum density",               nd,  .true., l_momentum_densities               )
-      call wb_variable_list_add( vl, "Prandtl number",                     .false., l_prandtl_number                   )
-      call wb_variable_list_add( vl, "Pressure",                           .false., l_pressure                         )
-      call wb_variable_list_add( vl, "Ratio of heat capacities",           .false., l_ratio_of_heat_capacities         )
-      call wb_variable_list_add( vl, "Specific enthalpy",                  .false., l_specific_enthalpy                )
-      call wb_variable_list_add( vl, "Specific entropy",                   .false., l_specific_entropy                 )
-      call wb_variable_list_add( vl, "Specific internal energy",           .false., l_specific_internal_energy         )
-      call wb_variable_list_add( vl, "Specific isobaric heat capacity",    .false., l_specific_isobaric_heat_capacity  )
-      call wb_variable_list_add( vl, "Specific isochoric heat capacity",   .false., l_specific_isochoric_heat_capacity )
-      call wb_variable_list_add( vl, "Specific total enthalpy",            .false., l_specific_total_enthalpy          )
-      call wb_variable_list_add( vl, "Specific total internal energy",      .true., l_specific_total_internal_energy   )
-      call wb_variable_list_add( vl, "Specific volume",                    .false., l_specific_volume                  )
-      call wb_variable_list_add( vl, "Speed",                              .false., l_speed                            )
-      call wb_variable_list_add( vl, "Speed of sound",                     .false., l_speed_of_sound                   )
-      call wb_variable_list_add( vl, "Temperature",                        .false., l_temperature                      )
-      call wb_variable_list_add( vl, "Thermal conductivity",               .false., l_thermal_conductivity             )
-      call wb_variable_list_add( vl, "Thermal diffusivity",                .false., l_thermal_diffusivity              )
-      call wb_variable_list_add( vl, "Velocity",                       nd, .false., l_velocities                       )
+      call wb_variable_list_add( vl, "Amount fraction",                       nc, .false., l_amount_fractions                 )
+      call wb_variable_list_add( vl, "Bulk viscosity",                            .false., l_bulk_viscosity                   )
+      call wb_variable_list_add( vl, "Coordinate",                            nd,  .true., l_coordinates                      )
+      call wb_variable_list_add( vl, "Dilatational viscosity",                    .false., l_dilatational_viscosity           )
+      call wb_variable_list_add( vl, "Dynamic viscosity",                         .false., l_dynamic_viscosity                )
+      call wb_variable_list_add( vl, "Kinematic viscosity",                       .false., l_kinematic_viscosity              )
+      call wb_variable_list_add( vl, "Mach number",                               .false., l_mach_number                      )
+      call wb_variable_list_add( vl, "Mass density",                  density_is_required, l_mass_density                     )
+      call wb_variable_list_add( vl, "Mass fraction",                         nc, .false., l_mass_fractions                   )
+      call wb_variable_list_add( vl, "Momentum density",                      nd,  .true., l_momentum_densities               )
+      call wb_variable_list_add( vl, "Prandtl number",                            .false., l_prandtl_number                   )
+      call wb_variable_list_add( vl, "Pressure",                                  .false., l_pressure                         )
+      call wb_variable_list_add( vl, "Ratio of heat capacities",                  .false., l_ratio_of_heat_capacities         )
+      call wb_variable_list_add( vl, "Specific enthalpy",                         .false., l_specific_enthalpy                )
+      call wb_variable_list_add( vl, "Specific entropy",                          .false., l_specific_entropy                 )
+      call wb_variable_list_add( vl, "Specific internal energy",                  .false., l_specific_internal_energy         )
+      call wb_variable_list_add( vl, "Specific isobaric heat capacity",           .false., l_specific_isobaric_heat_capacity  )
+      call wb_variable_list_add( vl, "Specific isochoric heat capacity",          .false., l_specific_isochoric_heat_capacity )
+      call wb_variable_list_add( vl, "Specific total enthalpy",                   .false., l_specific_total_enthalpy          )
+      call wb_variable_list_add( vl, "Specific total internal energy", energy_is_required, l_specific_total_internal_energy   )
+      call wb_variable_list_add( vl, "Specific volume",                           .false., l_specific_volume                  )
+      call wb_variable_list_add( vl, "Speed",                                     .false., l_speed                            )
+      call wb_variable_list_add( vl, "Speed of sound",                            .false., l_speed_of_sound                   )
+      call wb_variable_list_add( vl, "Temperature",                               .false., l_temperature                      )
+      call wb_variable_list_add( vl, "Thermal conductivity",                      .false., l_thermal_conductivity             )
+      call wb_variable_list_add( vl, "Thermal diffusivity",                       .false., l_thermal_diffusivity              )
+      call wb_variable_list_add( vl, "Velocity",                              nd, .false., l_velocities                       )
+
+      do ic = 1, number_of_required_mass_fractions
+         call wb_variable_list_mark_as_required( vl, l_mass_fractions(ic) )
+      end do
 
       ! Dependencies
 
