@@ -21,7 +21,7 @@ module wb_variables
       wb_variable_list_destroy, wb_variable_list_required_number, &
       construct_compressible_conservative_variables
 
-   integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  32_SP
+   integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  64_SP
    integer(SP), public, parameter :: NUMBER_OF_PHASES        = 1_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
 
@@ -39,8 +39,10 @@ contains
    subroutine construct_compressible_conservative_variables( vl, nd, nc )
       type(WB_Variable_List), intent(inout) :: vl
       integer(SP) :: nc, nd
-      integer(SP) :: l_dilatational_viscosity,         &
+      integer(SP) :: l_bulk_viscosity,                 &
+                     l_dilatational_viscosity,         &
                      l_dynamic_viscosity,              &
+                     l_kinematic_viscosity,            &
                      l_mach_number,                    &
                      l_mass_density,                   &
                      l_pressure,                       &
@@ -72,9 +74,11 @@ contains
 
       ! Declarations
       call wb_variable_list_add_vector(   vl, "Amount fraction",                nc, .false., l_amount_fractions               )
+      call wb_variable_list_add_variable( vl, "Bulk viscosity",                     .false., l_bulk_viscosity                 )
       call wb_variable_list_add_vector(   vl, "Coordinate",                     nd,  .true., l_coordinates                    )
       call wb_variable_list_add_variable( vl, "Dilatational viscosity",             .false., l_dilatational_viscosity         )
       call wb_variable_list_add_variable( vl, "Dynamic viscosity",                  .false., l_dynamic_viscosity              )
+      call wb_variable_list_add_variable( vl, "Kinematic viscosity",                .false., l_kinematic_viscosity            )
       call wb_variable_list_add_variable( vl, "Mach number",                        .false., l_mach_number                    )
       call wb_variable_list_add_variable( vl, "Mass density",                        .true., l_mass_density                   )
       call wb_variable_list_add_vector(   vl, "Mass fraction",                  nc, .false., l_mass_fractions                 )
