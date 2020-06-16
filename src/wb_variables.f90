@@ -166,7 +166,7 @@ contains
       ! p (pressure)
       ! e = e_tot - 0.5 * V**2
       call wb_variable_list_add_dependency( vl, l_specific_total_internal_energy, l_specific_internal_energy )
-      call wb_variable_list_add_dependency( vl, l_specific_total_internal_energy, l_speed                    )
+      call wb_variable_list_add_dependency( vl, l_speed,                          l_specific_internal_energy )
       ! c_p (specific isobaric heat capacity)
       ! c_v (specific isochoric heat capacity)
       ! h_tot = h + 0.5 * V**2
