@@ -168,7 +168,8 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
       type(WB_Variable_List) :: vl
 
-      call wb_variable_list_construct( vl )
+      ! TODO: Change the hardcoded maximum number of variables.
+      call wb_variable_list_construct( vl, 64_SP+2_SP*num_components(sd) )
 
       call construct_compressible_conservative_variables( vl, &
          num_dimensions(sd), num_components(sd) )

@@ -21,7 +21,6 @@ module wb_variables
       wb_variable_list_destroy, wb_variable_list_required_number, &
       construct_compressible_conservative_variables
 
-   integer(SP), public, parameter :: MAX_NUMBER_OF_VARIABLES =  64_SP
    integer(SP), public, parameter :: NUMBER_OF_PHASES        = 1_SP
    integer(SP), public, parameter :: VACANT_VARIABLE_NUMBER  =  -1_SP
 
@@ -29,7 +28,7 @@ module wb_variables
 
    type, public :: WB_Variable_List
       private
-      integer(SP) :: number_of_variables
+      integer(SP) :: number_of_variables, max_number_of_variables
       logical, dimension(:), allocatable :: is_a_required_variable
       logical, dimension(:,:), allocatable :: adjacency_matrix
       integer(SP), dimension(:), allocatable :: order_of_evaluation
@@ -143,7 +142,7 @@ contains
 
       variable_number = VACANT_VARIABLE_NUMBER
 
-      if ( wb_variable_list_number(vl) .lt. MAX_NUMBER_OF_VARIABLES ) then
+      if ( wb_variable_list_number(vl) .lt. wb_variable_list_max_number(vl) ) then
          variable_number = wb_variable_list_number(vl) + 1_SP
          vl%variable_names(variable_number) = trim(variable_name)
          if ( is_required ) then
@@ -173,16 +172,18 @@ contains
       end do
    end subroutine wb_variable_list_add_vector
 
-   subroutine wb_variable_list_construct( vl )
+   subroutine wb_variable_list_construct( vl, max_number_of_variables )
       type(WB_Variable_List), intent(inout) :: vl
+      integer(SP), intent(in) :: max_number_of_variables
 
-      allocate( vl%is_a_required_variable(MAX_NUMBER_OF_VARIABLES), &
-                      vl%adjacency_matrix(MAX_NUMBER_OF_VARIABLES,  &
-                                          MAX_NUMBER_OF_VARIABLES), &
-                   vl%order_of_evaluation(MAX_NUMBER_OF_VARIABLES), &
-                        vl%variable_names(MAX_NUMBER_OF_VARIABLES) )
+      allocate( vl%is_a_required_variable(max_number_of_variables), &
+                      vl%adjacency_matrix(max_number_of_variables,  &
+                                          max_number_of_variables), &
+                   vl%order_of_evaluation(max_number_of_variables), &
+                        vl%variable_names(max_number_of_variables) )
 
       vl%number_of_variables       = 0_SP
+      vl%max_number_of_variables   = max_number_of_variables
       vl%is_a_required_variable(:) = .false.
       vl%adjacency_matrix(:,:)     = .false.
       vl%order_of_evaluation(:)    = VACANT_VARIABLE_NUMBER
@@ -226,6 +227,13 @@ contains
             variable_number
       end if
    end subroutine wb_variable_list_mark_as_required
+
+   function wb_variable_list_max_number( vl ) result( max_number_of_variables )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: max_number_of_variables
+
+      max_number_of_variables = vl%max_number_of_variables
+   end function wb_variable_list_max_number
 
    function wb_variable_list_number( vl ) result( number_of_variables )
       type(WB_Variable_List), intent(in) :: vl
