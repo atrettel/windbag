@@ -21,7 +21,7 @@ module wb_variables
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
       construct_compressible_conservative_variables, &
-      write_variable_list_information
+      write_graphviz_file, write_variable_list_information
 
    integer(SP), public, parameter :: NUMBER_OF_PHASES        =  1_SP
    integer(SP), public, parameter :: UNUSED_VARIABLE_NUMBER  = -1_SP
@@ -379,6 +379,30 @@ contains
 
       number_of_required_variables = int(count(vl%is_a_required_variable),SP)
    end function wb_variable_list_required_number
+
+   subroutine write_graphviz_file( f, vl )
+      integer, intent(in) :: f
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: source_number, target_number
+
+      write (f, "(A)") "digraph variables {"
+      write (f, "(A)") "concentrate=true"
+      write (f, "(A)") "rankdir=LR"
+
+      do source_number = 1, wb_variable_list_number(vl)
+         do target_number = 1, wb_variable_list_number(vl)
+            if ( wb_variable_list_is_dependent( vl, source_number, &
+                                                    target_number ) ) then
+               write (f, "(5A)") '"', &
+                  trim(vl%variable_names(source_number)), '" -> "', &
+                  trim(vl%variable_names(target_number)), '"'
+            end if
+         end do
+      end do
+
+      write (f, "(A)") "}"
+      call write_blank_line( f )
+   end subroutine write_graphviz_file
 
    subroutine write_variable_list_information( f, vl )
       integer, intent(in) :: f

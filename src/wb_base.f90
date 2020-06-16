@@ -552,6 +552,7 @@ contains
       call write_scalar_variables(        output_unit, sd )
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_variable_list_information( output_unit, sd%field_list )
+         call write_graphviz_file( output_unit, sd%field_list )
       end if
       call write_block_information(       output_unit, sd )
       call write_subdomain_information(   output_unit, sd )
