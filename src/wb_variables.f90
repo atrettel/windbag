@@ -194,22 +194,18 @@ contains
 
       ! Calculated from specific volume, specific internal energy, and mass
       ! fractions.
-      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_bulk_viscosity       )
-      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_dynamic_viscosity    )
       call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_pressure             )
       call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_enthalpy    )
       call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_entropy     )
-      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_speed_of_sound       )
       call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_temperature          )
-      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_thermal_conductivity )
-      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_bulk_viscosity       )
-      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_dynamic_viscosity    )
       call wb_variable_list_add_dependency( vl, l_specific_volume,          l_pressure             )
       call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_enthalpy    )
       call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_entropy     )
-      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_speed_of_sound       )
       call wb_variable_list_add_dependency( vl, l_specific_volume,          l_temperature          )
-      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_thermal_conductivity )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_bulk_viscosity       )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_dynamic_viscosity    )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_speed_of_sound       )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_thermal_conductivity )
       if ( nc .gt. 1_SP ) then
          do ic = 1, nc
             call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_bulk_viscosity       )
