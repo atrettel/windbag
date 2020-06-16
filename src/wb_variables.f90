@@ -394,6 +394,8 @@ contains
       write (f, "(A)") "digraph variables {"
       write (f, "(A)") "concentrate=true"
       write (f, "(A)") "rankdir=LR"
+      write (f, "(A)") 'ranksep="1.0"'
+      write (f, "(A)") 'node [shape=box, fixedsize=true, width="2.0", height="0.5", margin="0.5"]'
 
       do source_number = 1, wb_variable_list_number(vl)
          do target_number = 1, wb_variable_list_number(vl)
