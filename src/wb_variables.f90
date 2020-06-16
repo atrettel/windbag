@@ -58,7 +58,8 @@ contains
                      l_speed,                            &
                      l_speed_of_sound,                   &
                      l_temperature,                      &
-                     l_thermal_conductivity
+                     l_thermal_conductivity,             &
+                     l_thermal_diffusivity
       integer(SP), dimension(:), allocatable :: &
          l_amount_fractions,   &
          l_coordinates,        &
@@ -102,19 +103,37 @@ contains
       call wb_variable_list_add_variable( vl, "Speed of sound",                     .false., l_speed_of_sound                   )
       call wb_variable_list_add_variable( vl, "Temperature",                        .false., l_temperature                      )
       call wb_variable_list_add_variable( vl, "Thermal conductivity",               .false., l_thermal_conductivity             )
+      call wb_variable_list_add_variable( vl, "Thermal diffusivity",                .false., l_thermal_diffusivity              )
       call wb_variable_list_add_vector(   vl, "Velocity",                       nd, .false., l_velocities                       )
 
       ! Dependencies
-      call wb_variable_list_add_dependency( vl, l_mass_density, &
-         l_specific_volume )
 
+      ! nu = mu / rho
+      call wb_variable_list_add_dependency( vl, l_dynamic_viscosity, l_kinematic_viscosity )
+      call wb_variable_list_add_dependency( vl, l_mass_density,      l_kinematic_viscosity )
+      ! M = V / a
+      call wb_variable_list_add_dependency( vl, l_speed,          l_mach_number )
+      call wb_variable_list_add_dependency( vl, l_speed_of_sound, l_mach_number )
+      ! Pr = nu / alpha
+      call wb_variable_list_add_dependency( vl, l_kinematic_viscosity, l_prandtl_number )
+      call wb_variable_list_add_dependency( vl, l_thermal_diffusivity, l_prandtl_number )
+      ! gamma = c_p / c_v
+      call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_ratio_of_heat_capacities )
+      call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_ratio_of_heat_capacities )
+      ! v = 1 / rho
+      call wb_variable_list_add_dependency( vl, l_mass_density, l_specific_volume )
+      ! V = sqrt( u^2 + v^2 + w^2 )
       do i_dim = 1, nd
-         call wb_variable_list_add_dependency( vl, &
-            l_mass_density, l_velocities(i_dim) )
-         call wb_variable_list_add_dependency( vl, &
-            l_momentum_densities(i_dim), l_velocities(i_dim) )
-         call wb_variable_list_add_dependency( vl, &
-            l_velocities(i_dim), l_speed )
+         call wb_variable_list_add_dependency( vl, l_velocities(i_dim), l_speed )
+      end do
+      ! alpha = k / ( c_p rho )
+      call wb_variable_list_add_dependency( vl, l_mass_density,                    l_thermal_diffusivity )
+      call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity, l_thermal_diffusivity )
+      call wb_variable_list_add_dependency( vl, l_thermal_conductivity,            l_thermal_diffusivity )
+      ! u = (rho u) / rho
+      do i_dim = 1, nd
+         call wb_variable_list_add_dependency( vl, l_mass_density,              l_velocities(i_dim) )
+         call wb_variable_list_add_dependency( vl, l_momentum_densities(i_dim), l_velocities(i_dim) )
       end do
 
       ! Requirements
