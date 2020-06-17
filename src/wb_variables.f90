@@ -359,6 +359,15 @@ contains
       number_of_variables = vl%number_of_variables
    end function wb_variable_list_number
 
+   function wb_variable_list_ordered_variable( vl, field_number ) &
+      result( variable_number )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP), intent(in) :: field_number
+      integer(SP) :: variable_number
+
+      variable_number = vl%order_of_evaluation(field_number)
+   end function wb_variable_list_ordered_variable
+
    recursive subroutine wb_variable_list_require( vl, target_number )
       type(WB_Variable_List), intent(inout) :: vl
       integer(SP), intent(in) :: target_number
@@ -438,7 +447,7 @@ contains
       call write_table_rule_entry( f, NAME_COLUMN_WIDTH, &
          alignment=LEFT_ALIGNED, end_row=.true. )
       do i_field = 1, wb_variable_list_required_number(vl)
-         i_var = vl%order_of_evaluation(i_field)
+         i_var = wb_variable_list_ordered_variable( vl, i_field )
          call wb_variable_list_variable_name( vl, i_var, variable_name )
 
          call write_table_entry( f, i_field, VARIABLE_COLUMN_WIDTH )
