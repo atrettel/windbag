@@ -90,7 +90,6 @@ module wb_base
       integer(SP) :: block_number, number_of_blocks
       integer(SP) :: number_of_components
       integer(SP) :: number_of_dimensions
-      integer(SP) :: number_of_fields
       integer(SP) :: number_of_ghost_points
       integer(SP) :: number_of_temporary_fields
       integer(SP) :: iteration_number
@@ -173,8 +172,6 @@ contains
 
       call construct_compressible_conservative_variables( sd%field_list, &
          num_dimensions(sd), num_components(sd) )
-      sd%number_of_fields = &
-         wb_variable_list_required_number(sd%field_list)
    end subroutine setup_variables
 
    subroutine check_block_bounds( block_number, number_of_blocks )
@@ -1127,7 +1124,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_fields
 
-      number_of_fields = sd%number_of_fields
+      number_of_fields = wb_variable_list_required_number(sd%field_list)
    end function wb_subdomain_fields
 
    function wb_subdomain_world_rank( sd ) result( world_rank )
