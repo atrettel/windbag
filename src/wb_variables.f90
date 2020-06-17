@@ -225,7 +225,7 @@ contains
       end if
 
       ! Requirements
-      call wb_variable_list_require( vl, l_mach_number )
+      call wb_variable_list_require( vl, l_speed )
 
       deallocate( l_amount_fractions,   &
                   l_coordinates,        &
