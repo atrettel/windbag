@@ -103,6 +103,10 @@ module wb_base
       type(WB_Variable_List) :: field_list
    end type WB_Subdomain
 
+   interface min_fields
+      module procedure wb_subdomain_min_fields
+   end interface min_fields
+
    interface neighbor
       module procedure wb_block_neighbor, wb_subdomain_neighbor
    end interface neighbor
@@ -1047,6 +1051,13 @@ contains
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
+   function wb_subdomain_fields( sd ) result( number_of_fields )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: number_of_fields
+
+      number_of_fields = wb_variable_list_required_number(sd%field_list)
+   end function wb_subdomain_fields
+
    function wb_subdomain_ghost_points( sd ) result( number_of_ghost_points )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_ghost_points
@@ -1074,6 +1085,14 @@ contains
 
       local_block = sd%local_block
    end subroutine wb_subdomain_local_block
+
+   function wb_subdomain_min_fields( sd ) result( min_number_of_fields )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: min_number_of_fields
+
+      min_number_of_fields = &
+         wb_variable_list_min_required_number(sd%field_list)
+   end function wb_subdomain_min_fields
 
    function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
       type(WB_Subdomain), intent(in) :: sd
@@ -1119,13 +1138,6 @@ contains
 
       points_in_subdomain = product(sd%number_of_points)
    end function wb_subdomain_total_points
-
-   function wb_subdomain_fields( sd ) result( number_of_fields )
-      type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: number_of_fields
-
-      number_of_fields = wb_variable_list_required_number(sd%field_list)
-   end function wb_subdomain_fields
 
    function wb_subdomain_world_rank( sd ) result( world_rank )
       type(WB_Subdomain), intent(in) :: sd
@@ -1467,7 +1479,11 @@ contains
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, num_dimensions(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
-         call write_table_entry( f, "Number of fields", &
+         call write_table_entry( f, "Minimum number of fields", &
+            PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, min_fields(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Total number of fields", &
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, num_fields(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )

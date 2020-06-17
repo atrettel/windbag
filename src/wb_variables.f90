@@ -19,6 +19,7 @@ module wb_variables
 
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
+      wb_variable_list_min_required_number, &
       construct_compressible_conservative_variables, &
       write_graphviz_file, write_variable_list_information
 
@@ -29,7 +30,8 @@ module wb_variables
 
    type, public :: WB_Variable_List
       private
-      integer(SP) :: number_of_variables, max_number_of_variables
+      integer(SP) :: number_of_variables, max_number_of_variables, &
+         min_number_of_required_variables
       logical, dimension(:), allocatable :: is_a_required_variable
       logical, dimension(:,:), allocatable :: adjacency_matrix
       integer(SP), dimension(:), allocatable :: order_of_evaluation
@@ -130,6 +132,8 @@ contains
       do ic = 1, number_of_required_mass_fractions
          call wb_variable_list_mark_as_required( vl, l_mass_fractions(ic) )
       end do
+
+      call wb_variable_list_set_as_minimum(vl)
 
       ! Dependencies
 
@@ -362,6 +366,15 @@ contains
       max_number_of_variables = vl%max_number_of_variables
    end function wb_variable_list_max_number
 
+   function wb_variable_list_min_required_number( vl ) &
+      result( min_number_of_required_variables )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP) :: min_number_of_required_variables
+
+      min_number_of_required_variables = &
+         vl%min_number_of_required_variables
+   end function wb_variable_list_min_required_number
+
    function wb_variable_list_number( vl ) result( number_of_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: number_of_variables
@@ -403,6 +416,13 @@ contains
 
       number_of_required_variables = int(count(vl%is_a_required_variable),SP)
    end function wb_variable_list_required_number
+
+   subroutine wb_variable_list_set_as_minimum( vl )
+      type(WB_Variable_List), intent(inout) :: vl
+
+      vl%min_number_of_required_variables = &
+         wb_variable_list_required_number(vl)
+   end subroutine wb_variable_list_set_as_minimum
 
    subroutine wb_variable_list_variable_name( vl, variable_number, &
       variable_name )
