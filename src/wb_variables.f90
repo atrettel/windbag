@@ -325,13 +325,23 @@ contains
       is_dependent = vl%adjacency_matrix(source_number,target_number)
    end function wb_variable_list_is_dependent
 
+   function wb_variable_list_is_required( vl, variable_number ) &
+      result( is_required )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP), intent(in) :: variable_number
+      logical :: is_required
+
+      is_required = vl%is_a_required_variable(variable_number)
+   end function wb_variable_list_is_required
+
    function wb_variable_list_is_unrequired( vl, variable_number ) &
       result( is_unrequired )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: variable_number
       logical :: is_unrequired
-      
-      is_unrequired = vl%is_a_required_variable(variable_number) .eqv. .false.
+
+      is_unrequired = wb_variable_list_is_required(vl,variable_number) &
+         .eqv. .false.
    end function wb_variable_list_is_unrequired
 
    subroutine wb_variable_list_mark_as_required( vl, variable_number )
