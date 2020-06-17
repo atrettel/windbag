@@ -547,12 +547,17 @@ contains
 
    subroutine print_initial_information( sd )
       type(WB_Subdomain), intent(in) :: sd
+      integer :: graphviz_unit
 
       call write_environment_information( output_unit, sd )
       call write_scalar_variables(        output_unit, sd )
       if ( wb_subdomain_is_world_master(sd) ) then
          call write_variable_list_information( output_unit, sd%field_list )
-         call write_graphviz_file( output_unit, sd%field_list )
+
+         open( newunit=graphviz_unit, file="variables.gv", form="formatted", &
+            action="write" )
+         call write_graphviz_file( graphviz_unit, sd%field_list )
+         close( unit=graphviz_unit )
       end if
       call write_block_information(       output_unit, sd )
       call write_subdomain_information(   output_unit, sd )
