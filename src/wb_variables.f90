@@ -4,8 +4,7 @@
 ! terms of the GNU General Public License as published by the Free Software
 ! Foundation, either version 3 of the License, or (at your option) any later
 ! version.
-! 
-! Windbag is distributed in the hope that it will be useful, but WITHOUT ANY
+!  ! Windbag is distributed in the hope that it will be useful, but WITHOUT ANY
 ! WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 ! A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 ! 
@@ -386,6 +385,15 @@ contains
       number_of_required_variables = int(count(vl%is_a_required_variable),SP)
    end function wb_variable_list_required_number
 
+   subroutine wb_variable_list_variable_name( vl, variable_number, &
+      variable_name )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP), intent(in) :: variable_number
+      character(len=*), intent(inout) :: variable_name
+
+      variable_name = vl%variable_names(variable_number)
+   end subroutine wb_variable_list_variable_name
+
    subroutine write_graphviz_file( f, vl )
       integer, intent(in) :: f
       type(WB_Variable_List), intent(in) :: vl
@@ -416,6 +424,7 @@ contains
       integer, intent(in) :: f
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: i_field, i_var
+      character(len=STRING_LENGTH) :: variable_name
 
       call write_log_heading( f, "List of fields", level=2_SP )
       call write_table_entry( f, "Field no.",    VARIABLE_COLUMN_WIDTH )
@@ -430,10 +439,12 @@ contains
          alignment=LEFT_ALIGNED, end_row=.true. )
       do i_field = 1, wb_variable_list_required_number(vl)
          i_var = vl%order_of_evaluation(i_field)
+         call wb_variable_list_variable_name( vl, i_var, variable_name )
+
          call write_table_entry( f, i_field, VARIABLE_COLUMN_WIDTH )
          call write_table_entry( f, i_var,   VARIABLE_COLUMN_WIDTH )
-         call write_table_entry( f, vl%variable_names(i_var), &
-            NAME_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, variable_name, NAME_COLUMN_WIDTH, &
+            end_row=.true. )
       end do
       call write_blank_line( f )
    end subroutine write_variable_list_information
