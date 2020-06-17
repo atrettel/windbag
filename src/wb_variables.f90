@@ -348,7 +348,7 @@ contains
       type(WB_Variable_List), intent(inout) :: vl
       integer(SP), intent(in) :: variable_number
 
-      if ( vl%is_a_required_variable(variable_number) .eqv. .false. ) then
+      if ( wb_variable_list_is_unrequired( vl, variable_number ) ) then
          vl%is_a_required_variable(variable_number) = .true.
          vl%order_of_evaluation(wb_variable_list_required_number(vl)) = &
             variable_number
@@ -383,7 +383,7 @@ contains
       integer(SP), intent(in) :: target_number
       integer(SP) :: source_number
 
-      if ( vl%is_a_required_variable(target_number) .eqv. .false. ) then
+      if ( wb_variable_list_is_unrequired( vl, target_number ) ) then
          do source_number = 1, wb_variable_list_number(vl)
             if ( wb_variable_list_is_dependent( vl, &
                  source_number, target_number ) .and. &
