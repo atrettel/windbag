@@ -25,8 +25,8 @@ module wb_base
    public find_input_file, print_initial_information, wb_subdomain_construct, &
       wb_subdomain_destroy
 
-   integer(MP), public, parameter :: BLOCK_MASTER = 0_MP
-   integer(MP), public, parameter :: WORLD_MASTER = 0_MP
+   integer(MP), public, parameter :: BLOCK_LEADER = 0_MP
+   integer(MP), public, parameter :: WORLD_LEADER = 0_MP
 
    integer(SP), public, parameter :: DEFAULT_BLOCK_NEIGHBOR = 1_SP
    integer(SP), public, parameter :: DEFAULT_BLOCK_NUMBER   = 1_SP
@@ -230,8 +230,8 @@ contains
 
       ! Ensure that lower and upper pairs exist, and that their number of
       ! points and processes match.  Since this is just checking and not
-      ! calculation, it must occur on the world master.  It is impossible to
-      ! have each block master check this for their own blocks since the block
+      ! calculation, it must occur on the world leader.  It is impossible to
+      ! have each block leader check this for their own blocks since the block
       ! communicators do not exist yet.  If that were possible, it would
       ! eliminate the loop over all blocks.
       do block_number = 1_SP, number_of_blocks
@@ -284,9 +284,9 @@ contains
       points_in_block = total_points(local_block)
       points_in_processes = 0_SP
       call mpi_reduce( total_points(sd), points_in_processes, &
-         num_dimensions_mp(sd), MPI_SP, MPI_SUM, BLOCK_MASTER, &
+         num_dimensions_mp(sd), MPI_SP, MPI_SUM, BLOCK_LEADER, &
          comm_block, ierr )
-      if ( wb_subdomain_is_block_master(sd) .and. &
+      if ( wb_subdomain_is_block_leader(sd) .and. &
          points_in_block .ne. points_in_processes ) then
          call wb_abort( "total points in block N1 (N2) does not match sum of &
                         &points in individual processes (N3)", &
@@ -471,7 +471,7 @@ contains
       logical :: file_exists
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr_mpi )
-      if ( world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_LEADER ) then
          argc = command_argument_count()
          if ( argc .eq. 0 ) then
             call wb_abort( "no input file given", EXIT_USAGE )
@@ -551,7 +551,7 @@ contains
 
       call write_environment_information( output_unit, sd )
       call write_scalar_variables(        output_unit, sd )
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_variable_list_information( output_unit, sd%field_list )
 
          open( newunit=graphviz_unit, file="variables.gv", form="formatted", &
@@ -590,7 +590,7 @@ contains
       allocate( blocks(number_of_blocks) )
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
       call mpi_comm_size( MPI_COMM_WORLD, world_size, ierr )
-      if ( world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_LEADER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
       end if
@@ -601,24 +601,24 @@ contains
          lower_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
          upper_neighbors(:)     = DEFAULT_BLOCK_NEIGHBOR
 
-         if ( world_rank .eq. WORLD_MASTER ) then
+         if ( world_rank .eq. WORLD_LEADER ) then
             read( unit=file_unit, nml=block )
             call check_block_bounds( block_number, number_of_blocks )
          end if
 
-         call mpi_bcast( block_number, 1_MP, MPI_INTEGER, WORLD_MASTER, &
+         call mpi_bcast( block_number, 1_MP, MPI_INTEGER, WORLD_LEADER, &
             MPI_COMM_WORLD, ierr )
-         call mpi_bcast( number_of_points, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
-            MPI_COMM_WORLD, ierr )
-         call mpi_bcast( number_of_processes, int(number_of_dimensions,MP), MPI_INTEGER, WORLD_MASTER, &
-            MPI_COMM_WORLD, ierr )
-         call mpi_bcast( lower_neighbors, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
-            MPI_COMM_WORLD, ierr )
-         call mpi_bcast( upper_neighbors, int(number_of_dimensions,MP), MPI_SP, WORLD_MASTER, &
-            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( number_of_points, int(number_of_dimensions,MP), &
+            MPI_SP, WORLD_LEADER, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( number_of_processes, int(number_of_dimensions,MP), &
+            MPI_INTEGER, WORLD_LEADER, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( lower_neighbors, int(number_of_dimensions,MP), &
+            MPI_SP, WORLD_LEADER, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( upper_neighbors, int(number_of_dimensions,MP), &
+            MPI_SP, WORLD_LEADER, MPI_COMM_WORLD, ierr )
 
          if ( block_is_defined(block_number) .and. &
-              world_rank .eq. WORLD_MASTER ) then
+              world_rank .eq. WORLD_LEADER ) then
             call wb_abort( "block N1 is defined multiple times", EXIT_DATAERR, &
                (/ block_number /) )
          else
@@ -630,7 +630,7 @@ contains
             number_of_processes, number_of_points, lower_neighbors, &
             upper_neighbors, block_number )
       end do
-      if ( world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_LEADER ) then
          close( unit=file_unit )
       end if
 
@@ -663,7 +663,7 @@ contains
       number_of_temporary_fields = DEFAULT_NUMBER_OF_TEMPORARY_FIELDS
 
       call mpi_comm_rank( MPI_COMM_WORLD, world_rank, ierr )
-      if ( world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_LEADER ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
          read( unit=file_unit, nml=general )
@@ -671,12 +671,17 @@ contains
       end if
 
       call mpi_bcast( case_name, int(STRING_LENGTH,MP), MPI_CHARACTER, &
-         WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( number_of_blocks, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( number_of_components, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( number_of_dimensions, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( number_of_ghost_points, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
-      call mpi_bcast( number_of_temporary_fields, 1_MP, MPI_SP, WORLD_MASTER, MPI_COMM_WORLD, ierr )
+         WORLD_LEADER, MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_blocks, 1_MP, MPI_SP, WORLD_LEADER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_components, 1_MP, MPI_SP, WORLD_LEADER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_dimensions, 1_MP, MPI_SP, WORLD_LEADER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_ghost_points, 1_MP, MPI_SP, WORLD_LEADER, &
+         MPI_COMM_WORLD, ierr )
+      call mpi_bcast( number_of_temporary_fields, 1_MP, MPI_SP, WORLD_LEADER, &
+         MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
 
    function wb_block_number( blk ) result( block_number )
@@ -943,7 +948,7 @@ contains
       call read_general_namelist( filename, case_name, number_of_blocks, &
          number_of_components, number_of_dimensions, number_of_ghost_points, &
          number_of_temporary_fields )
-      if ( world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_LEADER ) then
          call check_general_variables( number_of_blocks, &
             number_of_components, number_of_dimensions, &
             number_of_ghost_points, number_of_temporary_fields, world_size )
@@ -951,7 +956,7 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
       call read_block_namelists( filename, number_of_blocks, &
          number_of_dimensions, blocks )
-      if ( world_rank .eq. WORLD_MASTER ) then
+      if ( world_rank .eq. WORLD_LEADER ) then
          call check_block_dimension_arrays( blocks, number_of_blocks, &
             number_of_dimensions, number_of_ghost_points )
          call check_block_neighbors( blocks, number_of_blocks, &
@@ -1053,19 +1058,19 @@ contains
       number_of_ghost_points = sd%number_of_ghost_points
    end function wb_subdomain_ghost_points
 
-   function wb_subdomain_is_block_master( sd ) result( is_block_master )
+   function wb_subdomain_is_block_leader( sd ) result( is_block_leader )
       type(WB_Subdomain), intent(in) :: sd
-      logical :: is_block_master
+      logical :: is_block_leader
 
-      is_block_master = sd%block_rank .eq. BLOCK_MASTER
-   end function wb_subdomain_is_block_master
+      is_block_leader = sd%block_rank .eq. BLOCK_LEADER
+   end function wb_subdomain_is_block_leader
 
-   function wb_subdomain_is_world_master( sd ) result( is_world_master )
+   function wb_subdomain_is_world_leader( sd ) result( is_world_leader )
       type(WB_Subdomain), intent(in) :: sd
-      logical :: is_world_master
+      logical :: is_world_leader
 
-      is_world_master = sd%world_rank .eq. WORLD_MASTER
-   end function wb_subdomain_is_world_master
+      is_world_leader = sd%world_rank .eq. WORLD_LEADER
+   end function wb_subdomain_is_world_leader
 
    subroutine wb_subdomain_local_block( sd, local_block )
       type(WB_Subdomain), intent(in) :: sd
@@ -1148,7 +1153,7 @@ contains
       character(len=STRING_LENGTH) :: label
       type(WB_Block) :: local_block
 
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_log_heading( f, "Block information", level=2_SP )
 
          call write_table_entry( f, "`blkno`", BLOCK_NUMBER_COLUMN_WIDTH )
@@ -1183,7 +1188,7 @@ contains
       do block_number = 1_SP, num_blocks(sd)
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
-            wb_subdomain_is_block_master(sd) ) then
+            wb_subdomain_is_block_leader(sd) ) then
             call wb_subdomain_local_block( sd, local_block )
             call write_table_entry( f, wb_subdomain_block_number(sd), &
                BLOCK_NUMBER_COLUMN_WIDTH )
@@ -1204,7 +1209,7 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_blank_line( f )
       end if
    end subroutine write_block_information
@@ -1216,7 +1221,7 @@ contains
          mpi_minor_version_number, version_length
       character(len=MPI_MAX_LIBRARY_VERSION_STRING) :: lib_version
 
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_log_heading( f, PROGRAM_NAME )
 
          call write_log_heading( f, "Environment parameters", level=2_SP )
@@ -1294,7 +1299,7 @@ contains
       character(len=STRING_LENGTH) :: label
       character(len=MPI_MAX_PROCESSOR_NAME) :: processor_name
 
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_log_heading( f, "Subdomain information", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
@@ -1359,7 +1364,7 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_blank_line( f )
       end if
    end subroutine write_subdomain_information
@@ -1375,7 +1380,7 @@ contains
       face_count = 0_SP
       dirs = (/ LOWER_DIRECTION, UPPER_DIRECTION /)
 
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_log_heading( f, "Subdomain neighbors", level=2_SP )
 
          call write_table_entry( f, "`world_rank`", RANK_COLUMN_WIDTH )
@@ -1432,7 +1437,7 @@ contains
       end do
 
       call mpi_barrier( MPI_COMM_WORLD, ierr )
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_blank_line( f )
       end if
    end subroutine write_subdomain_neighbors
@@ -1444,7 +1449,7 @@ contains
 
       call wb_subdomain_case_name( sd, case_name )
 
-      if ( wb_subdomain_is_world_master(sd) ) then
+      if ( wb_subdomain_is_world_leader(sd) ) then
          call write_log_heading( f, "State scalar variables", level=2_SP )
          call write_table_entry( f, "Property", PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, "Value", VALUE_COLUMN_WIDTH, &
