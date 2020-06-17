@@ -93,7 +93,6 @@ module wb_base
       integer(SP) :: number_of_fields
       integer(SP) :: number_of_ghost_points
       integer(SP) :: number_of_temporary_fields
-      integer(SP) :: number_of_variables
       integer(SP) :: iteration_number
       integer(SP), dimension(:), allocatable :: number_of_points
       integer(MP), dimension(:), allocatable :: block_coords
@@ -125,13 +124,13 @@ module wb_base
       module procedure wb_subdomain_dimensions_mp
    end interface num_dimensions_mp
 
+   interface num_fields
+      module procedure wb_subdomain_fields
+   end interface num_fields
+
    interface num_ghost_points
       module procedure wb_subdomain_ghost_points
    end interface num_ghost_points
-
-   interface num_variables
-      module procedure wb_subdomain_variables
-   end interface num_variables
 
    interface num_points
       module procedure wb_block_points, wb_subdomain_points
@@ -174,7 +173,7 @@ contains
 
       call construct_compressible_conservative_variables( sd%field_list, &
          num_dimensions(sd), num_components(sd) )
-      sd%number_of_variables = &
+      sd%number_of_fields = &
          wb_variable_list_required_number(sd%field_list)
    end subroutine setup_variables
 
@@ -1124,12 +1123,12 @@ contains
       points_in_subdomain = product(sd%number_of_points)
    end function wb_subdomain_total_points
 
-   function wb_subdomain_variables( sd ) result( number_of_variables )
+   function wb_subdomain_fields( sd ) result( number_of_fields )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: number_of_variables
+      integer(SP) :: number_of_fields
 
-      number_of_variables = sd%number_of_variables
-   end function wb_subdomain_variables
+      number_of_fields = sd%number_of_fields
+   end function wb_subdomain_fields
 
    function wb_subdomain_world_rank( sd ) result( world_rank )
       type(WB_Subdomain), intent(in) :: sd
@@ -1471,6 +1470,10 @@ contains
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, num_dimensions(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
+         call write_table_entry( f, "Number of fields", &
+            PROPERTY_COLUMN_WIDTH )
+         call write_table_entry( f, num_fields(sd), &
+            VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_table_entry( f, "Number of ghost points", &
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, num_ghost_points(sd), &
@@ -1478,10 +1481,6 @@ contains
          call write_table_entry( f, "Number of temporary fields", &
             PROPERTY_COLUMN_WIDTH )
          call write_table_entry( f, wb_subdomain_temporary_fields(sd), &
-            VALUE_COLUMN_WIDTH, end_row=.true. )
-         call write_table_entry( f, "Number of variables", &
-            PROPERTY_COLUMN_WIDTH )
-         call write_table_entry( f, num_variables(sd), &
             VALUE_COLUMN_WIDTH, end_row=.true. )
          call write_blank_line( f )
       end if
