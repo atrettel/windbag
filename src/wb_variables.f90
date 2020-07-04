@@ -47,7 +47,6 @@ contains
       type(WB_Variable_List), intent(inout) :: vl
       integer(SP) :: nc, nd
       integer(SP) :: l_bulk_viscosity,                   &
-                     l_dilatational_viscosity,           &
                      l_dynamic_viscosity,                &
                      l_heat_capacity_ratio,              &
                      l_jacobian_determinant,             &
@@ -108,7 +107,6 @@ contains
       call wb_variable_list_add( vl, "Amount fraction",                       nc, .false., l_amount_fractions                 )
       call wb_variable_list_add( vl, "Bulk viscosity",                            .false., l_bulk_viscosity                   )
       call wb_variable_list_add( vl, "Coordinate",                            nd,  .true., l_coordinates                      )
-      call wb_variable_list_add( vl, "Dilatational viscosity",                    .false., l_dilatational_viscosity           )
       call wb_variable_list_add( vl, "Dynamic viscosity",                         .false., l_dynamic_viscosity                )
       call wb_variable_list_add( vl, "Heat capacity ratio",                       .false., l_heat_capacity_ratio              )
       call wb_variable_list_add( vl, "Jacobian component",                nd, nd, .false., l_jacobian_components              )
@@ -150,9 +148,6 @@ contains
       ! e_tot (specific total internal energy)
 
       ! zeta (bulk viscosity)
-      ! lambda = zeta - (2/3) * mu
-      call wb_variable_list_add_dependency( vl, l_bulk_viscosity,    l_dilatational_viscosity )
-      call wb_variable_list_add_dependency( vl, l_dynamic_viscosity, l_dilatational_viscosity )
       ! mu (dynamic viscosity)
       ! gamma = c_p / c_v
       call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
