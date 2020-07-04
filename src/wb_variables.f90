@@ -76,8 +76,8 @@ contains
          l_momentum_densities, &
          l_velocities
       integer(SP), dimension(:,:), allocatable :: l_jacobian_components
-      integer(SP) :: i_dim, j_dim, ic, thermodynamic_degrees_of_freedom, &
-         number_of_required_mass_fractions
+      integer(SP) :: i_dim, j_dim, k_dim, ic, &
+         thermodynamic_degrees_of_freedom, number_of_required_mass_fractions
       logical :: density_is_required, energy_is_required
 
       allocate( l_amount_fractions(nc), &
@@ -157,6 +157,14 @@ contains
       ! gamma = c_p / c_v
       call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
       call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_heat_capacity_ratio )
+      ! dX_i / dx_j = ...
+      do i_dim = 1, nd
+         do j_dim = 1, nd
+            do k_dim = 1, nd
+               call wb_variable_list_add_dependency( vl, l_coordinates(k_dim), l_jacobian_components(i_dim,j_dim) )
+            end do
+         end do
+      end do
       ! J = ...
       do i_dim = 1, nd
          do j_dim = 1, nd
