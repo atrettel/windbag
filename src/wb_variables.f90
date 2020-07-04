@@ -40,7 +40,7 @@ module wb_variables
 
    interface wb_variable_list_add
       module procedure wb_variable_list_add_variable, &
-         wb_variable_list_add_vector
+         wb_variable_list_add_vector, wb_variable_list_add_tensor
    end interface
 contains
    subroutine construct_compressible_conservative_variables( vl, nd, nc )
@@ -50,6 +50,7 @@ contains
                      l_dilatational_viscosity,           &
                      l_dynamic_viscosity,                &
                      l_heat_capacity_ratio,              &
+                     l_jacobian_determinant,             &
                      l_kinematic_viscosity,              &
                      l_mach_number,                      &
                      l_mass_density,                     &
@@ -74,7 +75,8 @@ contains
          l_mass_fractions,     &
          l_momentum_densities, &
          l_velocities
-      integer(SP) :: i_dim, ic, thermodynamic_degrees_of_freedom, &
+      integer(SP), dimension(:,:), allocatable :: l_jacobian_components
+      integer(SP) :: i_dim, j_dim, ic, thermodynamic_degrees_of_freedom, &
          number_of_required_mass_fractions
       logical :: density_is_required, energy_is_required
 
@@ -83,6 +85,8 @@ contains
                   l_mass_fractions(nc), &
               l_momentum_densities(nd), &
                       l_velocities(nd)  )
+
+      allocate( l_jacobian_components(nd,nd) )
 
       thermodynamic_degrees_of_freedom = phase_rule( nc, NUMBER_OF_PHASES )
 
@@ -107,6 +111,8 @@ contains
       call wb_variable_list_add( vl, "Dilatational viscosity",                    .false., l_dilatational_viscosity           )
       call wb_variable_list_add( vl, "Dynamic viscosity",                         .false., l_dynamic_viscosity                )
       call wb_variable_list_add( vl, "Heat capacity ratio",                       .false., l_heat_capacity_ratio              )
+      call wb_variable_list_add( vl, "Jacobian component",                nd, nd, .false., l_jacobian_components              )
+      call wb_variable_list_add( vl, "Jacobian determinant",                      .false., l_jacobian_determinant             )
       call wb_variable_list_add( vl, "Kinematic viscosity",                       .false., l_kinematic_viscosity              )
       call wb_variable_list_add( vl, "Mach number",                               .false., l_mach_number                      )
       call wb_variable_list_add( vl, "Mass density",                  density_is_required, l_mass_density                     )
@@ -151,6 +157,12 @@ contains
       ! gamma = c_p / c_v
       call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
       call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_heat_capacity_ratio )
+      ! J = ...
+      do i_dim = 1, nd
+         do j_dim = 1, nd
+            call wb_variable_list_add_dependency( vl, l_jacobian_components(i_dim,j_dim), l_jacobian_determinant )
+         end do
+      end do
       ! nu = mu / rho
       call wb_variable_list_add_dependency( vl, l_dynamic_viscosity, l_kinematic_viscosity )
       call wb_variable_list_add_dependency( vl, l_mass_density,      l_kinematic_viscosity )
@@ -231,11 +243,12 @@ contains
       ! Requirements
       call wb_variable_list_require( vl, l_speed )
 
-      deallocate( l_amount_fractions,   &
-                  l_coordinates,        &
-                  l_mass_fractions,     &
-                  l_momentum_densities, &
-                  l_velocities          )
+      deallocate( l_amount_fractions,    &
+                  l_coordinates,         &
+                  l_jacobian_components, &
+                  l_mass_fractions,      &
+                  l_momentum_densities,  &
+                  l_velocities           )
    end subroutine construct_compressible_conservative_variables
 
    pure function phase_rule( number_of_components, number_of_phases ) &
@@ -272,6 +285,29 @@ contains
          vl%number_of_variables = wb_variable_list_number(vl) + 1_SP
       end if
    end subroutine wb_variable_list_add_variable
+
+   subroutine wb_variable_list_add_tensor( vl, variable_base_name, m, n, &
+      is_required, variable_numbers )
+      type(WB_Variable_List), intent(inout) :: vl
+      character(len=*), intent(in) :: variable_base_name
+      integer(SP), intent(in) :: m, n
+      logical, intent(in) :: is_required
+      integer(SP), dimension(:,:), allocatable, intent(inout) :: &
+         variable_numbers
+      integer(SP) :: i, j, variable_number
+      character(len=STRING_LENGTH) :: variable_name
+
+      variable_numbers(:,:) = UNUSED_VARIABLE_NUMBER
+      do i = 1, m
+         do j = 1, n
+            write (variable_name,"(A, A, I0, A, I0)") &
+               trim(variable_base_name), " ", i, ",", j
+            call wb_variable_list_add_variable( vl, &
+               variable_name, is_required, variable_number )
+            variable_numbers(i,j) = variable_number
+         end do
+      end do
+   end subroutine wb_variable_list_add_tensor
 
    subroutine wb_variable_list_add_vector( vl, variable_base_name, n, &
       is_required, variable_numbers )
