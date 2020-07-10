@@ -381,6 +381,217 @@ contains
       end do
    end subroutine check_points
 
+   subroutine construct_compressible_conservative_variables( vl, nd, nc )
+      type(WB_Variable_List), intent(inout) :: vl
+      integer(SP) :: nc, nd
+      integer(SP) :: l_bulk_viscosity,                   &
+                     l_dynamic_viscosity,                &
+                     l_heat_capacity_ratio,              &
+                     l_jacobian_determinant,             &
+                     l_kinematic_viscosity,              &
+                     l_mach_number,                      &
+                     l_mass_density,                     &
+                     l_prandtl_number,                   &
+                     l_pressure,                         &
+                     l_specific_enthalpy,                &
+                     l_specific_entropy,                 &
+                     l_specific_internal_energy,         &
+                     l_specific_isobaric_heat_capacity,  &
+                     l_specific_isochoric_heat_capacity, &
+                     l_specific_total_enthalpy,          &
+                     l_specific_total_internal_energy,   &
+                     l_specific_volume,                  &
+                     l_speed,                            &
+                     l_speed_of_sound,                   &
+                     l_temperature,                      &
+                     l_thermal_conductivity,             &
+                     l_thermal_diffusivity
+      integer(SP), dimension(:), allocatable :: &
+         l_amount_fractions,   &
+         l_coordinates,        &
+         l_mass_fractions,     &
+         l_momentum_densities, &
+         l_velocities
+      integer(SP), dimension(:,:), allocatable :: l_jacobian_components
+      integer(SP) :: i_dim, j_dim, k_dim, ic, &
+         thermodynamic_degrees_of_freedom, number_of_required_mass_fractions
+      logical :: density_is_required, energy_is_required
+
+      allocate( l_amount_fractions(nc), &
+                     l_coordinates(nd), &
+                  l_mass_fractions(nc), &
+              l_momentum_densities(nd), &
+                      l_velocities(nd)  )
+
+      allocate( l_jacobian_components(nd,nd) )
+
+      thermodynamic_degrees_of_freedom = phase_rule( nc, NUMBER_OF_PHASES )
+
+      density_is_required               = .false.
+      energy_is_required                = .false.
+      number_of_required_mass_fractions = 0_SP
+      if ( thermodynamic_degrees_of_freedom .gt. 0_SP ) then
+         density_is_required = .true.
+      end if
+      if ( thermodynamic_degrees_of_freedom .gt. 1_SP ) then
+         energy_is_required = .true.
+      end if
+      if ( thermodynamic_degrees_of_freedom .gt. 2_SP ) then
+         number_of_required_mass_fractions = &
+            thermodynamic_degrees_of_freedom - 2_SP
+      end if
+
+      ! Declarations
+      call wb_variable_list_add( vl, "Amount fraction",                       nc, .false., l_amount_fractions                 )
+      call wb_variable_list_add( vl, "Bulk viscosity",                            .false., l_bulk_viscosity                   )
+      call wb_variable_list_add( vl, "Coordinate",                            nd,  .true., l_coordinates                      )
+      call wb_variable_list_add( vl, "Dynamic viscosity",                         .false., l_dynamic_viscosity                )
+      call wb_variable_list_add( vl, "Heat capacity ratio",                       .false., l_heat_capacity_ratio              )
+      call wb_variable_list_add( vl, "Jacobian component",                nd, nd, .false., l_jacobian_components              )
+      call wb_variable_list_add( vl, "Jacobian determinant",                      .false., l_jacobian_determinant             )
+      call wb_variable_list_add( vl, "Kinematic viscosity",                       .false., l_kinematic_viscosity              )
+      call wb_variable_list_add( vl, "Mach number",                               .false., l_mach_number                      )
+      call wb_variable_list_add( vl, "Mass density",                  density_is_required, l_mass_density                     )
+      call wb_variable_list_add( vl, "Mass fraction",                         nc, .false., l_mass_fractions                   )
+      call wb_variable_list_add( vl, "Momentum density",                      nd,  .true., l_momentum_densities               )
+      call wb_variable_list_add( vl, "Prandtl number",                            .false., l_prandtl_number                   )
+      call wb_variable_list_add( vl, "Pressure",                                  .false., l_pressure                         )
+      call wb_variable_list_add( vl, "Specific enthalpy",                         .false., l_specific_enthalpy                )
+      call wb_variable_list_add( vl, "Specific entropy",                          .false., l_specific_entropy                 )
+      call wb_variable_list_add( vl, "Specific internal energy",                  .false., l_specific_internal_energy         )
+      call wb_variable_list_add( vl, "Specific isobaric heat capacity",           .false., l_specific_isobaric_heat_capacity  )
+      call wb_variable_list_add( vl, "Specific isochoric heat capacity",          .false., l_specific_isochoric_heat_capacity )
+      call wb_variable_list_add( vl, "Specific total enthalpy",                   .false., l_specific_total_enthalpy          )
+      call wb_variable_list_add( vl, "Specific total internal energy", energy_is_required, l_specific_total_internal_energy   )
+      call wb_variable_list_add( vl, "Specific volume",                           .false., l_specific_volume                  )
+      call wb_variable_list_add( vl, "Speed",                                     .false., l_speed                            )
+      call wb_variable_list_add( vl, "Speed of sound",                            .false., l_speed_of_sound                   )
+      call wb_variable_list_add( vl, "Temperature",                               .false., l_temperature                      )
+      call wb_variable_list_add( vl, "Thermal conductivity",                      .false., l_thermal_conductivity             )
+      call wb_variable_list_add( vl, "Thermal diffusivity",                       .false., l_thermal_diffusivity              )
+      call wb_variable_list_add( vl, "Velocity",                              nd, .false., l_velocities                       )
+
+      do ic = 1, number_of_required_mass_fractions
+         call wb_variable_list_mark_as_required( vl, l_mass_fractions(ic) )
+      end do
+
+      call wb_variable_list_set_as_minimum(vl)
+
+      ! Dependencies
+
+      ! Givens
+      ! rho (mass density)
+      ! Y (mass fractions)
+      ! rho u (momentum densities)
+      ! e_tot (specific total internal energy)
+
+      ! zeta (bulk viscosity)
+      ! mu (dynamic viscosity)
+      ! gamma = c_p / c_v
+      call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
+      call wb_variable_list_add_dependency( vl, l_specific_isochoric_heat_capacity, l_heat_capacity_ratio )
+      ! dX_i / dx_j = ...
+      do i_dim = 1, nd
+         do j_dim = 1, nd
+            do k_dim = 1, nd
+               call wb_variable_list_add_dependency( vl, l_coordinates(k_dim), l_jacobian_components(i_dim,j_dim) )
+            end do
+         end do
+      end do
+      ! J = ...
+      do i_dim = 1, nd
+         do j_dim = 1, nd
+            call wb_variable_list_add_dependency( vl, l_jacobian_components(i_dim,j_dim), l_jacobian_determinant )
+         end do
+      end do
+      ! nu = mu / rho
+      call wb_variable_list_add_dependency( vl, l_dynamic_viscosity, l_kinematic_viscosity )
+      call wb_variable_list_add_dependency( vl, l_mass_density,      l_kinematic_viscosity )
+      ! M = V / a
+      call wb_variable_list_add_dependency( vl, l_speed,          l_mach_number )
+      call wb_variable_list_add_dependency( vl, l_speed_of_sound, l_mach_number )
+      ! rho (mass density)
+      ! Y_nc = 1 - Y_1 - Y_2 ...
+      do ic = 1, number_of_required_mass_fractions
+         call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_mass_fractions(nc) )
+      end do
+      ! rho u (momentum density)
+      ! Pr = nu / alpha
+      call wb_variable_list_add_dependency( vl, l_kinematic_viscosity, l_prandtl_number )
+      call wb_variable_list_add_dependency( vl, l_thermal_diffusivity, l_prandtl_number )
+      ! p (pressure)
+      ! e = e_tot - 0.5 * V**2
+      call wb_variable_list_add_dependency( vl, l_specific_total_internal_energy, l_specific_internal_energy )
+      call wb_variable_list_add_dependency( vl, l_speed,                          l_specific_internal_energy )
+      ! c_p (specific isobaric heat capacity)
+      ! c_v (specific isochoric heat capacity)
+      ! h_tot = h + 0.5 * V**2
+      call wb_variable_list_add_dependency( vl, l_specific_enthalpy, l_specific_total_enthalpy )
+      call wb_variable_list_add_dependency( vl, l_speed,             l_specific_total_enthalpy )
+      ! e_tot (specific total internal energy)
+      ! v = 1 / rho
+      call wb_variable_list_add_dependency( vl, l_mass_density, l_specific_volume )
+      ! V = sqrt( u**2 + v**2 + w**2 )
+      do i_dim = 1, nd
+         call wb_variable_list_add_dependency( vl, l_velocities(i_dim), l_speed )
+      end do
+      ! a (speed of sound)
+      ! T (temperature)
+      ! k (thermal conductivity)
+      ! alpha = k / ( c_p rho )
+      call wb_variable_list_add_dependency( vl, l_mass_density,                    l_thermal_diffusivity )
+      call wb_variable_list_add_dependency( vl, l_specific_isobaric_heat_capacity, l_thermal_diffusivity )
+      call wb_variable_list_add_dependency( vl, l_thermal_conductivity,            l_thermal_diffusivity )
+      ! u = (rho u) / rho
+      do i_dim = 1, nd
+         call wb_variable_list_add_dependency( vl, l_mass_density,              l_velocities(i_dim) )
+         call wb_variable_list_add_dependency( vl, l_momentum_densities(i_dim), l_velocities(i_dim) )
+      end do
+
+      ! Calculated from specific volume, specific internal energy, and mass
+      ! fractions.
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_pressure                         )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_enthalpy                )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_entropy                 )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_isobaric_heat_capacity  )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_specific_isochoric_heat_capacity )
+      call wb_variable_list_add_dependency( vl, l_specific_internal_energy, l_temperature                      )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_pressure                         )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_enthalpy                )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_entropy                 )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_isobaric_heat_capacity  )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_specific_isochoric_heat_capacity )
+      call wb_variable_list_add_dependency( vl, l_specific_volume,          l_temperature                      )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_bulk_viscosity                   )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_dynamic_viscosity                )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_speed_of_sound                   )
+      call wb_variable_list_add_dependency( vl, l_temperature,              l_thermal_conductivity             )
+      if ( nc .gt. 1_SP ) then
+         do ic = 1, nc
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_bulk_viscosity                    )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_dynamic_viscosity                 )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_pressure                          )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_specific_enthalpy                 )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_specific_entropy                  )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_specific_isobaric_heat_capacity   )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_specific_isochoric_heat_capacity  )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_speed_of_sound                    )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_temperature                       )
+            call wb_variable_list_add_dependency( vl, l_mass_fractions(ic), l_thermal_conductivity              )
+         end do
+      end if
+
+      ! Requirements
+      call wb_variable_list_require( vl, l_speed )
+
+      deallocate( l_amount_fractions,    &
+                  l_coordinates,         &
+                  l_jacobian_components, &
+                  l_mass_fractions,      &
+                  l_momentum_densities,  &
+                  l_velocities           )
+   end subroutine construct_compressible_conservative_variables
+
    subroutine decompose_domain( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: i_dim
