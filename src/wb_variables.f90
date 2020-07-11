@@ -19,7 +19,7 @@ module wb_variables
 
    public WB_Variable_List, wb_variable_list_construct, &
       wb_variable_list_destroy, wb_variable_list_required_number, &
-      wb_variable_list_min_required_number, &
+      wb_variable_list_min_required, &
       write_graphviz_file, write_variable_list_information, &
       wb_variable_list_add, wb_variable_list_mark_as_required, &
       wb_variable_list_set_as_minimum, wb_variable_list_add_dependency, &
@@ -196,14 +196,12 @@ contains
       max_number_of_variables = vl%max_number_of_variables
    end function wb_variable_list_max_number
 
-   function wb_variable_list_min_required_number( vl ) &
-      result( min_number_of_required_variables )
+   function wb_variable_list_min_required( vl ) result( min_required )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP) :: min_number_of_required_variables
+      integer(SP) :: min_required
 
-      min_number_of_required_variables = &
-         vl%min_number_of_required_variables
-   end function wb_variable_list_min_required_number
+      min_required = vl%min_number_of_required_variables
+   end function wb_variable_list_min_required
 
    function wb_variable_list_number( vl ) result( number_of_variables )
       type(WB_Variable_List), intent(in) :: vl

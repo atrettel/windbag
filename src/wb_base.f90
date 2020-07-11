@@ -1301,8 +1301,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: min_number_of_fields
 
-      min_number_of_fields = &
-         wb_variable_list_min_required_number(sd%field_list)
+      min_number_of_fields = wb_variable_list_min_required(sd%field_list)
    end function wb_subdomain_min_fields
 
    function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
