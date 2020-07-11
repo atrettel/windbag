@@ -70,13 +70,13 @@ contains
 
       variable_number = UNUSED_VARIABLE_NUMBER
 
-      if ( wb_variable_list_number(vl) .lt. wb_variable_list_max_variables(vl) ) then
-         variable_number = wb_variable_list_number(vl) + 1_SP
+      if ( wb_variable_list_total_variables(vl) .lt. wb_variable_list_max_variables(vl) ) then
+         variable_number = wb_variable_list_total_variables(vl) + 1_SP
          vl%variable_names(variable_number) = trim(variable_name)
          if ( is_required ) then
             call wb_variable_list_mark_as_required( vl, variable_number )
          end if
-         vl%number_of_variables = wb_variable_list_number(vl) + 1_SP
+         vl%number_of_variables = wb_variable_list_total_variables(vl) + 1_SP
       end if
    end subroutine wb_variable_list_add_variable
 
@@ -203,12 +203,12 @@ contains
       min_required = vl%min_number_of_required_variables
    end function wb_variable_list_min_required
 
-   function wb_variable_list_number( vl ) result( number_of_variables )
+   function wb_variable_list_total_variables( vl ) result( number_of_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: number_of_variables
 
       number_of_variables = vl%number_of_variables
-   end function wb_variable_list_number
+   end function wb_variable_list_total_variables
 
    function wb_variable_list_ordered_variable( vl, field_number ) &
       result( variable_number )
@@ -225,7 +225,7 @@ contains
       integer(SP) :: source_number
 
       if ( wb_variable_list_is_unrequired( vl, target_number ) ) then
-         do source_number = 1, wb_variable_list_number(vl)
+         do source_number = 1, wb_variable_list_total_variables(vl)
             if ( wb_variable_list_is_dependent( vl, &
                  source_number, target_number ) .and. &
                  wb_variable_list_is_unrequired( vl, source_number ) ) then
@@ -272,8 +272,8 @@ contains
       write (f, "(A)") 'ranksep="1.0"'
       write (f, "(A)") 'node [shape=box, fixedsize=true, width="2.0", height="0.5", margin="0.5"]'
 
-      do source_number = 1, wb_variable_list_number(vl)
-         do target_number = 1, wb_variable_list_number(vl)
+      do source_number = 1, wb_variable_list_total_variables(vl)
+         do target_number = 1, wb_variable_list_total_variables(vl)
             if ( wb_variable_list_is_dependent( vl, source_number, &
                                                     target_number ) ) then
                write (f, "(5A)") '"', &
