@@ -291,9 +291,9 @@ contains
       integer(SP) :: i_field, i_var
       character(len=STRING_LENGTH) :: variable_name
 
-      call write_log_heading( f, "List of fields", level=2_SP )
-      call write_table_entry( f, "Field no.",    VARIABLE_COLUMN_WIDTH )
-      call write_table_entry( f, "Variable no.", VARIABLE_COLUMN_WIDTH )
+      call write_log_heading( f, "List of required variables", level=2_SP )
+      call write_table_entry( f, "Sequence index", VARIABLE_COLUMN_WIDTH )
+      call write_table_entry( f, "Variable ID",    VARIABLE_COLUMN_WIDTH )
       call write_table_entry( f, "Name",         NAME_COLUMN_WIDTH, &
          end_row=.true. )
       call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH, &
