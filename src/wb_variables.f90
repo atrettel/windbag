@@ -202,11 +202,11 @@ contains
       min_required = vl%min_number_of_required_variables
    end function wb_variable_list_min_required
 
-   function wb_variable_list_total_variables( vl ) result( number_of_variables )
+   function wb_variable_list_total_variables( vl ) result( total_variables )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP) :: number_of_variables
+      integer(SP) :: total_variables
 
-      number_of_variables = vl%number_of_variables
+      total_variables = vl%number_of_variables
    end function wb_variable_list_total_variables
 
    function wb_variable_list_ordered_variable( vl, field_id ) &
