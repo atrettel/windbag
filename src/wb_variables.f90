@@ -25,8 +25,8 @@ module wb_variables
       wb_variable_list_set_as_minimum, wb_variable_list_add_dependency, &
       wb_variable_list_require, phase_rule
 
-   integer(SP), public, parameter :: NUMBER_OF_PHASES        =  1_SP
-   integer(SP), public, parameter :: UNUSED_VARIABLE_NUMBER  = -1_SP
+   integer(SP), public, parameter :: NUMBER_OF_PHASES   =  1_SP
+   integer(SP), public, parameter :: UNUSED_VARIABLE_ID = -1_SP
 
    character(len=*), public, parameter :: DEFAULT_VARIABLE_NAME = "Variable"
 
@@ -53,73 +53,72 @@ contains
       degrees_of_freedom = number_of_components - number_of_phases + 2_SP
    end function phase_rule
 
-   subroutine wb_variable_list_add_dependency( vl, source_number, &
-      target_number )
+   subroutine wb_variable_list_add_dependency( vl, source_id, target_id )
       type(WB_Variable_List), intent(inout) :: vl
-      integer(SP), intent(in) :: source_number, target_number
+      integer(SP), intent(in) :: source_id, target_id
       
-      vl%adjacency_matrix(source_number,target_number) = .true.
+      vl%adjacency_matrix(source_id,target_id) = .true.
    end subroutine wb_variable_list_add_dependency
 
    subroutine wb_variable_list_add_variable( vl, variable_name, is_required, &
-      variable_number )
+      variable_id )
       type(WB_Variable_List), intent(inout) :: vl
       character(len=*), intent(in) :: variable_name
       logical, intent(in) :: is_required
-      integer(SP), intent(out) :: variable_number
+      integer(SP), intent(out) :: variable_id
 
-      variable_number = UNUSED_VARIABLE_NUMBER
+      variable_id = UNUSED_VARIABLE_ID
 
       if ( wb_variable_list_total_variables(vl) .lt. wb_variable_list_max_variables(vl) ) then
-         variable_number = wb_variable_list_total_variables(vl) + 1_SP
-         vl%variable_names(variable_number) = trim(variable_name)
+         variable_id = wb_variable_list_total_variables(vl) + 1_SP
+         vl%variable_names(variable_id) = trim(variable_name)
          if ( is_required ) then
-            call wb_variable_list_mark_as_required( vl, variable_number )
+            call wb_variable_list_mark_as_required( vl, variable_id )
          end if
          vl%number_of_variables = wb_variable_list_total_variables(vl) + 1_SP
       end if
    end subroutine wb_variable_list_add_variable
 
    subroutine wb_variable_list_add_tensor( vl, variable_base_name, m, n, &
-      is_required, variable_numbers )
+      is_required, variable_ids )
       type(WB_Variable_List), intent(inout) :: vl
       character(len=*), intent(in) :: variable_base_name
       integer(SP), intent(in) :: m, n
       logical, intent(in) :: is_required
       integer(SP), dimension(:,:), allocatable, intent(inout) :: &
-         variable_numbers
-      integer(SP) :: i, j, variable_number
+         variable_ids
+      integer(SP) :: i, j, variable_id
       character(len=STRING_LENGTH) :: variable_name
 
-      variable_numbers(:,:) = UNUSED_VARIABLE_NUMBER
+      variable_ids(:,:) = UNUSED_VARIABLE_ID
       do i = 1, m
          do j = 1, n
             write (variable_name,"(A, A, I0, A, I0)") &
                trim(variable_base_name), " ", i, ",", j
             call wb_variable_list_add_variable( vl, &
-               variable_name, is_required, variable_number )
-            variable_numbers(i,j) = variable_number
+               variable_name, is_required, variable_id )
+            variable_ids(i,j) = variable_id
          end do
       end do
    end subroutine wb_variable_list_add_tensor
 
    subroutine wb_variable_list_add_vector( vl, variable_base_name, n, &
-      is_required, variable_numbers )
+      is_required, variable_ids )
       type(WB_Variable_List), intent(inout) :: vl
       character(len=*), intent(in) :: variable_base_name
       integer(SP), intent(in) :: n
       logical, intent(in) :: is_required
       integer(SP), dimension(:), allocatable, intent(inout) :: &
-         variable_numbers
-      integer(SP) :: i, variable_number
+         variable_ids
+      integer(SP) :: i, variable_id
       character(len=STRING_LENGTH) :: variable_name
 
-      variable_numbers(:) = UNUSED_VARIABLE_NUMBER
+      variable_ids(:) = UNUSED_VARIABLE_ID
       do i = 1, n
          write (variable_name,"(A, A, I0)") trim(variable_base_name), " ", i
          call wb_variable_list_add_variable( vl, &
-            variable_name, is_required, variable_number )
-         variable_numbers(i) = variable_number
+            variable_name, is_required, variable_id )
+         variable_ids(i) = variable_id
       end do
    end subroutine wb_variable_list_add_vector
 
@@ -137,7 +136,7 @@ contains
       vl%max_number_of_variables   = max_number_of_variables
       vl%is_a_required_variable(:) = .false.
       vl%adjacency_matrix(:,:)     = .false.
-      vl%order_of_evaluation(:)    =  UNUSED_VARIABLE_NUMBER
+      vl%order_of_evaluation(:)    =  UNUSED_VARIABLE_ID
       vl%variable_names(:)         = DEFAULT_VARIABLE_NAME
    end subroutine wb_variable_list_construct
 
@@ -150,42 +149,42 @@ contains
                   vl%variable_names )
    end subroutine wb_variable_list_destroy
 
-   function wb_variable_list_is_dependent( vl, source_number, target_number ) &
+   function wb_variable_list_is_dependent( vl, source_id, target_id ) &
       result( is_dependent )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP), intent(in) :: source_number, target_number
+      integer(SP), intent(in) :: source_id, target_id
       logical :: is_dependent
       
-      is_dependent = vl%adjacency_matrix(source_number,target_number)
+      is_dependent = vl%adjacency_matrix(source_id,target_id)
    end function wb_variable_list_is_dependent
 
-   function wb_variable_list_is_required( vl, variable_number ) &
+   function wb_variable_list_is_required( vl, variable_id ) &
       result( is_required )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP), intent(in) :: variable_number
+      integer(SP), intent(in) :: variable_id
       logical :: is_required
 
-      is_required = vl%is_a_required_variable(variable_number)
+      is_required = vl%is_a_required_variable(variable_id)
    end function wb_variable_list_is_required
 
-   function wb_variable_list_is_unrequired( vl, variable_number ) &
+   function wb_variable_list_is_unrequired( vl, variable_id ) &
       result( is_unrequired )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP), intent(in) :: variable_number
+      integer(SP), intent(in) :: variable_id
       logical :: is_unrequired
 
-      is_unrequired = wb_variable_list_is_required(vl,variable_number) &
+      is_unrequired = wb_variable_list_is_required(vl,variable_id) &
          .eqv. .false.
    end function wb_variable_list_is_unrequired
 
-   subroutine wb_variable_list_mark_as_required( vl, variable_number )
+   subroutine wb_variable_list_mark_as_required( vl, variable_id )
       type(WB_Variable_List), intent(inout) :: vl
-      integer(SP), intent(in) :: variable_number
+      integer(SP), intent(in) :: variable_id
 
-      if ( wb_variable_list_is_unrequired( vl, variable_number ) ) then
-         vl%is_a_required_variable(variable_number) = .true.
+      if ( wb_variable_list_is_unrequired( vl, variable_id ) ) then
+         vl%is_a_required_variable(variable_id) = .true.
          vl%order_of_evaluation(wb_variable_list_required_number(vl)) = &
-            variable_number
+            variable_id
       end if
    end subroutine wb_variable_list_mark_as_required
 
@@ -210,30 +209,30 @@ contains
       number_of_variables = vl%number_of_variables
    end function wb_variable_list_total_variables
 
-   function wb_variable_list_ordered_variable( vl, field_number ) &
-      result( variable_number )
+   function wb_variable_list_ordered_variable( vl, field_id ) &
+      result( variable_id )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP), intent(in) :: field_number
-      integer(SP) :: variable_number
+      integer(SP), intent(in) :: field_id
+      integer(SP) :: variable_id
 
-      variable_number = vl%order_of_evaluation(field_number)
+      variable_id = vl%order_of_evaluation(field_id)
    end function wb_variable_list_ordered_variable
 
-   recursive subroutine wb_variable_list_require( vl, target_number )
+   recursive subroutine wb_variable_list_require( vl, target_id )
       type(WB_Variable_List), intent(inout) :: vl
-      integer(SP), intent(in) :: target_number
-      integer(SP) :: source_number
+      integer(SP), intent(in) :: target_id
+      integer(SP) :: source_id
 
-      if ( wb_variable_list_is_unrequired( vl, target_number ) ) then
-         do source_number = 1, wb_variable_list_total_variables(vl)
+      if ( wb_variable_list_is_unrequired( vl, target_id ) ) then
+         do source_id = 1, wb_variable_list_total_variables(vl)
             if ( wb_variable_list_is_dependent( vl, &
-                 source_number, target_number ) .and. &
-                 wb_variable_list_is_unrequired( vl, source_number ) ) then
-               call wb_variable_list_require( vl, source_number )
+                 source_id, target_id ) .and. &
+                 wb_variable_list_is_unrequired( vl, source_id ) ) then
+               call wb_variable_list_require( vl, source_id )
             end if
          end do
 
-         call wb_variable_list_mark_as_required( vl, target_number )
+         call wb_variable_list_mark_as_required( vl, target_id )
       end if
    end subroutine wb_variable_list_require
 
@@ -252,19 +251,18 @@ contains
          wb_variable_list_required_number(vl)
    end subroutine wb_variable_list_set_as_minimum
 
-   subroutine wb_variable_list_variable_name( vl, variable_number, &
-      variable_name )
+   subroutine wb_variable_list_variable_name( vl, variable_id, variable_name )
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP), intent(in) :: variable_number
+      integer(SP), intent(in) :: variable_id
       character(len=*), intent(inout) :: variable_name
 
-      variable_name = vl%variable_names(variable_number)
+      variable_name = vl%variable_names(variable_id)
    end subroutine wb_variable_list_variable_name
 
    subroutine write_graphviz_file( f, vl )
       integer, intent(in) :: f
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP) :: source_number, target_number
+      integer(SP) :: source_id, target_id
 
       write (f, "(A)") "digraph variables {"
       write (f, "(A)") "concentrate=true"
@@ -272,13 +270,13 @@ contains
       write (f, "(A)") 'ranksep="1.0"'
       write (f, "(A)") 'node [shape=box, fixedsize=true, width="2.0", height="0.5", margin="0.5"]'
 
-      do source_number = 1, wb_variable_list_total_variables(vl)
-         do target_number = 1, wb_variable_list_total_variables(vl)
-            if ( wb_variable_list_is_dependent( vl, source_number, &
-                                                    target_number ) ) then
+      do source_id = 1, wb_variable_list_total_variables(vl)
+         do target_id = 1, wb_variable_list_total_variables(vl)
+            if ( wb_variable_list_is_dependent( vl, source_id, &
+                                                    target_id ) ) then
                write (f, "(5A)") '"', &
-                  trim(vl%variable_names(source_number)), '" -> "', &
-                  trim(vl%variable_names(target_number)), '"'
+                  trim(vl%variable_names(source_id)), '" -> "', &
+                  trim(vl%variable_names(target_id)), '"'
             end if
          end do
       end do
