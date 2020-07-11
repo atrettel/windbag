@@ -70,7 +70,7 @@ contains
 
       variable_number = UNUSED_VARIABLE_NUMBER
 
-      if ( wb_variable_list_number(vl) .lt. wb_variable_list_max_number(vl) ) then
+      if ( wb_variable_list_number(vl) .lt. wb_variable_list_max_variables(vl) ) then
          variable_number = wb_variable_list_number(vl) + 1_SP
          vl%variable_names(variable_number) = trim(variable_name)
          if ( is_required ) then
@@ -189,12 +189,12 @@ contains
       end if
    end subroutine wb_variable_list_mark_as_required
 
-   function wb_variable_list_max_number( vl ) result( max_number_of_variables )
+   function wb_variable_list_max_variables( vl ) result( max_number_of_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: max_number_of_variables
 
       max_number_of_variables = vl%max_number_of_variables
-   end function wb_variable_list_max_number
+   end function wb_variable_list_max_variables
 
    function wb_variable_list_min_required( vl ) result( min_required )
       type(WB_Variable_List), intent(in) :: vl
