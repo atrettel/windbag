@@ -209,14 +209,14 @@ contains
       total_variables = vl%number_of_variables
    end function wb_variable_list_total_variables
 
-   function wb_variable_list_ordered_variable( vl, sequence_index ) &
+   function wb_variable_list_variable_id( vl, sequence_index ) &
       result( variable_id )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: sequence_index
       integer(SP) :: variable_id
 
       variable_id = vl%order_of_evaluation(sequence_index)
-   end function wb_variable_list_ordered_variable
+   end function wb_variable_list_variable_id
 
    recursive subroutine wb_variable_list_require( vl, target_id )
       type(WB_Variable_List), intent(inout) :: vl
@@ -303,7 +303,7 @@ contains
       call write_table_rule_entry( f, NAME_COLUMN_WIDTH, &
          alignment=LEFT_ALIGNED, end_row=.true. )
       do i_index = 1, wb_variable_list_required_number(vl)
-         i_var = wb_variable_list_ordered_variable( vl, i_index )
+         i_var = wb_variable_list_variable_id( vl, i_index )
          call wb_variable_list_variable_name( vl, i_var, variable_name )
 
          call write_table_entry( f, i_index, VARIABLE_COLUMN_WIDTH )
