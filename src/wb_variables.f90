@@ -288,7 +288,7 @@ contains
    subroutine write_variable_list_information( f, vl )
       integer, intent(in) :: f
       type(WB_Variable_List), intent(in) :: vl
-      integer(SP) :: i_index, i_var
+      integer(SP) :: sequence_index, variable_id
       character(len=STRING_LENGTH) :: variable_name
 
       call write_log_heading( f, "List of required variables", level=2_SP )
@@ -302,13 +302,13 @@ contains
          alignment=RIGHT_ALIGNED )
       call write_table_rule_entry( f, NAME_COLUMN_WIDTH, &
          alignment=LEFT_ALIGNED, end_row=.true. )
-      do i_index = 1, wb_variable_list_required_number(vl)
-         i_var = wb_variable_list_variable_id( vl, i_index )
-         call wb_variable_list_variable_name( vl, i_var, variable_name )
+      do sequence_index = 1, wb_variable_list_required_number(vl)
+         variable_id = wb_variable_list_variable_id( vl, sequence_index )
+         call wb_variable_list_variable_name( vl, variable_id, variable_name )
 
-         call write_table_entry( f, i_index, VARIABLE_COLUMN_WIDTH )
-         call write_table_entry( f, i_var,   VARIABLE_COLUMN_WIDTH )
-         call write_table_entry( f, variable_name, NAME_COLUMN_WIDTH, &
+         call write_table_entry( f, sequence_index, VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, variable_id,    VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, variable_name,      NAME_COLUMN_WIDTH, &
             end_row=.true. )
       end do
       call write_blank_line( f )
