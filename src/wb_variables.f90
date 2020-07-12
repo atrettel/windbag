@@ -18,7 +18,7 @@ module wb_variables
    private
 
    public WB_Variable_List, wb_variable_list_construct, &
-      wb_variable_list_destroy, wb_variable_list_required_number, &
+      wb_variable_list_destroy, wb_variable_list_total_required, &
       wb_variable_list_min_required, &
       write_graphviz_file, write_variable_list_information, &
       wb_variable_list_add, wb_variable_list_mark_as_required, &
@@ -183,7 +183,7 @@ contains
 
       if ( wb_variable_list_is_unrequired( vl, variable_id ) ) then
          vl%is_a_required_variable(variable_id) = .true.
-         vl%order_of_evaluation(wb_variable_list_required_number(vl)) = &
+         vl%order_of_evaluation(wb_variable_list_total_required(vl)) = &
             variable_id
       end if
    end subroutine wb_variable_list_mark_as_required
@@ -236,19 +236,18 @@ contains
       end if
    end subroutine wb_variable_list_require
 
-   function wb_variable_list_required_number( vl ) &
+   function wb_variable_list_total_required( vl ) &
       result( number_of_required_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: number_of_required_variables
 
       number_of_required_variables = int(count(vl%is_a_required_variable),SP)
-   end function wb_variable_list_required_number
+   end function wb_variable_list_total_required
 
    subroutine wb_variable_list_set_as_minimum( vl )
       type(WB_Variable_List), intent(inout) :: vl
 
-      vl%min_number_of_required_variables = &
-         wb_variable_list_required_number(vl)
+      vl%min_number_of_required_variables = wb_variable_list_total_required(vl)
    end subroutine wb_variable_list_set_as_minimum
 
    subroutine wb_variable_list_variable_name( vl, variable_id, variable_name )
@@ -302,7 +301,7 @@ contains
          alignment=RIGHT_ALIGNED )
       call write_table_rule_entry( f, NAME_COLUMN_WIDTH, &
          alignment=LEFT_ALIGNED, end_row=.true. )
-      do sequence_index = 1, wb_variable_list_required_number(vl)
+      do sequence_index = 1, wb_variable_list_total_required(vl)
          variable_id = wb_variable_list_variable_id( vl, sequence_index )
          call wb_variable_list_variable_name( vl, variable_id, variable_name )
 

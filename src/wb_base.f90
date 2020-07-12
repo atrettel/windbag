@@ -1266,7 +1266,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_fields
 
-      number_of_fields = wb_variable_list_required_number(sd%field_list)
+      number_of_fields = wb_variable_list_total_required(sd%field_list)
    end function wb_subdomain_fields
 
    function wb_subdomain_ghost_points( sd ) result( number_of_ghost_points )
