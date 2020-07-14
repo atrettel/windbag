@@ -450,7 +450,7 @@ contains
       call wb_variable_list_add( sd%fl, "Mach number",                               .false., l_mach_number                      )
       call wb_variable_list_add( sd%fl, "Mass density",                  density_is_required, l_mass_density                     )
       call wb_variable_list_add( sd%fl, "Mass fraction",                         nc, .false., l_mass_fractions                   )
-      call wb_variable_list_add( sd%fl, "Momentum density",                      nd,  .true., l_momentum_densities               )
+      call wb_variable_list_add( sd%fl, "Momentum density",                      nd, .false., l_momentum_densities               )
       call wb_variable_list_add( sd%fl, "Prandtl number",                            .false., l_prandtl_number                   )
       call wb_variable_list_add( sd%fl, "Pressure",                                  .false., l_pressure                         )
       call wb_variable_list_add( sd%fl, "Specific enthalpy",                         .false., l_specific_enthalpy                )
@@ -459,7 +459,8 @@ contains
       call wb_variable_list_add( sd%fl, "Specific isobaric heat capacity",           .false., l_specific_isobaric_heat_capacity  )
       call wb_variable_list_add( sd%fl, "Specific isochoric heat capacity",          .false., l_specific_isochoric_heat_capacity )
       call wb_variable_list_add( sd%fl, "Specific total enthalpy",                   .false., l_specific_total_enthalpy          )
-      call wb_variable_list_add( sd%fl, "Specific total internal energy", energy_is_required, l_specific_total_internal_energy   )
+      !call wb_variable_list_add( sd%fl, "Specific total internal energy", energy_is_required, l_specific_total_internal_energy   )
+      call wb_variable_list_add( sd%fl, "Specific total internal energy",            .false., l_specific_total_internal_energy   )
       call wb_variable_list_add( sd%fl, "Specific volume",                           .false., l_specific_volume                  )
       call wb_variable_list_add( sd%fl, "Speed",                                     .false., l_speed                            )
       call wb_variable_list_add( sd%fl, "Speed of sound",                            .false., l_speed_of_sound                   )
@@ -579,7 +580,7 @@ contains
       end if
 
       ! Requirements
-      call wb_variable_list_require( sd%fl, l_speed )
+      !call wb_variable_list_require( sd%fl, l_speed )
 
       ! Set field indices (sequence indices) for minimal number of required
       ! fields.
