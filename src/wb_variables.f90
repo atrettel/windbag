@@ -23,8 +23,9 @@ module wb_variables
       write_graphviz_file, write_variable_list_information, &
       wb_variable_list_add, wb_variable_list_mark_as_required, &
       wb_variable_list_set_as_minimum, wb_variable_list_add_dependency, &
-      wb_variable_list_require, phase_rule
+      wb_variable_list_require, phase_rule, wb_variable_list_sequence_index
 
+   integer(SP), public, parameter :: NO_SEQUENCE_INDEX  = -1_SP
    integer(SP), public, parameter :: NUMBER_OF_PHASES   =  1_SP
    integer(SP), public, parameter :: UNUSED_VARIABLE_ID = -1_SP
 
@@ -208,6 +209,21 @@ contains
 
       total_variables = vl%number_of_variables
    end function wb_variable_list_total_variables
+
+   function wb_variable_list_sequence_index( vl, variable_id ) &
+      result( sequence_index )
+      type(WB_Variable_List), intent(in) :: vl
+      integer(SP), intent(in) :: variable_id
+      integer(SP) :: sequence_index, loop_sequence_index
+
+      sequence_index = NO_SEQUENCE_INDEX
+      do loop_sequence_index = 1, wb_variable_list_total_required(vl)
+         if ( vl%order_of_evaluation(loop_sequence_index) .eq. &
+              variable_id ) then
+            sequence_index = loop_sequence_index
+         end if
+      end do
+   end function wb_variable_list_sequence_index
 
    function wb_variable_list_variable_id( vl, sequence_index ) &
       result( variable_id )

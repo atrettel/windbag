@@ -101,6 +101,8 @@ module wb_base
       type(MPI_Comm) :: comm_block
       type(WB_Block) :: local_block
       type(WB_Variable_List) :: fl
+      integer(SP), dimension(:), allocatable :: l_coordinates
+      integer(SP) :: l_mass_density
    end type WB_Subdomain
 
    interface min_fields
@@ -578,6 +580,14 @@ contains
 
       ! Requirements
       call wb_variable_list_require( sd%fl, l_speed )
+
+      ! Set field indices (sequence indices) for minimal number of required
+      ! fields.
+      allocate( sd%l_coordinates(nd) )
+      do i_dim = 1, nd
+         sd%l_coordinates(i_dim) = wb_variable_list_sequence_index( sd%fl, l_coordinates(i_dim) )
+      end do
+      sd%l_mass_density = wb_variable_list_sequence_index( sd%fl, l_mass_density )
 
       deallocate( l_amount_fractions,    &
                   l_coordinates,         &
@@ -1227,10 +1237,11 @@ contains
       integer(MP) :: ierr
       type(WB_Subdomain), intent(inout) :: sd
 
-      deallocate( sd%case_name,    &
-                  sd%block_coords, &
-                  sd%neighbors,    &
-                  sd%number_of_points )
+      deallocate( sd%case_name,        &
+                  sd%block_coords,     &
+                  sd%neighbors,        &
+                  sd%number_of_points, &
+                  sd%l_coordinates     )
       call mpi_comm_free( sd%comm_block, ierr )
       call wb_block_destroy( sd%local_block )
       call wb_variable_list_destroy( sd%fl )
