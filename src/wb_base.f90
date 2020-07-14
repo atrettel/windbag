@@ -489,16 +489,16 @@ contains
       call wb_variable_list_add_dependency( sd%fl, l_specific_isobaric_heat_capacity,  l_heat_capacity_ratio )
       call wb_variable_list_add_dependency( sd%fl, l_specific_isochoric_heat_capacity, l_heat_capacity_ratio )
       ! dX_i / dx_j = ...
-      do i_dim = 1, nd
-         do j_dim = 1, nd
-            do k_dim = 1, nd
+      do i_dim = 1_SP, nd
+         do j_dim = 1_SP, nd
+            do k_dim = 1_SP, nd
                call wb_variable_list_add_dependency( sd%fl, l_coordinates(k_dim), l_jacobian_components(i_dim,j_dim) )
             end do
          end do
       end do
       ! J = ...
-      do i_dim = 1, nd
-         do j_dim = 1, nd
+      do i_dim = 1_SP, nd
+         do j_dim = 1_SP, nd
             call wb_variable_list_add_dependency( sd%fl, l_jacobian_components(i_dim,j_dim), l_jacobian_determinant )
          end do
       end do
@@ -510,7 +510,7 @@ contains
       call wb_variable_list_add_dependency( sd%fl, l_speed_of_sound, l_mach_number )
       ! rho (mass density)
       ! Y_nc = 1 - Y_1 - Y_2 ...
-      do ic = 1, number_of_required_mass_fractions
+      do ic = 1_SP, number_of_required_mass_fractions
          call wb_variable_list_add_dependency( sd%fl, l_mass_fractions(ic), l_mass_fractions(nc) )
       end do
       ! rho u (momentum density)
@@ -530,7 +530,7 @@ contains
       ! v = 1 / rho
       call wb_variable_list_add_dependency( sd%fl, l_mass_density, l_specific_volume )
       ! V = sqrt( u**2 + v**2 + w**2 )
-      do i_dim = 1, nd
+      do i_dim = 1_SP, nd
          call wb_variable_list_add_dependency( sd%fl, l_velocities(i_dim), l_speed )
       end do
       ! a (speed of sound)
@@ -541,7 +541,7 @@ contains
       call wb_variable_list_add_dependency( sd%fl, l_specific_isobaric_heat_capacity, l_thermal_diffusivity )
       call wb_variable_list_add_dependency( sd%fl, l_thermal_conductivity,            l_thermal_diffusivity )
       ! u = (rho u) / rho
-      do i_dim = 1, nd
+      do i_dim = 1_SP, nd
          call wb_variable_list_add_dependency( sd%fl, l_mass_density,              l_velocities(i_dim) )
          call wb_variable_list_add_dependency( sd%fl, l_momentum_densities(i_dim), l_velocities(i_dim) )
       end do
@@ -565,7 +565,7 @@ contains
       call wb_variable_list_add_dependency( sd%fl, l_temperature,              l_speed_of_sound                   )
       call wb_variable_list_add_dependency( sd%fl, l_temperature,              l_thermal_conductivity             )
       if ( nc .gt. 1_SP ) then
-         do ic = 1, nc
+         do ic = 1_SP, nc
             call wb_variable_list_add_dependency( sd%fl, l_mass_fractions(ic), l_bulk_viscosity                    )
             call wb_variable_list_add_dependency( sd%fl, l_mass_fractions(ic), l_dynamic_viscosity                 )
             call wb_variable_list_add_dependency( sd%fl, l_mass_fractions(ic), l_pressure                          )
@@ -585,16 +585,16 @@ contains
       ! Set field indices (sequence indices) for minimal number of required
       ! fields.
       allocate( sd%l_coordinates(nd) )
-      do i_dim = 1, nd
+      do i_dim = 1_SP, nd
          sd%l_coordinates(i_dim) = wb_variable_list_sequence_index( sd%fl, l_coordinates(i_dim) )
       end do
       sd%l_mass_density = wb_variable_list_sequence_index( sd%fl, l_mass_density )
 
       ! Allocate fields.
       allocate( sd%fields( num_fields(sd), &
-                           (1-num_ghost_points(sd)):(num_points(sd,1_SP)+num_ghost_points(sd)), &
-                           (1-num_ghost_points(sd)):(num_points(sd,2_SP)+num_ghost_points(sd)), &
-                           (1-num_ghost_points(sd)):(num_points(sd,3_SP)+num_ghost_points(sd)) ) )
+                           (1_SP-num_ghost_points(sd)):(num_points(sd,1_SP)+num_ghost_points(sd)), &
+                           (1_SP-num_ghost_points(sd)):(num_points(sd,2_SP)+num_ghost_points(sd)), &
+                           (1_SP-num_ghost_points(sd)):(num_points(sd,3_SP)+num_ghost_points(sd)) ) )
 
       deallocate( l_amount_fractions,    &
                   l_coordinates,         &
