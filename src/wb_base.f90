@@ -590,6 +590,12 @@ contains
       end do
       sd%l_mass_density = wb_variable_list_sequence_index( sd%fl, l_mass_density )
 
+      ! Allocate fields.
+      allocate( sd%fields( num_fields(sd), &
+                           (1-num_ghost_points(sd)):(num_points(sd,1_SP)+num_ghost_points(sd)), &
+                           (1-num_ghost_points(sd)):(num_points(sd,2_SP)+num_ghost_points(sd)), &
+                           (1-num_ghost_points(sd)):(num_points(sd,3_SP)+num_ghost_points(sd)) ) )
+
       deallocate( l_amount_fractions,    &
                   l_coordinates,         &
                   l_jacobian_components, &
@@ -1240,6 +1246,7 @@ contains
 
       deallocate( sd%case_name,        &
                   sd%block_coords,     &
+                  sd%fields,           &
                   sd%neighbors,        &
                   sd%number_of_points, &
                   sd%l_coordinates     )
