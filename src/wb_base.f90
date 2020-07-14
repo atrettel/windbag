@@ -46,8 +46,6 @@ module wb_base
    integer(SP), public, parameter ::     LOWER_DIRECTION  = 1_SP
    integer(SP), public, parameter ::     UPPER_DIRECTION  = 2_SP
 
-   integer(SP), public, parameter :: NO_FIELD = 0_SP
-
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
    integer(SP), public, parameter ::     MIN_NUMBER_OF_GHOST_POINTS = 1_SP
 
