@@ -17,13 +17,19 @@ module wb_variables
 
    private
 
-   public WB_Variable_List, wb_variable_list_construct, &
-      wb_variable_list_destroy, wb_variable_list_total_required, &
-      wb_variable_list_min_required, &
-      write_graphviz_file, write_variable_list_information, &
-      wb_variable_list_add, wb_variable_list_mark_as_required, &
-      wb_variable_list_set_as_minimum, wb_variable_list_add_dependency, &
-      wb_variable_list_require, phase_rule, wb_variable_list_sequence_index
+   public phase_rule,                        &
+          wb_variable_list_add,              &
+          wb_variable_list_add_dependency,   &
+          wb_variable_list_construct,        &
+          wb_variable_list_destroy,          &
+          wb_variable_list_mark_as_required, &
+          wb_variable_list_min_required,     &
+          wb_variable_list_require,          &
+          wb_variable_list_sequence_index,   &
+          wb_variable_list_set_as_minimum,   &
+          wb_variable_list_total_required,   &
+          write_graphviz_file,               &
+          write_variable_list_information
 
    integer(SP), public, parameter :: NO_SEQUENCE_INDEX  = -1_SP
    integer(SP), public, parameter :: NUMBER_OF_PHASES   =  1_SP
