@@ -25,6 +25,7 @@ program windbag
    call find_mpi_precisions
    call find_input_file( filename )
    call wb_subdomain_construct( sd, filename )
+   call construct_conservative_variables( sd )
    call print_initial_information( sd )
    call wb_subdomain_destroy( sd )
    call mpi_finalize( ierr )

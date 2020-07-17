@@ -22,8 +22,11 @@ module wb_base
 
    private
 
-   public find_input_file, print_initial_information, wb_subdomain_construct, &
-      wb_subdomain_destroy
+   public construct_conservative_variables, &
+          find_input_file,                  &
+          print_initial_information,        &
+          wb_subdomain_construct,           &
+          wb_subdomain_destroy
 
    integer(MP), public, parameter :: BLOCK_LEADER = 0_MP
    integer(MP), public, parameter :: WORLD_LEADER = 0_MP
@@ -370,7 +373,7 @@ contains
       end do
    end subroutine check_points
 
-   subroutine construct_compressible_conservative_variables( sd )
+   subroutine construct_conservative_variables( sd )
       type(WB_Subdomain), intent(inout) :: sd
       integer(SP) :: nc, nd
       integer(SP) :: l_bulk_viscosity,                   &
@@ -600,7 +603,7 @@ contains
                   l_mass_fractions,      &
                   l_momentum_densities,  &
                   l_velocities           )
-   end subroutine construct_compressible_conservative_variables
+   end subroutine construct_conservative_variables
 
    subroutine decompose_domain( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
@@ -1234,8 +1237,6 @@ contains
          call wb_process_destroy( processes(world_rank) )
       end do
       deallocate( processes )
-
-      call construct_compressible_conservative_variables( sd )
    end subroutine wb_subdomain_construct_variables
 
    subroutine wb_subdomain_destroy( sd )
