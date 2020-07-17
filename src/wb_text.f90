@@ -17,8 +17,10 @@ module wb_text
 
    private
 
-   public write_blank_line, write_log_heading, write_table_entry, &
-      write_table_rule_entry
+   public write_blank_line,  &
+          write_log_heading, &
+          write_table_entry, &
+          write_table_rule_entry
 
    integer(SP), public, parameter ::      UNALIGNED = 0_SP
    integer(SP), public, parameter ::   LEFT_ALIGNED = 1_SP

@@ -18,8 +18,9 @@ module wb_representation
 
    private
 
-   public find_mpi_precisions, identify_integer_precision, &
-      identify_real_precision
+   public find_mpi_precisions,        &
+          identify_integer_precision, &
+          identify_real_precision
 
    integer, public, parameter       ::     FP = real64
    type(MPI_Datatype), public, save :: MPI_FP
