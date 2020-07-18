@@ -1375,7 +1375,7 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       logical :: is_world_leader
 
-      is_world_leader = sd%world_rank .eq. WORLD_LEADER
+      is_world_leader = wb_subdomain_world_rank(sd) .eq. WORLD_LEADER
    end function wb_subdomain_is_world_leader
 
    subroutine wb_subdomain_local_block( sd, local_block )
