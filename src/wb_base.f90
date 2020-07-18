@@ -688,8 +688,7 @@ contains
 
       do i_dim = 1_SP, num_dimensions(sd)
          sd%number_of_points(i_dim) = num_points_per_process(sd,i_dim)
-         if ( sd%block_coords(i_dim) .eq. &
-              wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
+         if ( wb_subdomain_is_block_end(sd,i_dim) ) then
             sd%number_of_points(i_dim) = sd%number_of_points(i_dim) +    &
                modulo(                                                   &
                   num_points( sd%local_block, i_dim ),                   &
@@ -1380,6 +1379,17 @@ contains
 
       number_of_ghost_points = sd%number_of_ghost_points
    end function wb_subdomain_ghost_points
+
+   function wb_subdomain_is_block_end( sd, i_dim ) result( is_block_end )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      logical :: is_block_end
+      type(WB_Block) :: local_block
+
+      call wb_subdomain_local_block( sd, local_block )
+      is_block_end = wb_subdomain_block_coord( sd, i_dim ) .eq. &
+         wb_block_processes( local_block, i_dim ) - 1_MP
+   end function wb_subdomain_is_block_end
 
    function wb_subdomain_is_block_leader( sd ) result( is_block_leader )
       type(WB_Subdomain), intent(in) :: sd
