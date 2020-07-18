@@ -147,6 +147,11 @@ module wb_base
       module procedure wb_block_points, wb_subdomain_points
    end interface num_points
 
+   interface num_points_per_process
+      module procedure wb_block_points_per_process, &
+         wb_subdomain_local_block_points_per_process
+   end interface num_points_per_process
+
    interface total_points
       module procedure wb_block_total_points, wb_subdomain_total_points
    end interface total_points
@@ -640,7 +645,7 @@ contains
       type(MPI_Comm) :: comm_split
       type(WB_Subdomain), intent(inout) :: sd
       type(WB_Block), dimension(:), allocatable, intent(in) :: blocks
-      type(WB_Process), dimension(:), allocatable, intent(out) :: processes
+      type(WB_Process), dimension(:), allocatable, intent(inout) :: processes
       integer(SP), dimension(:), allocatable :: block_nx, block_assignments, &
          block_neighbors_l, block_neighbors_u
       integer(MP), dimension(:), allocatable :: block_np
@@ -682,8 +687,7 @@ contains
          num_dimensions_mp(sd), sd%block_coords, ierr )
 
       do i_dim = 1_SP, num_dimensions(sd)
-         sd%number_of_points(i_dim) = &
-            wb_block_points_per_process( sd%local_block, i_dim )
+         sd%number_of_points(i_dim) = num_points_per_process(sd,i_dim)
          if ( sd%block_coords(i_dim) .eq. &
               wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%number_of_points(i_dim) = sd%number_of_points(i_dim) +    &
@@ -694,7 +698,6 @@ contains
          end if
       end do
 
-      allocate( processes(0_MP:wb_subdomain_world_size(sd)-1_MP) )
       do world_rank = 0_MP, wb_subdomain_world_size(sd)-1_MP
          if ( world_rank .eq. wb_subdomain_world_rank(sd) ) then
             call wb_process_construct( processes(world_rank), &
@@ -1315,7 +1318,8 @@ contains
 
       allocate( sd%number_of_points(num_dimensions(sd)), &
                     sd%block_coords(num_dimensions(sd)), &
-                       sd%neighbors(num_dimensions(sd),NUMBER_OF_DIRECTIONS) )
+                       sd%neighbors(num_dimensions(sd),NUMBER_OF_DIRECTIONS), &
+                processes(0_MP:wb_subdomain_world_size(sd)-1_MP) )
 
       call decompose_domain( sd, blocks, processes )
       call check_points( sd )
@@ -1397,6 +1401,17 @@ contains
 
       local_block = sd%local_block
    end subroutine wb_subdomain_local_block
+
+   function wb_subdomain_local_block_points_per_process( sd, i_dim ) &
+      result( points_per_process )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      type(WB_Block) :: local_block
+      integer(SP) :: points_per_process
+
+      call wb_subdomain_local_block( sd, local_block )
+      points_per_process = wb_block_points_per_process( local_block, i_dim )
+   end function wb_subdomain_local_block_points_per_process
 
    function wb_subdomain_min_fields( sd ) result( min_number_of_fields )
       type(WB_Subdomain), intent(in) :: sd
