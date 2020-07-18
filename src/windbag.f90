@@ -26,6 +26,7 @@ program windbag
    call find_input_file( filename )
    call wb_subdomain_construct( sd, filename )
    call construct_conservative_variables( sd )
+   call construct_grids( sd, filename )
    call print_initial_information( sd )
    call wb_subdomain_destroy( sd )
    call mpi_finalize( ierr )

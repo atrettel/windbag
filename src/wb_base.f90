@@ -23,6 +23,7 @@ module wb_base
    private
 
    public construct_conservative_variables, &
+          construct_grids,                  &
           find_input_file,                  &
           print_initial_information,        &
           wb_subdomain_construct,           &
@@ -51,6 +52,10 @@ module wb_base
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
    integer(SP), public, parameter ::     MIN_NUMBER_OF_GHOST_POINTS = 1_SP
+
+   integer(FP), public, parameter :: DEFAULT_LENGTH = 1.0_FP
+
+   integer(FP), public, parameter :: DEFAULT_ORIGIN = 0.0_FP
 
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
@@ -605,6 +610,30 @@ contains
                   l_velocities           )
    end subroutine construct_conservative_variables
 
+   subroutine construct_grids( sd, filename )
+      type(WB_Subdomain), intent(inout) :: sd
+      character(len=STRING_LENGTH), intent(in) :: filename
+      real(SP), dimension(:), allocatable :: origin, lengths
+      integer(MP) :: ierr
+      integer(SP) :: block_number
+
+      allocate( origin(num_dimensions(sd)), &
+               lengths(num_dimensions(sd)) )
+      call read_cuboid_grid_namelists( filename, sd, origin, lengths )
+
+      do block_number = 1_SP, num_blocks(sd)
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+         if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
+            wb_subdomain_is_block_leader(sd) ) then
+            print *, block_number
+            print *, origin
+            print *, lengths
+         end if
+      end do
+
+      deallocate( origin, lengths )
+   end subroutine construct_grids
+
    subroutine decompose_domain( sd, blocks, processes )
       integer(MP) :: ierr, world_rank
       integer(SP) :: i_dim
@@ -864,6 +893,52 @@ contains
                   lower_neighbors,     &
                   upper_neighbors )
    end subroutine read_block_namelists
+
+   subroutine read_cuboid_grid_namelists( filename, sd, origin_out, lengths_out )
+      character(len=STRING_LENGTH), intent(in) :: filename
+      type(WB_Subdomain), intent(in) :: sd
+      real(FP), dimension(:), allocatable, intent(out) :: origin_out, &
+         lengths_out
+      integer :: file_unit
+      integer(SP) :: block_number, loop_block_number
+      integer(MP) :: ierr
+      real(FP), dimension(:), allocatable :: origin, lengths
+      namelist /cuboid_grid/ block_number, origin, lengths
+
+      allocate( origin(num_dimensions(sd)), &
+               lengths(num_dimensions(sd)) )
+
+      if ( wb_subdomain_is_world_leader(sd) ) then
+         open( newunit=file_unit, file=filename, form="formatted", &
+            action="read" )
+      end if
+      do loop_block_number = 1_SP, num_blocks(sd)
+         block_number = DEFAULT_BLOCK_NUMBER
+         origin(:)    = DEFAULT_ORIGIN
+         lengths(:)   = DEFAULT_LENGTH
+
+         if ( wb_subdomain_is_world_leader(sd) ) then
+            read( unit=file_unit, nml=cuboid_grid )
+         end if
+
+         call mpi_bcast( block_number, 1_MP, MPI_SP, WORLD_LEADER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( origin, num_dimensions_mp(sd), MPI_FP, WORLD_LEADER, &
+            MPI_COMM_WORLD, ierr )
+         call mpi_bcast( lengths, num_dimensions_mp(sd), MPI_FP, &
+            WORLD_LEADER, MPI_COMM_WORLD, ierr )
+
+         if ( block_number .eq. wb_subdomain_block_number(sd) ) then
+            origin_out  = origin
+            lengths_out = lengths
+         end if
+      end do
+      if ( wb_subdomain_is_world_leader(sd) ) then
+         close( unit=file_unit )
+      end if
+
+      deallocate( origin, lengths )
+   end subroutine read_cuboid_grid_namelists
 
    subroutine read_general_namelist( filename, case_name, number_of_blocks, &
       number_of_components, number_of_dimensions, number_of_ghost_points, &
