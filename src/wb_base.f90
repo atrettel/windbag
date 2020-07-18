@@ -689,11 +689,8 @@ contains
       do i_dim = 1_SP, num_dimensions(sd)
          sd%number_of_points(i_dim) = num_points_per_process(sd,i_dim)
          if ( wb_subdomain_is_block_end(sd,i_dim) ) then
-            sd%number_of_points(i_dim) = sd%number_of_points(i_dim) +    &
-               modulo(                                                   &
-                  num_points( sd%local_block, i_dim ),                   &
-                  int( wb_block_processes( sd%local_block, i_dim ), SP ) &
-               )
+            sd%number_of_points(i_dim) = sd%number_of_points(i_dim) + &
+               wb_subdomain_local_block_remainder( sd, i_dim )
          end if
       end do
 
@@ -1452,6 +1449,19 @@ contains
          points = sd%number_of_points(i_dim)
       end if
    end function wb_subdomain_points
+
+   function wb_subdomain_local_block_remainder( sd, i_dim ) result( remainder )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      type(WB_Block) :: local_block
+      integer(SP) :: remainder
+
+      call wb_subdomain_local_block( sd, local_block )
+      remainder = modulo(                                    &
+         num_points( local_block, i_dim ),                   &
+         int( wb_block_processes( local_block, i_dim ), SP ) &
+      )
+   end function wb_subdomain_local_block_remainder
 
    function wb_subdomain_total_blocks( sd ) result( total_blocks )
       type(WB_Subdomain), intent(in) :: sd
