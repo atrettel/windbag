@@ -682,9 +682,8 @@ contains
          num_dimensions_mp(sd), sd%block_coords, ierr )
 
       do i_dim = 1_SP, num_dimensions(sd)
-         sd%number_of_points(i_dim) =             &
-            num_points( sd%local_block, i_dim ) / &
-            int( wb_block_processes( sd%local_block, i_dim ), SP )
+         sd%number_of_points(i_dim) = &
+            wb_block_points_per_process( sd%local_block, i_dim )
          if ( sd%block_coords(i_dim) .eq. &
               wb_block_processes( sd%local_block, i_dim ) - 1_MP ) then
             sd%number_of_points(i_dim) = sd%number_of_points(i_dim) +    &
@@ -1072,6 +1071,16 @@ contains
 
       number_of_points = blk%number_of_points(i_dim)
    end function wb_block_points
+
+   function wb_block_points_per_process( blk, i_dim ) &
+      result( points_per_process )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: points_per_process
+
+      points_per_process = &
+         num_points(blk,i_dim) / int(wb_block_processes(blk,i_dim),SP)
+   end function wb_block_points_per_process
 
    subroutine wb_block_points_vector( blk, number_of_points )
       type(WB_Block), intent(in) :: blk
