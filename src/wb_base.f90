@@ -921,6 +921,10 @@ contains
             read( unit=file_unit, nml=cuboid_grid )
          end if
 
+         ! TODO: I realize that this implementation uses much more
+         ! communication than necessary.  It works well provided the number of
+         ! blocks is small (which should be the case).  A better implementation
+         ! would send the information to the correct block directly.
          call mpi_bcast( block_number, 1_MP, MPI_SP, WORLD_LEADER, &
             MPI_COMM_WORLD, ierr )
          call mpi_bcast( origin, num_dimensions_mp(sd), MPI_FP, WORLD_LEADER, &
