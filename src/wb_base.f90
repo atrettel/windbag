@@ -14,8 +14,9 @@
 module wb_base
    use iso_fortran_env
    use mpi_f08
-   use wb_representation
    use wb_exit
+   use wb_grids
+   use wb_representation
    use wb_text
    use wb_variables
    implicit none
@@ -620,11 +621,32 @@ contains
       character(len=STRING_LENGTH), intent(in) :: filename
       real(SP), dimension(:), allocatable :: origin, lengths
       integer(MP) :: ierr
-      integer(SP) :: block_number, i_dim
+      integer(SP) :: block_number, i_dim, ix, iy, iz, j
 
       allocate( origin(num_dimensions(sd)), &
                lengths(num_dimensions(sd)) )
       call read_cuboid_grid_namelists( filename, sd, origin, lengths )
+
+      do iz = 1_SP, num_points(sd,3_SP)
+         do iy = 1_SP, num_points(sd,2_SP)
+            do ix = 1_SP, num_points(sd,1_SP)
+               do i_dim = 1_SP, num_dimensions(sd)
+                  if (      i_dim .eq. 1_SP ) then
+                     j = ix
+                  else if ( i_dim .eq. 2_SP ) then
+                     j = iy
+                  else if ( i_dim .eq. 3_SP ) then
+                     j = iz
+                  end if
+                  call wb_subdomain_set_field_point( sd,                    &
+                     wb_subdomain_coordinate_field_index(sd,i_dim),         &
+                     ix, iy, iz,                                            &
+                     uniform_grid( wb_subdomain_comp_coord( sd, i_dim, j ), &
+                        origin(i_dim), lengths(i_dim) ) )
+               end do
+            end do
+         end do
+      end do
 
       do block_number = 1_SP, num_blocks(sd)
          call mpi_barrier( MPI_COMM_WORLD, ierr )
@@ -1267,6 +1289,14 @@ contains
       number_of_components = sd%number_of_components
    end function wb_subdomain_components
 
+   function wb_subdomain_coordinate_field_index( sd, i_dim ) result( l )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: l
+
+      l = sd%l_coordinates(i_dim)
+   end function wb_subdomain_coordinate_field_index
+
    subroutine wb_subdomain_construct_namelist( sd, filename )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -1496,6 +1526,14 @@ contains
          int( wb_block_processes( local_block, i_dim ), SP ) &
       )
    end function wb_subdomain_local_block_remainder
+
+   subroutine wb_subdomain_set_field_point( sd, l, i, j, k, f )
+      type(WB_Subdomain), intent(inout) :: sd
+      integer(SP), intent(in) :: l, i, j, k
+      real(FP), intent(in) :: f
+
+      sd%fields(l,i,j,k) = f
+   end subroutine wb_subdomain_set_field_point
 
    function wb_subdomain_total_blocks( sd ) result( total_blocks )
       type(WB_Subdomain), intent(in) :: sd
