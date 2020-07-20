@@ -17,7 +17,7 @@ FFLAGS=-std=f2008 -nocpp -fimplicit-none -Wall -O2 -fmax-errors=1
 
 project=windbag
 
-OBJ = wb_representation.o wb_exit.o wb_text.o wb_variables.o wb_base.o
+OBJ = wb_representation.o wb_exit.o wb_grids.o wb_text.o wb_variables.o wb_base.o
 
 $(project): $(project).f90 $(OBJ)
 	$(FC) $(FFLAGS) $^ -o $@
