@@ -45,7 +45,8 @@ module wb_text
 
    interface write_table_entry
       module procedure write_table_entry_character, &
-         write_table_entry_integer, write_table_entry_logical
+         write_table_entry_integer, write_table_entry_logical, &
+         write_table_entry_real
    end interface write_table_entry
 contains
    subroutine write_log_heading( f, title, level )
@@ -135,6 +136,21 @@ contains
          end if
       end if
    end subroutine write_table_entry_logical
+
+   subroutine write_table_entry_real( f, entry, width, end_row )
+      integer, intent(in) :: f
+      real(FP), intent(in) :: entry
+      integer(SP), intent(in) :: width
+      logical, optional, intent(in) :: end_row
+      character(len=STRING_LENGTH) :: write_fmt
+
+      write (write_fmt,"(A, I2.1, A, I2.1, A)") "(A, E", width, ".", &
+         width-2_SP, ", A)"
+      write (f, write_fmt, advance="no") "| ", entry, " "
+      if ( present(end_row) .and. end_row .eqv. .true. ) then
+         write (f, "(A)", advance="yes") "|"
+      end if
+   end subroutine write_table_entry_real
 
    subroutine write_table_rule_entry( f, width, alignment, end_row )
       integer, intent(in) :: f

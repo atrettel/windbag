@@ -620,8 +620,7 @@ contains
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
       real(SP), dimension(:), allocatable :: origin, lengths
-      integer(MP) :: ierr
-      integer(SP) :: block_number, i_dim, ix, iy, iz, j
+      integer(SP) :: i_dim, ix, iy, iz, j
 
       allocate( origin(num_dimensions(sd)), &
                lengths(num_dimensions(sd)) )
@@ -643,28 +642,11 @@ contains
                      ix, iy, iz,                                            &
                      uniform_grid( wb_subdomain_comp_coord( sd, i_dim, j ), &
                         origin(i_dim), lengths(i_dim) ) )
+                  call wb_subdomain_set_field_point( sd, sd%l_mass_density, &
+                     ix, iy, iz, 1.0_FP )
                end do
             end do
          end do
-      end do
-
-      do i_dim = 1_SP, num_dimensions(sd)
-         print *, "World min", i_dim, wb_subdomain_field_world_min( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
-         print *, "World max", i_dim, wb_subdomain_field_world_max( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
-      end do
-
-      do block_number = 1_SP, num_blocks(sd)
-         call mpi_barrier( MPI_COMM_WORLD, ierr )
-         if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
-            wb_subdomain_is_block_leader(sd) ) then
-            print *, block_number
-            print *, origin
-            print *, lengths
-            do i_dim = 1_SP, num_dimensions(sd)
-               print *, i_dim, 1_SP, wb_subdomain_comp_coord( sd, i_dim, 1_SP )
-               print *, i_dim, num_points(sd,i_dim), wb_subdomain_comp_coord( sd, i_dim, num_points(sd,i_dim) )
-            end do
-         end if
       end do
 
       deallocate( origin, lengths )
@@ -844,6 +826,7 @@ contains
       call write_block_information(       output_unit, sd )
       call write_subdomain_information(   output_unit, sd )
       call write_subdomain_neighbors(     output_unit, sd )
+      call write_field_information(       output_unit, sd )
    end subroutine print_initial_information
 
    subroutine read_block_namelists( filename, number_of_blocks, &
@@ -1421,6 +1404,31 @@ contains
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
+   function wb_subdomain_fields( sd ) result( number_of_fields )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: number_of_fields
+
+      number_of_fields = wb_variable_list_total_required(sd%fl)
+   end function wb_subdomain_fields
+
+   subroutine wb_subdomain_field_name( sd, sequence_index, variable_name )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: sequence_index
+      character(len=STRING_LENGTH), intent(out) :: variable_name
+
+      call wb_variable_list_variable_name( sd%fl, &
+         wb_subdomain_field_variable_id( sd, sequence_index ), variable_name )
+   end subroutine wb_subdomain_field_name
+
+   function wb_subdomain_field_variable_id( sd, sequence_index ) &
+      result( variable_id )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: sequence_index
+      integer(SP) :: variable_id
+
+      variable_id = wb_variable_list_variable_id( sd%fl, sequence_index )
+   end function wb_subdomain_field_variable_id
+
    function wb_subdomain_field_world_max( sd, l ) result( world_max )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: l
@@ -1456,13 +1464,6 @@ contains
       call mpi_allreduce( local_min, world_min, 1_MP, MPI_FP, MPI_MIN, &
          MPI_COMM_WORLD, ierr )
    end function wb_subdomain_field_world_min
-
-   function wb_subdomain_fields( sd ) result( number_of_fields )
-      type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: number_of_fields
-
-      number_of_fields = wb_variable_list_total_required(sd%fl)
-   end function wb_subdomain_fields
 
    function wb_subdomain_ghost_points( sd ) result( number_of_ghost_points )
       type(WB_Subdomain), intent(in) :: sd
@@ -1757,6 +1758,56 @@ contains
          call write_blank_line( f )
       end if
    end subroutine write_environment_information
+
+   subroutine write_field_information( f, sd )
+      integer, intent(in) :: f
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: field_number, variable_id
+      character(len=STRING_LENGTH) :: field_name
+      real(SP) :: minimum_value, maximum_value
+      integer(MP) :: ierr
+
+      if ( wb_subdomain_is_world_leader(sd) ) then
+         call write_log_heading( f, "Field information", level=2_SP )
+         call write_table_entry( f, "Field no.",   VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, "Variable ID", VARIABLE_COLUMN_WIDTH )
+         call write_table_entry( f, "Name",            NAME_COLUMN_WIDTH )
+         call write_table_entry( f, "Minimum",        VALUE_COLUMN_WIDTH )
+         call write_table_entry( f, "Maximum",        VALUE_COLUMN_WIDTH, &
+            end_row=.true. )
+         call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
+         call write_table_rule_entry( f, VARIABLE_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
+         call write_table_rule_entry( f, NAME_COLUMN_WIDTH, &
+            alignment=LEFT_ALIGNED )
+         call write_table_rule_entry( f, VALUE_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED )
+         call write_table_rule_entry( f, VALUE_COLUMN_WIDTH, &
+            alignment=RIGHT_ALIGNED, end_row=.true. )
+      end if
+
+      do field_number = 1_SP, num_fields(sd)
+         variable_id = wb_subdomain_field_variable_id( sd, field_number )
+         call wb_subdomain_field_name( sd, field_number, field_name )
+         minimum_value = wb_subdomain_field_world_min( sd, field_number )
+         maximum_value = wb_subdomain_field_world_max( sd, field_number )
+
+         if ( wb_subdomain_is_world_leader(sd) ) then
+            call write_table_entry( f, field_number, VARIABLE_COLUMN_WIDTH )
+            call write_table_entry( f, variable_id,  VARIABLE_COLUMN_WIDTH )
+            call write_table_entry( f, field_name,       NAME_COLUMN_WIDTH )
+            call write_table_entry( f, minimum_value,   VALUE_COLUMN_WIDTH )
+            call write_table_entry( f, maximum_value,   VALUE_COLUMN_WIDTH, &
+               end_row=.true. )
+         end if
+      end do
+
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      if ( wb_subdomain_is_world_leader(sd) ) then
+         call write_blank_line( f )
+      end if
+   end subroutine write_field_information
 
    subroutine write_subdomain_information( f, sd )
       integer, intent(in) :: f

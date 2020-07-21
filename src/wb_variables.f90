@@ -28,6 +28,8 @@ module wb_variables
           wb_variable_list_sequence_index,   &
           wb_variable_list_set_as_minimum,   &
           wb_variable_list_total_required,   &
+          wb_variable_list_variable_id,      &
+          wb_variable_list_variable_name,    &
           write_graphviz_file,               &
           write_variable_list_information
 
