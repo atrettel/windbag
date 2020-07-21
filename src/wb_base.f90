@@ -649,6 +649,7 @@ contains
       end do
 
       do i_dim = 1_SP, num_dimensions(sd)
+         print *, "World min", i_dim, wb_subdomain_field_world_min( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
          print *, "World max", i_dim, wb_subdomain_field_world_max( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
       end do
 
@@ -1437,6 +1438,24 @@ contains
       call mpi_allreduce( local_max, world_max, 1_MP, MPI_FP, MPI_MAX, &
          MPI_COMM_WORLD, ierr )
    end function wb_subdomain_field_world_max
+
+   function wb_subdomain_field_world_min( sd, l ) result( world_min )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: l
+      real(FP) :: world_min, local_min
+      integer(MP) :: ierr
+
+      local_min = minval(             &
+         sd%fields(                   &
+            l,                        &
+            1_SP:num_points(sd,1_SP), &
+            1_SP:num_points(sd,2_SP), &
+            1_SP:num_points(sd,3_SP)  &
+      ) )
+
+      call mpi_allreduce( local_min, world_min, 1_MP, MPI_FP, MPI_MIN, &
+         MPI_COMM_WORLD, ierr )
+   end function wb_subdomain_field_world_min
 
    function wb_subdomain_fields( sd ) result( number_of_fields )
       type(WB_Subdomain), intent(in) :: sd
