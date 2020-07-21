@@ -144,8 +144,8 @@ contains
       logical, optional, intent(in) :: end_row
       character(len=STRING_LENGTH) :: write_fmt
 
-      write (write_fmt,"(A, I2.1, A, I2.1, A)") "(A, E", width, ".", &
-         width-2_SP, ", A)"
+      write (write_fmt,"(A, I2.1, A, I2.1, A)") "(A, ES", width, ".", &
+         width-7_SP, "E2, A)"
       write (f, write_fmt, advance="no") "| ", entry, " "
       if ( present(end_row) .and. end_row .eqv. .true. ) then
          write (f, "(A)", advance="yes") "|"
