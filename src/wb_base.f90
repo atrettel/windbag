@@ -649,6 +649,10 @@ contains
          end do
       end do
 
+      do i_dim = 1_SP, num_dimensions(sd)
+         call save_field( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
+      end do
+
       deallocate( origin, lengths )
    end subroutine construct_grids
 
@@ -998,6 +1002,72 @@ contains
       call mpi_bcast( number_of_temporary_fields, 1_MP, MPI_SP, WORLD_LEADER, &
          MPI_COMM_WORLD, ierr )
    end subroutine read_general_namelist
+
+   subroutine save_field( sd, field_number )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: field_number
+      type(WB_Block) :: local_block
+      real(FP), dimension(:,:,:), allocatable :: field
+      character(len=STRING_LENGTH) :: filename
+      integer(SP) :: ix, iy, iz
+      integer(MP) :: ierr
+      integer :: field_unit
+
+      call wb_subdomain_local_block( sd, local_block )
+
+      ! Allocate aray.
+      if ( wb_subdomain_is_block_leader(sd) ) then
+         allocate( field( num_points( local_block, 1_SP ), &
+                          num_points( local_block, 2_SP ), &
+                          num_points( local_block, 3_SP ) ) )
+         field(:,:,:) = 0.0_FP
+      end if
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+
+      ! Combine subprocessed into a single array.
+      !if ( wb_subdomain_is_block_leader(sd) ) then
+      !   ! Leader
+      !   !
+      !   ! Save your information to array.
+      !   !
+      !   ! Iterate over all workers (except self).  Collect information from
+      !   ! workers (allocate a second temporary array for this purpose on each
+      !   ! iteration).
+      !else
+      !   ! Worker
+      !   !
+      !   ! Send information to leader.
+      !end if
+
+      ! Save array
+      if ( wb_subdomain_is_block_leader(sd) ) then
+         write ( filename, "(A, I1, A)" ) "windbag-field-", field_number, ".bin"
+
+         open(                  &
+            newunit=field_unit, &
+            file=filename,      &
+            access="stream",    &
+            action="write"      &
+         )
+
+         do iz = 1, num_points( local_block, 3_SP )
+            do iy = 1, num_points( local_block, 2_SP )
+               do ix = 1, num_points( local_block, 1_SP )
+                  write( unit=field_unit ) field(ix,iy,iz)
+               end do
+            end do
+         end do
+
+         close( unit=field_unit )
+      end if
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+
+      ! Deallocate array.
+      if ( wb_subdomain_is_block_leader(sd) ) then
+         deallocate( field )
+      end if
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+   end subroutine save_field
 
    function wb_block_number( blk ) result( block_number )
       type(WB_Block), intent(in) :: blk
