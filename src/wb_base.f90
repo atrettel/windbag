@@ -648,6 +648,10 @@ contains
          end do
       end do
 
+      do i_dim = 1_SP, num_dimensions(sd)
+         print *, "World max", i_dim, wb_subdomain_field_world_max( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
+      end do
+
       do block_number = 1_SP, num_blocks(sd)
          call mpi_barrier( MPI_COMM_WORLD, ierr )
          if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
@@ -1415,6 +1419,24 @@ contains
 
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
+
+   function wb_subdomain_field_world_max( sd, l ) result( world_max )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: l
+      real(FP) :: world_max, local_max
+      integer(MP) :: ierr
+
+      local_max = maxval(             &
+         sd%fields(                   &
+            l,                        &
+            1_SP:num_points(sd,1_SP), &
+            1_SP:num_points(sd,2_SP), &
+            1_SP:num_points(sd,3_SP)  &
+      ) )
+
+      call mpi_allreduce( local_max, world_max, 1_MP, MPI_FP, MPI_MAX, &
+         MPI_COMM_WORLD, ierr )
+   end function wb_subdomain_field_world_max
 
    function wb_subdomain_fields( sd ) result( number_of_fields )
       type(WB_Subdomain), intent(in) :: sd
