@@ -1026,6 +1026,7 @@ contains
 
       !! Combine subprocesses into a single array.
       !if ( wb_subdomain_is_block_leader(sd) ) then
+      !   ! Leader
       !   do block_rank = 0_MP, wb_block_size(local_block)
       !      ! Get size of subdomain.
       !      !
@@ -1041,6 +1042,20 @@ contains
       !   ! Worker
       !   !
       !   ! Send information to leader.
+      !   !
+      !   ! The point here is to ensure that as little as possible gets
+      !   ! recalculated by the leader.  If a worker has the information, make
+      !   ! them calculate it and then send it, especially since they have
+      !   ! access to information that the leader does not.  This also prevents
+      !   ! errors by ensuring that there is only one way to calculate things,
+      !   ! rather than competing implementations.
+      !   !
+      !   ! - Start and end blocks in terms of block indices
+      !   !   - This is easily calculated by each worker using the
+      !   !     wb_subdomain_block_index function.
+      !   ! - Number of points in each direction
+      !   ! - Field data itself (the entire field to prevent issues)
+      !   then
       !end if
 
       ! Save array
