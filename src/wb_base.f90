@@ -1024,15 +1024,19 @@ contains
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
 
-      ! Combine subprocessed into a single array.
+      !! Combine subprocesses into a single array.
       !if ( wb_subdomain_is_block_leader(sd) ) then
-      !   ! Leader
-      !   !
-      !   ! Save your information to array.
-      !   !
-      !   ! Iterate over all workers (except self).  Collect information from
-      !   ! workers (allocate a second temporary array for this purpose on each
-      !   ! iteration).
+      !   do block_rank = 0_MP, wb_block_size(local_block)
+      !      ! Get size of subdomain.
+      !      !
+      !      ! Calculate location in field array.
+      !      if ( block_rank .eq. BLOCK_LEADER ) then
+      !         ! Save your local information to the field array.
+      !      else
+      !         ! Receive information from subprocess block_rank.  Save this
+      !         ! information to the field array.
+      !      end
+      !   end do
       !else
       !   ! Worker
       !   !
