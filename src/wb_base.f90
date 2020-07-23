@@ -1007,16 +1007,30 @@ contains
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: field_number
       type(WB_Block) :: local_block
-      real(FP), dimension(:,:,:), allocatable :: field
+      real(FP), dimension(:,:,:), allocatable :: field, field_slice
       character(len=STRING_LENGTH) :: filename
-      integer(SP) :: ix, iy, iz
-      integer(MP) :: ierr
+      integer(SP) :: ix, iy, iz, i_dim, nd
+      integer(MP) :: block_rank, ierr
       integer :: field_unit
+      integer(SP), dimension(:), allocatable :: start_indices, &
+         end_indices, start_indices_tmp, number_of_points,  &
+         end_indices_tmp, number_of_points_tmp
+      type(MPI_Comm) :: comm_block
 
+      ! tmp variables should perhaps be called slice variables instead.
+
+      nd = 3_SP
+      call wb_subdomain_block_communicator( sd, comm_block )
       call wb_subdomain_local_block( sd, local_block )
 
-      ! Allocate aray.
+      ! Allocation
+      allocate( start_indices(nd), &
+                  end_indices(nd), &
+             number_of_points(nd)  )
       if ( wb_subdomain_is_block_leader(sd) ) then
+         allocate( start_indices_tmp(nd), &
+                     end_indices_tmp(nd), &
+                number_of_points_tmp(nd)  )
          allocate( field( num_points( local_block, 1_SP ), &
                           num_points( local_block, 2_SP ), &
                           num_points( local_block, 3_SP ) ) )
@@ -1024,39 +1038,90 @@ contains
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
 
-      !! Combine subprocesses into a single array.
-      !if ( wb_subdomain_is_block_leader(sd) ) then
-      !   ! Leader
-      !   do block_rank = 0_MP, wb_block_size(local_block)
-      !      ! Get size of subdomain.
-      !      !
-      !      ! Calculate location in field array.
-      !      if ( block_rank .eq. BLOCK_LEADER ) then
-      !         ! Save your local information to the field array.
-      !      else
-      !         ! Receive information from subprocess block_rank.  Save this
-      !         ! information to the field array.
-      !      end
-      !   end do
-      !else
-      !   ! Worker
-      !   !
-      !   ! Send information to leader.
-      !   !
-      !   ! The point here is to ensure that as little as possible gets
-      !   ! recalculated by the leader.  If a worker has the information, make
-      !   ! them calculate it and then send it, especially since they have
-      !   ! access to information that the leader does not.  This also prevents
-      !   ! errors by ensuring that there is only one way to calculate things,
-      !   ! rather than competing implementations.
-      !   !
-      !   ! - Start and end blocks in terms of block indices
-      !   !   - This is easily calculated by each worker using the
-      !   !     wb_subdomain_block_index function.
-      !   ! - Number of points in each direction
-      !   ! - Field data itself (the entire field to prevent issues)
-      !   then
-      !end if
+      ! Calculate starting and ending indices and number of points.
+      do i_dim = 1_SP, nd
+         number_of_points(i_dim) = num_points(sd,i_dim)
+         start_indices(i_dim)    = wb_subdomain_block_index( sd, i_dim, 1_SP )
+         end_indices(i_dim)      = wb_subdomain_block_index( sd, i_dim, num_points(sd,i_dim) )
+      end do
+
+      ! Combine subprocesses into a single array.
+      if ( wb_subdomain_is_block_leader(sd) ) then
+         ! Leader
+         do block_rank = 0_MP, wb_block_size(local_block)-1_MP
+            if ( block_rank .eq. BLOCK_LEADER ) then
+               ! Save your local information to the field array.
+               field( start_indices(1_SP):end_indices(1_SP),         &
+                      start_indices(2_SP):end_indices(2_SP),         &
+                      start_indices(3_SP):end_indices(3_SP) ) =      &
+                  sd%fields( field_number, 1_SP:number_of_points(1_SP), &
+                                           1_SP:number_of_points(2_SP), &
+                                           1_SP:number_of_points(3_SP)  )
+            else
+               ! Receive information from subprocess block_rank.  Save this
+               ! information to the field array.
+               call mpi_recv( number_of_points_tmp, int(nd,MP), MPI_SP, &
+                  block_rank, 1_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+               call mpi_recv( start_indices_tmp, int(nd,MP), MPI_SP, &
+                  block_rank, 2_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+               call mpi_recv( end_indices_tmp, int(nd,MP), MPI_SP, &
+                  block_rank, 3_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+
+               allocate( field_slice( 1_SP:number_of_points_tmp(1_SP),  &
+                                      1_SP:number_of_points_tmp(2_SP),  &
+                                      1_SP:number_of_points_tmp(3_SP) ) )
+
+               call mpi_recv( field_slice,                                   &
+                  int(product(number_of_points_tmp),MP), MPI_FP, block_rank, &
+                  4_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+
+               field( start_indices_tmp(1_SP):end_indices_tmp(1_SP),    &
+                      start_indices_tmp(2_SP):end_indices_tmp(2_SP),    &
+                      start_indices_tmp(3_SP):end_indices_tmp(3_SP) ) = &
+                      field_slice(:,:,:)
+
+               deallocate( field_slice )
+            end if
+         end do
+      else
+         ! Worker
+         !
+         ! Send information to leader.
+         !
+         ! The point here is to ensure that as little as possible gets
+         ! recalculated by the leader.  If a worker has the information, make
+         ! them calculate it and then send it, especially since they have
+         ! access to information that the leader does not.  This also prevents
+         ! errors by ensuring that there is only one way to calculate things,
+         ! rather than competing implementations.
+         !
+         ! - Start and end indices in terms of block indices
+         !   - This is easily calculated by each worker using the
+         !     wb_subdomain_block_index function.
+         ! - Number of points in each direction
+         ! - Field data itself (the entire field to prevent issues)
+         !   - First, copy this field to a temporary array to prevent array
+         !     slicing issues.  Then do an MPI send on that.
+         call mpi_send( number_of_points, int(nd,MP), MPI_SP, BLOCK_LEADER, &
+            1_MP, comm_block, ierr )
+         call mpi_send( start_indices, int(nd,MP), MPI_SP, BLOCK_LEADER, &
+            2_MP, comm_block, ierr )
+         call mpi_send( end_indices, int(nd,MP), MPI_SP, BLOCK_LEADER, &
+            3_MP, comm_block, ierr )
+
+         allocate( field_slice( 1_SP:number_of_points(1_SP),  &
+                                1_SP:number_of_points(2_SP),  &
+                                1_SP:number_of_points(3_SP) ) )
+
+         field_slice(:,:,:) = sd%fields( field_number, 1_SP:number_of_points(1_SP), &
+                                                       1_SP:number_of_points(2_SP), &
+                                                       1_SP:number_of_points(3_SP)  )
+
+         call mpi_send( field_slice, int(product(number_of_points),MP), MPI_FP, &
+            BLOCK_LEADER, 4_MP, comm_block, ierr )
+
+         deallocate( field_slice )
+      end if
 
       ! Save array
       if ( wb_subdomain_is_block_leader(sd) ) then
@@ -1081,8 +1146,14 @@ contains
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
 
-      ! Deallocate array.
+      ! Deallocation
+      deallocate( start_indices, &
+                    end_indices, &
+               number_of_points  )
       if ( wb_subdomain_is_block_leader(sd) ) then
+         deallocate( start_indices_tmp, &
+                       end_indices_tmp, &
+                  number_of_points_tmp  )
          deallocate( field )
       end if
       call mpi_barrier( MPI_COMM_WORLD, ierr )
