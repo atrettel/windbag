@@ -1513,12 +1513,12 @@ contains
    end function wb_subdomain_components
 
    function wb_subdomain_coordinate_field_index( sd, i_dim ) &
-   result( l )
+   result( field_index )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
-      integer(SP) :: l
+      integer(SP) :: field_index
 
-      l = sd%l_coordinates(i_dim)
+      field_index = sd%l_coordinates(i_dim)
    end function wb_subdomain_coordinate_field_index
 
    subroutine wb_subdomain_construct_namelist( sd, filename )
