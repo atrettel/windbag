@@ -19,7 +19,8 @@ module wb_grids
 
    public uniform_grid
 contains
-   function uniform_grid( xc, xp0, lx ) result( xp )
+   function uniform_grid( xc, xp0, lx ) &
+   result( xp )
       real(FP), intent(in) :: xc, xp0, lx
       real(FP) :: xp
 

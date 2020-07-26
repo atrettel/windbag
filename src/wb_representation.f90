@@ -68,7 +68,8 @@ contains
       call mpi_type_match_size( MPI_TYPECLASS_INTEGER, mpi_size, MPI_MP, ierr )
    end subroutine find_mpi_precisions
 
-   function identify_integer_precision_fortran( vp ) result( string )
+   function identify_integer_precision_fortran( vp ) &
+   result( string )
       integer, intent(in) :: vp
       character(len=STRING_LENGTH) :: string
 
@@ -81,7 +82,8 @@ contains
       end if
    end function identify_integer_precision_fortran
 
-   function identify_integer_precision_mpi( datatype ) result( string )
+   function identify_integer_precision_mpi( datatype ) &
+   result( string )
       type(MPI_Datatype), intent(in) :: datatype
       character(len=STRING_LENGTH) :: string
 
@@ -96,7 +98,8 @@ contains
       end if
    end function identify_integer_precision_mpi
 
-   function identify_real_precision_fortran( vp ) result( string )
+   function identify_real_precision_fortran( vp ) &
+   result( string )
       integer, intent(in) :: vp
       character(len=STRING_LENGTH) :: string
 
@@ -109,7 +112,8 @@ contains
       end if
    end function identify_real_precision_fortran
 
-   function identify_real_precision_mpi( datatype ) result( string )
+   function identify_real_precision_mpi( datatype ) &
+   result( string )
       type(MPI_Datatype), intent(in) :: datatype
       character(len=STRING_LENGTH) :: string
 

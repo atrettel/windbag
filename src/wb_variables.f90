@@ -55,7 +55,7 @@ module wb_variables
    end interface
 contains
    pure function phase_rule( number_of_components, number_of_phases ) &
-      result( degrees_of_freedom )
+   result( degrees_of_freedom )
       integer(SP), intent(in) :: number_of_components, number_of_phases
       integer(SP) :: degrees_of_freedom
 
@@ -159,7 +159,7 @@ contains
    end subroutine wb_variable_list_destroy
 
    function wb_variable_list_is_dependent( vl, source_id, target_id ) &
-      result( is_dependent )
+   result( is_dependent )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: source_id, target_id
       logical :: is_dependent
@@ -168,7 +168,7 @@ contains
    end function wb_variable_list_is_dependent
 
    function wb_variable_list_is_required( vl, variable_id ) &
-      result( is_required )
+   result( is_required )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: variable_id
       logical :: is_required
@@ -177,7 +177,7 @@ contains
    end function wb_variable_list_is_required
 
    function wb_variable_list_is_unrequired( vl, variable_id ) &
-      result( is_unrequired )
+   result( is_unrequired )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: variable_id
       logical :: is_unrequired
@@ -197,21 +197,24 @@ contains
       end if
    end subroutine wb_variable_list_mark_as_required
 
-   function wb_variable_list_max_variables( vl ) result( max_number_of_variables )
+   function wb_variable_list_max_variables( vl ) &
+   result( max_number_of_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: max_number_of_variables
 
       max_number_of_variables = vl%max_number_of_variables
    end function wb_variable_list_max_variables
 
-   function wb_variable_list_min_required( vl ) result( min_required )
+   function wb_variable_list_min_required( vl ) &
+   result( min_required )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: min_required
 
       min_required = vl%min_number_of_required_variables
    end function wb_variable_list_min_required
 
-   function wb_variable_list_total_variables( vl ) result( total_variables )
+   function wb_variable_list_total_variables( vl ) &
+   result( total_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: total_variables
 
@@ -219,7 +222,7 @@ contains
    end function wb_variable_list_total_variables
 
    function wb_variable_list_sequence_index( vl, variable_id ) &
-      result( sequence_index )
+   result( sequence_index )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: variable_id
       integer(SP) :: sequence_index, loop_sequence_index
@@ -234,7 +237,7 @@ contains
    end function wb_variable_list_sequence_index
 
    function wb_variable_list_variable_id( vl, sequence_index ) &
-      result( variable_id )
+   result( variable_id )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP), intent(in) :: sequence_index
       integer(SP) :: variable_id
@@ -261,7 +264,7 @@ contains
    end subroutine wb_variable_list_require
 
    function wb_variable_list_total_required( vl ) &
-      result( number_of_required_variables )
+   result( number_of_required_variables )
       type(WB_Variable_List), intent(in) :: vl
       integer(SP) :: number_of_required_variables
 
