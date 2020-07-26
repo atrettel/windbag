@@ -242,7 +242,12 @@ contains
       integer(SP), intent(in) :: sequence_index
       integer(SP) :: variable_id
 
-      variable_id = vl%order_of_evaluation(sequence_index)
+      if ( sequence_index .lt. 1_SP .or. &
+           sequence_index .gt. wb_variable_list_total_required(vl) ) then
+         variable_id = UNUSED_VARIABLE_ID
+      else
+         variable_id = vl%order_of_evaluation(sequence_index)
+      end if
    end function wb_variable_list_variable_id
 
    recursive subroutine wb_variable_list_require( vl, target_id )
