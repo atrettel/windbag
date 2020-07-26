@@ -54,10 +54,6 @@ module wb_base
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_GHOST_POINTS = 3_SP
    integer(SP), public, parameter ::     MIN_NUMBER_OF_GHOST_POINTS = 1_SP
 
-   integer(FP), public, parameter :: DEFAULT_LENGTH = 1.0_FP
-
-   integer(FP), public, parameter :: DEFAULT_ORIGIN = 0.0_FP
-
    integer(SP), public, parameter :: DEFAULT_NUMBER_OF_POINTS = 0_SP
 
    integer(MP), public, parameter :: DEFAULT_NUMBER_OF_PROCESSES = 0_MP
@@ -619,12 +615,16 @@ contains
    subroutine construct_grids( sd, filename )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
-      real(SP), dimension(:), allocatable :: origin, lengths
+      real(SP), dimension(:), allocatable :: origin, lengths,        &
+         minimum_derivative_locations, maximum_derivative_locations, &
+         uniformities
       integer(SP) :: i_dim, ix, iy, iz, j
 
       allocate( origin(num_dimensions(sd)), &
                lengths(num_dimensions(sd)) )
-      call read_cuboid_grid_namelists( filename, sd, origin, lengths )
+      call read_cuboid_grid_namelists( filename, sd, origin, lengths, &
+         minimum_derivative_locations, maximum_derivative_locations,  &
+         uniformities )
 
       do iz = 1_SP, num_points(sd,3_SP)
          do iy = 1_SP, num_points(sd,2_SP)
@@ -644,9 +644,9 @@ contains
                         wb_subdomain_comp_coord( sd, i_dim, j ), &
                         origin(i_dim),                           &
                         lengths(i_dim),                          &
-                        0.0_FP,                                  &
-                        0.5_FP,                                  &
-                        0.0_FP ) )
+                        minimum_derivative_locations(i_dim),     &
+                        maximum_derivative_locations(i_dim),     &
+                        uniformities(i_dim) ) )
                   call wb_subdomain_set_field_point( sd, sd%l_mass_density, &
                      ix, iy, iz, 1.0_FP )
                end do
@@ -658,7 +658,11 @@ contains
          call save_field( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
       end do
 
-      deallocate( origin, lengths )
+      deallocate(              origin, &
+                              lengths, &
+         minimum_derivative_locations, &
+         maximum_derivative_locations, &
+                         uniformities )
    end subroutine construct_grids
 
    subroutine decompose_domain( sd, blocks, processes )
@@ -915,28 +919,41 @@ contains
                   upper_neighbors )
    end subroutine read_block_namelists
 
-   subroutine read_cuboid_grid_namelists( filename, sd, origin_out, lengths_out )
+   subroutine read_cuboid_grid_namelists( filename, sd, origin_out, &
+      lengths_out, minimum_derivative_locations_out,                &
+      maximum_derivative_locations_out, uniformities_out )
       character(len=STRING_LENGTH), intent(in) :: filename
       type(WB_Subdomain), intent(in) :: sd
       real(FP), dimension(:), allocatable, intent(out) :: origin_out, &
-         lengths_out
+         lengths_out, minimum_derivative_locations_out,               &
+         maximum_derivative_locations_out, uniformities_out
       integer :: file_unit
       integer(SP) :: block_number, loop_block_number
       integer(MP) :: ierr
-      real(FP), dimension(:), allocatable :: origin, lengths
-      namelist /cuboid_grid/ block_number, origin, lengths
+      real(FP), dimension(:), allocatable :: origin, lengths,        &
+         minimum_derivative_locations, maximum_derivative_locations, &
+         uniformities
+      namelist /cuboid_grid/ block_number, origin, lengths,          &
+         minimum_derivative_locations, maximum_derivative_locations, &
+         uniformities
 
-      allocate( origin(num_dimensions(sd)), &
-               lengths(num_dimensions(sd)) )
+      allocate(                origin(num_dimensions(sd)), &
+                              lengths(num_dimensions(sd)), &
+         minimum_derivative_locations(num_dimensions(sd)), &
+         maximum_derivative_locations(num_dimensions(sd)), &
+                         uniformities(num_dimensions(sd))  )
 
       if ( wb_subdomain_is_world_leader(sd) ) then
          open( newunit=file_unit, file=filename, form="formatted", &
             action="read" )
       end if
       do loop_block_number = 1_SP, num_blocks(sd)
-         block_number = DEFAULT_BLOCK_NUMBER
-         origin(:)    = DEFAULT_ORIGIN
-         lengths(:)   = DEFAULT_LENGTH
+         block_number                    = DEFAULT_BLOCK_NUMBER
+         origin(:)                       = DEFAULT_ORIGIN
+         lengths(:)                      = DEFAULT_LENGTH
+         minimum_derivative_locations(:) = DEFAULT_LOCATION
+         maximum_derivative_locations(:) = 1.0_FP - DEFAULT_LOCATION
+         uniformities(:)                 = DEFAULT_UNIFORMITY
 
          if ( wb_subdomain_is_world_leader(sd) ) then
             read( unit=file_unit, nml=cuboid_grid )
@@ -952,17 +969,30 @@ contains
             MPI_COMM_WORLD, ierr )
          call mpi_bcast( lengths, num_dimensions_mp(sd), MPI_FP, &
             WORLD_LEADER, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( minimum_derivative_locations, num_dimensions_mp(sd), &
+            MPI_FP, WORLD_LEADER, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( maximum_derivative_locations, num_dimensions_mp(sd), &
+            MPI_FP, WORLD_LEADER, MPI_COMM_WORLD, ierr )
+         call mpi_bcast( uniformities, num_dimensions_mp(sd), MPI_FP, &
+            WORLD_LEADER, MPI_COMM_WORLD, ierr )
 
          if ( block_number .eq. wb_subdomain_block_number(sd) ) then
-            origin_out  = origin
-            lengths_out = lengths
+            origin_out                       = origin
+            lengths_out                      = lengths
+            minimum_derivative_locations_out = minimum_derivative_locations
+            maximum_derivative_locations_out = maximum_derivative_locations
+            uniformities_out                 = uniformities
          end if
       end do
       if ( wb_subdomain_is_world_leader(sd) ) then
          close( unit=file_unit )
       end if
 
-      deallocate( origin, lengths )
+      deallocate(              origin, &
+                              lengths, &
+         minimum_derivative_locations, &
+         maximum_derivative_locations, &
+                         uniformities )
    end subroutine read_cuboid_grid_namelists
 
    subroutine read_general_namelist( filename, case_name, number_of_blocks, &

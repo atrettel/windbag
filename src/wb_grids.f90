@@ -17,6 +17,11 @@ module wb_grids
 
    private
 
+   integer(FP), public, parameter :: DEFAULT_LENGTH     = 1.0_FP
+   integer(FP), public, parameter :: DEFAULT_LOCATION   = 0.0_FP
+   integer(FP), public, parameter :: DEFAULT_ORIGIN     = 0.0_FP
+   integer(FP), public, parameter :: DEFAULT_UNIFORMITY = 1.0_FP
+
    public uniform_grid, polynomial_stretched_grid
 contains
    function uniform_grid( xc, xp0, lx ) &
