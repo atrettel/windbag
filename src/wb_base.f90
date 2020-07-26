@@ -640,8 +640,13 @@ contains
                   call wb_subdomain_set_field_point( sd,                    &
                      wb_subdomain_coordinate_field_index(sd,i_dim),         &
                      ix, iy, iz,                                            &
-                     uniform_grid( wb_subdomain_comp_coord( sd, i_dim, j ), &
-                        origin(i_dim), lengths(i_dim) ) )
+                     polynomial_stretched_grid(                  &
+                        wb_subdomain_comp_coord( sd, i_dim, j ), &
+                        origin(i_dim),                           &
+                        lengths(i_dim),                          &
+                        0.0_FP,                                  &
+                        0.5_FP,                                  &
+                        0.0_FP ) )
                   call wb_subdomain_set_field_point( sd, sd%l_mass_density, &
                      ix, iy, iz, 1.0_FP )
                end do
