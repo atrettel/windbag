@@ -1174,7 +1174,7 @@ contains
 
       ! Save array
       if ( wb_subdomain_is_block_leader(sd) ) then
-         write ( filename, "(A, I1, A)" ) "windbag-field-", field_number, ".bin"
+         call wb_subdomain_field_filename( sd, field_number, filename )
 
          open(                  &
             newunit=field_unit, &
@@ -1630,6 +1630,21 @@ contains
 
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
+
+   subroutine wb_subdomain_field_filename( sd, field_number, filename )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: field_number
+      character(len=STRING_LENGTH), intent(out) :: filename
+      character(len=:), allocatable :: case_name
+
+      call wb_subdomain_case_name( sd, case_name )
+
+      write ( filename, "(A, A, I0.2, A, I0.2, A)" )                     &
+         case_name, "-block-", wb_subdomain_block_number(sd), "-field-", &
+         field_number, ".bin"
+
+      deallocate( case_name )
+   end subroutine wb_subdomain_field_filename
 
    function wb_subdomain_fields( sd ) &
    result( number_of_fields )
