@@ -43,6 +43,10 @@ module wb_text
    integer(SP), public, parameter ::        VALUE_COLUMN_WIDTH = 20_SP
    integer(SP), public, parameter ::     VARIABLE_COLUMN_WIDTH = 15_SP
 
+   ! The term end_row in write_table_entry is somewhat confusing.  It is the
+   ! "end column" but it also "ends the row", which is why I called it that
+   ! originally.  I kept it as as end_row since it is shorter than end_column
+   ! and end is a reserved word.
    interface write_table_entry
       module procedure write_table_entry_character, &
          write_table_entry_integer, write_table_entry_logical, &
