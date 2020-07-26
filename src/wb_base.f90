@@ -1009,7 +1009,7 @@ contains
       type(WB_Block) :: local_block
       real(FP), dimension(:,:,:), allocatable :: field, field_slice
       character(len=STRING_LENGTH) :: filename
-      integer(SP) :: ix, iy, iz, i_dim, nd
+      integer(SP) :: ix, iy, iz, i_dim, nd, nx_block, ny_block, nz_block
       integer(MP) :: block_rank, ierr
       integer :: field_unit
       integer(SP), dimension(:), allocatable :: start_indices, &
@@ -1026,16 +1026,21 @@ contains
       ! Allocation
       allocate( start_indices(nd), &
                   end_indices(nd), &
-             number_of_points(nd)  )
+             number_of_points(nd), &
+            start_indices_tmp(nd), &
+              end_indices_tmp(nd), &
+         number_of_points_tmp(nd)  )
+
+      nx_block = 0_SP
+      ny_block = 0_SP
+      nz_block = 0_SP
       if ( wb_subdomain_is_block_leader(sd) ) then
-         allocate( start_indices_tmp(nd), &
-                     end_indices_tmp(nd), &
-                number_of_points_tmp(nd)  )
-         allocate( field( num_points( local_block, 1_SP ), &
-                          num_points( local_block, 2_SP ), &
-                          num_points( local_block, 3_SP ) ) )
-         field(:,:,:) = 0.0_FP
+         nx_block = num_points( local_block, 1_SP )
+         ny_block = num_points( local_block, 2_SP )
+         nz_block = num_points( local_block, 3_SP )
       end if
+
+      allocate( field( nx_block, ny_block, nz_block ) )
       call mpi_barrier( MPI_COMM_WORLD, ierr )
 
       ! Calculate starting and ending indices and number of points.
@@ -1149,13 +1154,11 @@ contains
       ! Deallocation
       deallocate( start_indices, &
                     end_indices, &
-               number_of_points  )
-      if ( wb_subdomain_is_block_leader(sd) ) then
-         deallocate( start_indices_tmp, &
-                       end_indices_tmp, &
-                  number_of_points_tmp  )
-         deallocate( field )
-      end if
+               number_of_points, &
+              start_indices_tmp, &
+                end_indices_tmp, &
+           number_of_points_tmp  )
+      deallocate( field )
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine save_field
 
