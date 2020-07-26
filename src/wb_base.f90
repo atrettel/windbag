@@ -1162,7 +1162,8 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine save_field
 
-   function wb_block_number( blk ) result( block_number )
+   function wb_block_number( blk ) &
+   result( block_number )
       type(WB_Block), intent(in) :: blk
       integer(SP) :: block_number
 
@@ -1201,14 +1202,16 @@ contains
                   blk%number_of_processes )
    end subroutine wb_block_destroy
 
-   function wb_block_dimensions( blk ) result( number_of_dimensions )
+   function wb_block_dimensions( blk ) &
+   result( number_of_dimensions )
       type(WB_Block), intent(in) :: blk
       integer(SP) :: number_of_dimensions
 
       number_of_dimensions = blk%number_of_dimensions
    end function wb_block_dimensions
 
-   function wb_block_neighbor( blk, i_dim, i_dir ) result( neighbor )
+   function wb_block_neighbor( blk, i_dim, i_dir ) &
+   result( neighbor )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim, i_dir
       integer(SP) :: neighbor
@@ -1240,7 +1243,8 @@ contains
       end do
    end subroutine wb_block_periods_vector
 
-   function wb_block_points( blk, i_dim ) result( number_of_points )
+   function wb_block_points( blk, i_dim ) &
+   result( number_of_points )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
       integer(SP) :: number_of_points
@@ -1249,7 +1253,7 @@ contains
    end function wb_block_points
 
    function wb_block_points_per_process( blk, i_dim ) &
-      result( points_per_process )
+   result( points_per_process )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
       integer(SP) :: points_per_process
@@ -1265,7 +1269,8 @@ contains
       number_of_points = blk%number_of_points
    end subroutine wb_block_points_vector
 
-   function wb_block_processes( blk, i_dim ) result( number_of_processes )
+   function wb_block_processes( blk, i_dim ) &
+   result( number_of_processes )
       type(WB_Block), intent(in) :: blk
       integer(SP), intent(in) :: i_dim
       integer(MP) :: number_of_processes
@@ -1281,35 +1286,40 @@ contains
       number_of_processes = blk%number_of_processes
    end subroutine wb_block_processes_vector
 
-   function wb_block_reorder( blk ) result( reorder )
+   function wb_block_reorder( blk ) &
+   result( reorder )
       type(WB_Block), intent(in) :: blk
       logical :: reorder
 
       reorder = blk%reorder
    end function wb_block_reorder
 
-   function wb_block_size( blk ) result( block_size )
+   function wb_block_size( blk ) &
+   result( block_size )
       type(WB_Block), intent(in) :: blk
       integer(MP) :: block_size
 
       block_size = product(blk%number_of_processes)
    end function wb_block_size
 
-   function wb_block_total_points( blk ) result( points_in_block )
+   function wb_block_total_points( blk ) &
+   result( points_in_block )
       type(WB_Block), intent(in) :: blk
       integer(SP) :: points_in_block
 
       points_in_block = product(blk%number_of_points)
    end function wb_block_total_points
 
-   function wb_process_block_number( process ) result( block_number )
+   function wb_process_block_number( process ) &
+   result( block_number )
       type(WB_Process), intent(in) :: process
       integer(SP) :: block_number
 
       block_number = process%block_number
    end function wb_process_block_number
 
-   function wb_process_block_rank( process ) result( block_rank )
+   function wb_process_block_rank( process ) &
+   result( block_rank )
       type(WB_Process), intent(in) :: process
       integer(MP) :: block_rank
 
@@ -1371,7 +1381,8 @@ contains
       comm_block = sd%comm_block
    end subroutine wb_subdomain_block_communicator
 
-   function wb_subdomain_block_coord( sd, i_dim ) result( block_coord )
+   function wb_subdomain_block_coord( sd, i_dim ) &
+   result( block_coord )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: i_dim
       integer(MP) :: block_coord
@@ -1386,7 +1397,8 @@ contains
       block_coords = sd%block_coords
    end subroutine wb_subdomain_block_coords_vector
 
-   function wb_subdomain_block_index( sd, i_dim, i_proc ) result( i_blk )
+   function wb_subdomain_block_index( sd, i_dim, i_proc ) &
+   result( i_blk )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim, i_proc
       integer(SP) :: i_blk
@@ -1395,21 +1407,24 @@ contains
          num_points_per_process(sd,i_dim) + i_proc
    end function wb_subdomain_block_index
 
-   function wb_subdomain_block_number( sd ) result( block_number )
+   function wb_subdomain_block_number( sd ) &
+   result( block_number )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: block_number
 
       block_number = sd%block_number
    end function wb_subdomain_block_number
 
-   function wb_subdomain_block_number_mp( sd ) result( block_number )
+   function wb_subdomain_block_number_mp( sd ) &
+   result( block_number )
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: block_number
 
       block_number = int(wb_subdomain_block_number(sd),MP)
    end function wb_subdomain_block_number_mp
 
-   function wb_subdomain_block_rank( sd ) result( block_rank )
+   function wb_subdomain_block_rank( sd ) &
+   result( block_rank )
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: block_rank
 
@@ -1424,7 +1439,7 @@ contains
    end subroutine wb_subdomain_case_name
 
    function wb_subdomain_comp_coord( sd, i_dim, i_proc ) &
-      result( comp_coord )
+   result( comp_coord )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim, i_proc
       real(FP) :: comp_coord
@@ -1433,14 +1448,16 @@ contains
          real(wb_subdomain_local_block_points(sd,i_dim)-1_SP)
    end function wb_subdomain_comp_coord
 
-   function wb_subdomain_components( sd ) result( number_of_components )
+   function wb_subdomain_components( sd ) &
+   result( number_of_components )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_components
 
       number_of_components = sd%number_of_components
    end function wb_subdomain_components
 
-   function wb_subdomain_coordinate_field_index( sd, i_dim ) result( l )
+   function wb_subdomain_coordinate_field_index( sd, i_dim ) &
+   result( l )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       integer(SP) :: l
@@ -1546,28 +1563,32 @@ contains
       call wb_variable_list_destroy( sd%fl )
    end subroutine wb_subdomain_destroy
 
-   function wb_subdomain_dimensions( sd ) result( number_of_dimensions )
+   function wb_subdomain_dimensions( sd ) &
+   result( number_of_dimensions )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_dimensions
 
       number_of_dimensions = sd%number_of_dimensions
    end function wb_subdomain_dimensions
 
-   function wb_subdomain_dimensions_mp( sd ) result( number_of_dimensions )
+   function wb_subdomain_dimensions_mp( sd ) &
+   result( number_of_dimensions )
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: number_of_dimensions
 
       number_of_dimensions = int(wb_subdomain_dimensions(sd),MP)
    end function wb_subdomain_dimensions_mp
 
-   function wb_subdomain_faces( sd ) result( number_of_faces )
+   function wb_subdomain_faces( sd ) &
+   result( number_of_faces )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_faces
 
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
-   function wb_subdomain_fields( sd ) result( number_of_fields )
+   function wb_subdomain_fields( sd ) &
+   result( number_of_fields )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_fields
 
@@ -1584,7 +1605,7 @@ contains
    end subroutine wb_subdomain_field_name
 
    function wb_subdomain_field_variable_id( sd, sequence_index ) &
-      result( variable_id )
+   result( variable_id )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: sequence_index
       integer(SP) :: variable_id
@@ -1592,7 +1613,8 @@ contains
       variable_id = wb_variable_list_variable_id( sd%fl, sequence_index )
    end function wb_subdomain_field_variable_id
 
-   function wb_subdomain_field_world_max( sd, l ) result( world_max )
+   function wb_subdomain_field_world_max( sd, l ) &
+   result( world_max )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: l
       real(FP) :: world_max, local_max
@@ -1610,7 +1632,8 @@ contains
          MPI_COMM_WORLD, ierr )
    end function wb_subdomain_field_world_max
 
-   function wb_subdomain_field_world_min( sd, l ) result( world_min )
+   function wb_subdomain_field_world_min( sd, l ) &
+   result( world_min )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: l
       real(FP) :: world_min, local_min
@@ -1628,14 +1651,16 @@ contains
          MPI_COMM_WORLD, ierr )
    end function wb_subdomain_field_world_min
 
-   function wb_subdomain_ghost_points( sd ) result( number_of_ghost_points )
+   function wb_subdomain_ghost_points( sd ) &
+   result( number_of_ghost_points )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_ghost_points
 
       number_of_ghost_points = sd%number_of_ghost_points
    end function wb_subdomain_ghost_points
 
-   function wb_subdomain_is_block_end( sd, i_dim ) result( is_block_end )
+   function wb_subdomain_is_block_end( sd, i_dim ) &
+   result( is_block_end )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       logical :: is_block_end
@@ -1646,14 +1671,16 @@ contains
          wb_block_processes( local_block, i_dim ) - 1_MP
    end function wb_subdomain_is_block_end
 
-   function wb_subdomain_is_block_leader( sd ) result( is_block_leader )
+   function wb_subdomain_is_block_leader( sd ) &
+   result( is_block_leader )
       type(WB_Subdomain), intent(in) :: sd
       logical :: is_block_leader
 
       is_block_leader = sd%block_rank .eq. BLOCK_LEADER
    end function wb_subdomain_is_block_leader
 
-   function wb_subdomain_is_world_leader( sd ) result( is_world_leader )
+   function wb_subdomain_is_world_leader( sd ) &
+   result( is_world_leader )
       type(WB_Subdomain), intent(in) :: sd
       logical :: is_world_leader
 
@@ -1668,7 +1695,7 @@ contains
    end subroutine wb_subdomain_local_block
 
    function wb_subdomain_local_block_points( sd, i_dim ) &
-      result( points )
+   result( points )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       type(WB_Block) :: local_block
@@ -1679,7 +1706,7 @@ contains
    end function wb_subdomain_local_block_points
 
    function wb_subdomain_local_block_points_per_process( sd, i_dim ) &
-      result( points_per_process )
+   result( points_per_process )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       type(WB_Block) :: local_block
@@ -1689,14 +1716,16 @@ contains
       points_per_process = wb_block_points_per_process( local_block, i_dim )
    end function wb_subdomain_local_block_points_per_process
 
-   function wb_subdomain_min_fields( sd ) result( min_number_of_fields )
+   function wb_subdomain_min_fields( sd ) &
+   result( min_number_of_fields )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: min_number_of_fields
 
       min_number_of_fields = wb_variable_list_min_required(sd%fl)
    end function wb_subdomain_min_fields
 
-   function wb_subdomain_neighbor( sd, i_dim, i_dir ) result( neighbor )
+   function wb_subdomain_neighbor( sd, i_dim, i_dir ) &
+   result( neighbor )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim, i_dir
       integer(MP) :: neighbor
@@ -1704,7 +1733,8 @@ contains
       neighbor = sd%neighbors(i_dim,i_dir)
    end function wb_subdomain_neighbor
 
-   function wb_subdomain_points( sd, i_dim ) result( points )
+   function wb_subdomain_points( sd, i_dim ) &
+   result( points )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       integer(SP) :: points
@@ -1719,7 +1749,8 @@ contains
       end if
    end function wb_subdomain_points
 
-   function wb_subdomain_local_block_remainder( sd, i_dim ) result( remainder )
+   function wb_subdomain_local_block_remainder( sd, i_dim ) &
+   result( remainder )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
       type(WB_Block) :: local_block
@@ -1740,7 +1771,8 @@ contains
       sd%fields(l,i,j,k) = f
    end subroutine wb_subdomain_set_field_point
 
-   function wb_subdomain_total_blocks( sd ) result( total_blocks )
+   function wb_subdomain_total_blocks( sd ) &
+   result( total_blocks )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: total_blocks
 
@@ -1748,28 +1780,31 @@ contains
    end function wb_subdomain_total_blocks
 
    function wb_subdomain_temporary_fields( sd ) &
-      result( number_of_temporary_fields )
+   result( number_of_temporary_fields )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: number_of_temporary_fields
 
       number_of_temporary_fields = sd%number_of_temporary_fields
    end function wb_subdomain_temporary_fields
 
-   function wb_subdomain_total_points( sd ) result( points_in_subdomain )
+   function wb_subdomain_total_points( sd ) &
+   result( points_in_subdomain )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP) :: points_in_subdomain
 
       points_in_subdomain = product(sd%number_of_points)
    end function wb_subdomain_total_points
 
-   function wb_subdomain_world_rank( sd ) result( world_rank )
+   function wb_subdomain_world_rank( sd ) &
+   result( world_rank )
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: world_rank
 
       world_rank = sd%world_rank
    end function wb_subdomain_world_rank
 
-   function wb_subdomain_world_size( sd ) result( world_size )
+   function wb_subdomain_world_size( sd ) &
+   result( world_size )
       type(WB_Subdomain), intent(in) :: sd
       integer(MP) :: world_size
 
