@@ -1010,7 +1010,8 @@ contains
       real(FP), dimension(:,:,:), allocatable :: field, field_slice
       character(len=STRING_LENGTH) :: filename
       integer(SP) :: ix, iy, iz, i_dim, nd, nx_block, ny_block, nz_block
-      integer(MP) :: block_rank, ierr
+      integer(MP) :: block_rank, ierr, number_of_points_tag, &
+         start_indices_tag, end_indices_tag, field_slice_tag
       integer :: field_unit
       integer(SP), dimension(:), allocatable :: start_indices, &
          end_indices, start_indices_tmp, number_of_points,  &
@@ -1018,6 +1019,11 @@ contains
       type(MPI_Comm) :: comm_block
 
       ! tmp variables should perhaps be called slice variables instead.
+
+      number_of_points_tag = 1_MP
+      start_indices_tag    = 2_MP
+      end_indices_tag      = 3_MP
+      field_slice_tag      = 4_MP
 
       nd = 3_SP
       call wb_subdomain_block_communicator( sd, comm_block )
@@ -1066,11 +1072,14 @@ contains
                ! Receive information from subprocess block_rank.  Save this
                ! information to the field array.
                call mpi_recv( number_of_points_tmp, int(nd,MP), MPI_SP, &
-                  block_rank, 1_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+                  block_rank, number_of_points_tag, comm_block,         &
+                  MPI_STATUS_IGNORE, ierr )
                call mpi_recv( start_indices_tmp, int(nd,MP), MPI_SP, &
-                  block_rank, 2_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+                  block_rank, start_indices_tag, comm_block,         &
+                  MPI_STATUS_IGNORE, ierr )
                call mpi_recv( end_indices_tmp, int(nd,MP), MPI_SP, &
-                  block_rank, 3_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+                  block_rank, end_indices_tag, comm_block,         &
+                  MPI_STATUS_IGNORE, ierr )
 
                allocate( field_slice( 1_SP:number_of_points_tmp(1_SP),  &
                                       1_SP:number_of_points_tmp(2_SP),  &
@@ -1078,7 +1087,7 @@ contains
 
                call mpi_recv( field_slice,                                   &
                   int(product(number_of_points_tmp),MP), MPI_FP, block_rank, &
-                  4_MP, comm_block, MPI_STATUS_IGNORE, ierr )
+                  field_slice_tag, comm_block, MPI_STATUS_IGNORE, ierr )
 
                field( start_indices_tmp(1_SP):end_indices_tmp(1_SP),    &
                       start_indices_tmp(2_SP):end_indices_tmp(2_SP),    &
@@ -1108,11 +1117,11 @@ contains
          !   - First, copy this field to a temporary array to prevent array
          !     slicing issues.  Then do an MPI send on that.
          call mpi_send( number_of_points, int(nd,MP), MPI_SP, BLOCK_LEADER, &
-            1_MP, comm_block, ierr )
+            number_of_points_tag, comm_block, ierr )
          call mpi_send( start_indices, int(nd,MP), MPI_SP, BLOCK_LEADER, &
-            2_MP, comm_block, ierr )
+            start_indices_tag, comm_block, ierr )
          call mpi_send( end_indices, int(nd,MP), MPI_SP, BLOCK_LEADER, &
-            3_MP, comm_block, ierr )
+            end_indices_tag, comm_block, ierr )
 
          allocate( field_slice( 1_SP:number_of_points(1_SP),  &
                                 1_SP:number_of_points(2_SP),  &
@@ -1123,7 +1132,7 @@ contains
                                                        1_SP:number_of_points(3_SP)  )
 
          call mpi_send( field_slice, int(product(number_of_points),MP), MPI_FP, &
-            BLOCK_LEADER, 4_MP, comm_block, ierr )
+            BLOCK_LEADER, field_slice_tag, comm_block, ierr )
 
          deallocate( field_slice )
       end if
