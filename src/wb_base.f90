@@ -1293,7 +1293,11 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(SP) :: number_of_points
 
-      number_of_points = blk%number_of_points(i_dim)
+      if ( i_dim .gt. num_dimensions(blk) ) then
+         number_of_points = 1_SP
+      else
+         number_of_points = blk%number_of_points(i_dim)
+      end if
    end function wb_block_points
 
    function wb_block_points_per_process( blk, i_dim ) &
@@ -1319,7 +1323,11 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(MP) :: number_of_processes
 
-      number_of_processes = blk%number_of_processes(i_dim)
+      if ( i_dim .gt. num_dimensions(blk) ) then
+         number_of_processes = 1_MP
+      else
+         number_of_processes = blk%number_of_processes(i_dim)
+      end if
    end function wb_block_processes
 
    subroutine wb_block_processes_vector( blk, number_of_processes )
@@ -1431,7 +1439,11 @@ contains
       integer(SP) :: i_dim
       integer(MP) :: block_coord
 
-      block_coord = sd%block_coords(i_dim)
+      if ( i_dim .gt. num_dimensions(sd) ) then
+         block_coord = 0_MP
+      else
+         block_coord = sd%block_coords(i_dim)
+      end if
    end function wb_subdomain_block_coord
 
    subroutine wb_subdomain_block_coords_vector( sd, block_coords )
@@ -1441,14 +1453,14 @@ contains
       block_coords = sd%block_coords
    end subroutine wb_subdomain_block_coords_vector
 
-   function wb_subdomain_block_index( sd, i_dim, i_proc ) &
-   result( i_blk )
+   function wb_subdomain_block_index( sd, i_dim, index_in_process ) &
+   result( index_in_block )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP), intent(in) :: i_dim, i_proc
-      integer(SP) :: i_blk
+      integer(SP), intent(in) :: i_dim, index_in_process
+      integer(SP) :: index_in_block
 
-      i_blk = wb_subdomain_block_coord(sd,i_dim) * &
-         num_points_per_process(sd,i_dim) + i_proc
+      index_in_block = wb_subdomain_block_coord(sd,i_dim) * &
+         num_points_per_process(sd,i_dim) + index_in_process
    end function wb_subdomain_block_index
 
    function wb_subdomain_block_number( sd ) &
