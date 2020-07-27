@@ -630,7 +630,7 @@ contains
       real(SP), dimension(:), allocatable :: origin, lengths,        &
          minimum_derivative_locations, maximum_derivative_locations, &
          uniformities
-      integer(SP) :: i_dim, ix, iy, iz, j
+      integer(SP) :: i_dim, ix, iy, iz, j, field_number
 
       allocate( origin(num_dimensions(sd)), &
                lengths(num_dimensions(sd)) )
@@ -666,8 +666,8 @@ contains
          end do
       end do
 
-      do i_dim = 1_SP, num_dimensions(sd)
-         call save_field( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
+      do field_number = 1_SP, num_fields(sd)
+         call save_field( sd, field_number )
       end do
 
       call write_xdmf_file( sd )
