@@ -658,6 +658,8 @@ contains
          call save_field( sd, wb_subdomain_coordinate_field_index(sd,i_dim) )
       end do
 
+      call write_xdmf_file( sd )
+
       deallocate(              origin, &
                               lengths, &
          minimum_derivative_locations, &
@@ -1643,6 +1645,8 @@ contains
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
+   ! TODO: This function is repeated in write_xdmf_file.  Perhaps I should
+   ! refactor this to just accept mroe basic arguments to work in both cases.
    subroutine wb_subdomain_field_filename( sd, field_number, filename )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: field_number
@@ -2279,4 +2283,108 @@ contains
 
       deallocate( case_name )
    end subroutine write_scalar_variables
+
+   subroutine write_xdmf_file( sd )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP) :: block_number, i_dim, j_dim
+      integer(MP) :: ierr
+      integer :: xdmf_unit
+      character(len=:), allocatable :: case_name
+      character(len=STRING_LENGTH) :: filename
+      integer(SP), dimension(:), allocatable :: number_of_points
+      type(WB_Block) :: local_block
+
+      call wb_subdomain_case_name( sd, case_name )
+      write ( filename, "(A, A)" ) case_name, ".xmf"
+
+      allocate( number_of_points(num_dimensions(sd)) )
+      call wb_subdomain_local_block( sd, local_block )
+
+      if ( wb_subdomain_is_world_leader(sd) ) then
+         open( newunit=xdmf_unit, file=filename, form="formatted", &
+            action="write" )
+
+         write ( xdmf_unit, "(A)" ) "<?xml version='1.0' ?>"
+         write ( xdmf_unit, "(A)" ) "<!DOCTYPE Xdmf SYSTEM 'Xdmf.dtd' []>"
+         write ( xdmf_unit, "(A)" ) "<Xdmf Version='2.0'>"
+         write ( xdmf_unit, "(A, A, A)" ) "<Domain Name='", case_name, "'>"
+      end if
+
+      do block_number = 1_SP, num_blocks(sd)
+         if ( wb_subdomain_is_world_leader(sd) ) then
+            write ( xdmf_unit, "(A, I0.2, A)" ) "<Grid Name='block", &
+               block_number, "' GridType='Uniform'>"
+         end if
+
+         call wb_block_points_vector( local_block, number_of_points )
+         if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
+              wb_subdomain_is_block_leader(sd) ) then
+            call mpi_send( number_of_points, num_dimensions_mp(sd), MPI_SP, &
+               WORLD_LEADER, 0_MP, MPI_COMM_WORLD, ierr )
+         end if
+         if ( wb_subdomain_is_world_leader(sd) ) then
+            call mpi_recv( number_of_points, num_dimensions_mp(sd), MPI_SP, &
+               MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,                 &
+               MPI_STATUS_IGNORE, ierr )
+
+            write ( xdmf_unit, "(A)", advance="no" ) "<Topology TopologyType='"
+            if ( num_dimensions(sd) .eq. 2_SP ) then
+               write ( xdmf_unit, "(A)", advance="no" ) "2DSMesh"
+            else
+               write ( xdmf_unit, "(A)", advance="no" ) "3DSMesh"
+            end if
+            write ( xdmf_unit, "(A)", advance="no" ) "' Dimensions='"
+            do i_dim = num_dimensions(sd), 1_SP, -1_SP
+               write ( xdmf_unit, "(I0)", advance="no" ) number_of_points(i_dim)
+               if ( i_dim .ne. 1_SP ) then
+                  write ( xdmf_unit, "(A)", advance="no" ) " "
+               end if
+            end do
+            write ( xdmf_unit, "(A)", advance="yes" ) "'/>"
+
+            write ( xdmf_unit, "(A)", advance="no" ) "<Geometry GeometryType='"
+            if ( num_dimensions(sd) .eq. 2_SP ) then
+               write ( xdmf_unit, "(A)", advance="no" ) "X_Y"
+            else
+               write ( xdmf_unit, "(A)", advance="no" ) "X_Y_Z"
+            end if
+            write ( xdmf_unit, "(A)", advance="yes" ) "'>"
+            do i_dim = 1_SP, num_dimensions(sd)
+               write ( xdmf_unit, "(A)", advance="no" ) "<DataItem Dimensions='"
+               do j_dim = num_dimensions(sd), 1_SP, -1_SP
+                  write ( xdmf_unit, "(I0)", advance="no" ) number_of_points(j_dim)
+                  if ( j_dim .ne. 1_SP ) then
+                     write ( xdmf_unit, "(A)", advance="no" ) " "
+                  end if
+               end do
+               write ( xdmf_unit, "(A)", advance="no" ) "' DataType='Float' Precision='"
+               write ( xdmf_unit, "(I0)", advance="no" ) real_precision_in_bytes(FP)
+               write ( xdmf_unit, "(A)", advance="no" ) "' Format='Binary' Endian='"
+               if ( ARCH_IS_BIG_ENDIAN .eqv. .true. ) then
+                  write ( xdmf_unit, "(A)", advance="no" ) "Big"
+               else
+                  write ( xdmf_unit, "(A)", advance="no" ) "Little"
+               end if
+               write ( xdmf_unit, "(A)", advance="yes" ) "'>"
+               write ( xdmf_unit, "(A, A, I0.2, A, I0.2, A)" )    &
+                  case_name, "-block-", block_number, "-field-", &
+                  wb_subdomain_coordinate_field_index(sd,i_dim), ".bin"
+               write ( xdmf_unit, "(A)" ) "</DataItem>"
+            end do
+            write ( xdmf_unit, "(A)" ) "</Geometry>"
+            write ( xdmf_unit, "(A)" ) "</Grid>"
+         end if
+
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
+      end do
+
+      if ( wb_subdomain_is_world_leader(sd) ) then
+         write ( xdmf_unit, "(A)" ) "</Domain>"
+         write ( xdmf_unit, "(A)" ) "</Xdmf>"
+
+         close( unit=xdmf_unit )
+      end if
+
+      deallocate( case_name, number_of_points )
+   end subroutine write_xdmf_file
 end module wb_base

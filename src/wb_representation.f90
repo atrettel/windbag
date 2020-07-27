@@ -20,7 +20,8 @@ module wb_representation
 
    public find_mpi_precisions,        &
           identify_integer_precision, &
-          identify_real_precision
+          identify_real_precision,    &
+          real_precision_in_bytes
 
    integer, public, parameter       ::     FP = real64
    type(MPI_Datatype), public, save :: MPI_FP
@@ -127,4 +128,18 @@ contains
          write (string,"(A)") "(unknown)"
       end if
    end function identify_real_precision_mpi
+
+   function real_precision_in_bytes( vp ) &
+   result( bytes )
+      integer, intent(in) :: vp
+      integer(SP) :: bytes
+
+      if ( vp .eq. real64 ) then
+         bytes = 8_SP
+      else if ( vp .eq. real32 ) then
+         bytes = 4_SP
+      else
+         bytes = 0_SP
+      end if
+   end function
 end module wb_representation
