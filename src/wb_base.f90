@@ -1761,6 +1761,23 @@ contains
       is_block_leader = sd%block_rank .eq. BLOCK_LEADER
    end function wb_subdomain_is_block_leader
 
+   function wb_subdomain_is_coordinate_field( sd, field_number ) &
+   result( is_coordinate_field )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: field_number
+      logical :: is_coordinate_field
+      integer(SP) :: i_dim
+
+      is_coordinate_field = .false.
+
+      do i_dim = 1_SP, num_dimensions(sd)
+         if ( field_number .eq. &
+              wb_subdomain_coordinate_field_index(sd,i_dim) ) then
+            is_coordinate_field = .true.
+         end if
+      end do
+   end function wb_subdomain_is_coordinate_field
+
    function wb_subdomain_is_world_leader( sd ) &
    result( is_world_leader )
       type(WB_Subdomain), intent(in) :: sd
@@ -2293,11 +2310,11 @@ contains
 
    subroutine write_xdmf_file( sd )
       type(WB_Subdomain), intent(in) :: sd
-      integer(SP) :: block_number, i_dim, j_dim
+      integer(SP) :: block_number, field_number, i_dim, j_dim
       integer(MP) :: ierr
       integer :: xdmf_unit
       character(len=:), allocatable :: case_name
-      character(len=STRING_LENGTH) :: filename, field_filename
+      character(len=STRING_LENGTH) :: filename, field_name, field_filename
       integer(SP), dimension(:), allocatable :: number_of_points
       type(WB_Block) :: local_block
 
@@ -2357,6 +2374,7 @@ contains
             end if
             write ( xdmf_unit, "(A)", advance="yes" ) "'>"
             do i_dim = 1_SP, num_dimensions(sd)
+               ! TODO: Switch this to a variable or function.
                write ( xdmf_unit, "(A)", advance="no" ) "<DataItem Dimensions='"
                do j_dim = num_dimensions(sd), 1_SP, -1_SP
                   write ( xdmf_unit, "(I0)", advance="no" ) number_of_points(j_dim)
@@ -2380,6 +2398,40 @@ contains
                write ( xdmf_unit, "(A)" ) "</DataItem>"
             end do
             write ( xdmf_unit, "(A)" ) "</Geometry>"
+
+            do field_number = 1_SP, num_fields(sd)
+               if ( wb_subdomain_is_coordinate_field(sd,field_number) &
+                    .eqv. .false. ) then
+                  call wb_subdomain_field_name( sd, field_number, field_name )
+
+                  write ( xdmf_unit, "(A, A, A)" ) "<Attribute Name='", &
+                     trim(field_name), "' AttributeType='Scalar' Center='Node'>"
+
+                  write ( xdmf_unit, "(A)", advance="no" ) "<DataItem Dimensions='"
+                  do j_dim = num_dimensions(sd), 1_SP, -1_SP
+                     write ( xdmf_unit, "(I0)", advance="no" ) number_of_points(j_dim)
+                     if ( j_dim .ne. 1_SP ) then
+                        write ( xdmf_unit, "(A)", advance="no" ) " "
+                     end if
+                  end do
+                  write ( xdmf_unit, "(A)", advance="no" ) "' DataType='Float' Precision='"
+                  write ( xdmf_unit, "(I0)", advance="no" ) real_precision_in_bytes(FP)
+                  write ( xdmf_unit, "(A)", advance="no" ) "' Format='Binary' Endian='"
+                  if ( ARCH_IS_BIG_ENDIAN .eqv. .true. ) then
+                     write ( xdmf_unit, "(A)", advance="no" ) "Big"
+                  else
+                     write ( xdmf_unit, "(A)", advance="no" ) "Little"
+                  end if
+                  write ( xdmf_unit, "(A)", advance="yes" ) "'>"
+                  call construct_field_filename( case_name, block_number, &
+                     field_number, field_filename )
+                  write ( xdmf_unit, "(A)" ) field_filename
+                  write ( xdmf_unit, "(A)" ) "</DataItem>"
+
+                  write ( xdmf_unit, "(A)" ) "</Attribute>"
+               end if
+            end do
+
             write ( xdmf_unit, "(A)" ) "</Grid>"
          end if
 
