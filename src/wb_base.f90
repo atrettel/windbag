@@ -1521,7 +1521,7 @@ contains
       real(FP) :: comp_coord
 
       comp_coord = real(wb_subdomain_block_index(sd,i_dim,i_proc)-1_SP) / &
-         real(wb_subdomain_local_block_points(sd,i_dim)-1_SP)
+         real(wb_subdomain_local_block_points_adjusted(sd,i_dim)-1_SP)
    end function wb_subdomain_comp_coord
 
    function wb_subdomain_components( sd ) &
@@ -1809,6 +1809,22 @@ contains
       call wb_subdomain_local_block( sd, local_block )
       points = num_points( local_block, i_dim )
    end function wb_subdomain_local_block_points
+
+   function wb_subdomain_local_block_points_adjusted( sd, i_dim ) &
+   result( points )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      type(WB_Block) :: local_block
+      integer(SP) :: points
+
+      points = wb_subdomain_local_block_points(sd,i_dim)
+
+      call wb_subdomain_local_block( sd, local_block )
+      if ( wb_block_neighbor( local_block, i_dim, UPPER_DIRECTION ) .ne. &
+           NO_BLOCK_NEIGHBOR ) then
+         points = points + 1_SP
+      end if
+   end function wb_subdomain_local_block_points_adjusted
 
    function wb_subdomain_local_block_points_per_process( sd, i_dim ) &
    result( points_per_process )
