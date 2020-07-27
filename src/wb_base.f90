@@ -612,6 +612,18 @@ contains
                   l_velocities           )
    end subroutine construct_conservative_variables
 
+   ! Eventually this should include the iteration number.
+   subroutine construct_field_filename( case_name, block_number, &
+      field_number, filename )
+      character(len=*) :: case_name
+      integer(SP), intent(in) :: block_number, field_number
+      character(len=STRING_LENGTH), intent(out) :: filename
+
+      write ( filename, "(A, A, I0.2, A, I0.2, A)" )    &
+         case_name, "-block-", block_number, "-field-", &
+         field_number, ".bin"
+   end subroutine construct_field_filename
+
    subroutine construct_grids( sd, filename )
       type(WB_Subdomain), intent(inout) :: sd
       character(len=STRING_LENGTH), intent(in) :: filename
@@ -1645,8 +1657,6 @@ contains
       number_of_faces = wb_subdomain_dimensions(sd) * NUMBER_OF_DIRECTIONS
    end function wb_subdomain_faces
 
-   ! TODO: This function is repeated in write_xdmf_file.  Perhaps I should
-   ! refactor this to just accept mroe basic arguments to work in both cases.
    subroutine wb_subdomain_field_filename( sd, field_number, filename )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: field_number
@@ -1654,11 +1664,8 @@ contains
       character(len=:), allocatable :: case_name
 
       call wb_subdomain_case_name( sd, case_name )
-
-      write ( filename, "(A, A, I0.2, A, I0.2, A)" )                     &
-         case_name, "-block-", wb_subdomain_block_number(sd), "-field-", &
-         field_number, ".bin"
-
+      call construct_field_filename( case_name, &
+         wb_subdomain_block_number(sd), field_number, filename )
       deallocate( case_name )
    end subroutine wb_subdomain_field_filename
 
@@ -2290,7 +2297,7 @@ contains
       integer(MP) :: ierr
       integer :: xdmf_unit
       character(len=:), allocatable :: case_name
-      character(len=STRING_LENGTH) :: filename
+      character(len=STRING_LENGTH) :: filename, field_filename
       integer(SP), dimension(:), allocatable :: number_of_points
       type(WB_Block) :: local_block
 
@@ -2366,9 +2373,10 @@ contains
                   write ( xdmf_unit, "(A)", advance="no" ) "Little"
                end if
                write ( xdmf_unit, "(A)", advance="yes" ) "'>"
-               write ( xdmf_unit, "(A, A, I0.2, A, I0.2, A)" )    &
-                  case_name, "-block-", block_number, "-field-", &
-                  wb_subdomain_coordinate_field_index(sd,i_dim), ".bin"
+               call construct_field_filename( case_name, block_number, &
+                  wb_subdomain_coordinate_field_index(sd,i_dim),       &
+                  field_filename )
+               write ( xdmf_unit, "(A)" ) field_filename
                write ( xdmf_unit, "(A)" ) "</DataItem>"
             end do
             write ( xdmf_unit, "(A)" ) "</Geometry>"
