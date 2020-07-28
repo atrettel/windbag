@@ -1485,7 +1485,7 @@ contains
       comm_block = sd%comm_block
    end subroutine wb_subdomain_block_communicator
 
-   function wb_subdomain_block_adjustment_points( sd, i_dim ) &
+   function wb_subdomain_block_upper_overlap_points( sd, i_dim ) &
    result( points )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
@@ -1494,7 +1494,7 @@ contains
 
       call wb_subdomain_local_block( sd, local_block )
       points = wb_block_upper_overlap_points( local_block, i_dim )
-   end function wb_subdomain_block_adjustment_points
+   end function wb_subdomain_block_upper_overlap_points
 
    function wb_subdomain_block_coord( sd, i_dim ) &
    result( block_coord )
@@ -1863,7 +1863,7 @@ contains
       integer(SP) :: points
 
       points = wb_subdomain_local_block_points(sd,i_dim) &
-             + wb_subdomain_block_adjustment_points(sd,i_dim)
+             + wb_subdomain_block_upper_overlap_points(sd,i_dim)
    end function wb_subdomain_local_block_points_adjusted
 
    function wb_subdomain_local_block_points_per_process( sd, i_dim ) &
@@ -1916,8 +1916,10 @@ contains
       integer(SP), intent(in) :: i_dim
       integer(SP) :: points
 
-      points = wb_subdomain_points(sd,i_dim) &
-             + wb_subdomain_block_adjustment_points(sd,i_dim)
+      points = wb_subdomain_points(sd,i_dim)
+      if ( wb_subdomain_is_block_end( sd, i_dim ) ) then
+         points = points + wb_subdomain_block_upper_overlap_points(sd,i_dim)
+      end if
    end function wb_subdomain_points_adjusted
 
    function wb_subdomain_local_block_remainder( sd, i_dim ) &
