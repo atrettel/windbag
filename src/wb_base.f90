@@ -678,14 +678,20 @@ contains
                         minimum_derivative_locations(i_dim),     &
                         maximum_derivative_locations(i_dim),     &
                         uniformities(i_dim) ) )
+               end do
+            end do
+         end do
+      end do
 
-                  do field_number = 1_SP, num_fields(sd)
-                     if ( wb_subdomain_is_coordinate_field(sd,field_number) &
-                          .eqv. .false. ) then
-                        call wb_subdomain_set_field_point( sd, field_number, &
-                           ix, iy, iz, 1.0_FP )
-                     end if
-                  end do
+      do iz = 1_SP, wb_subdomain_points(sd,3_SP)
+         do iy = 1_SP, wb_subdomain_points(sd,2_SP)
+            do ix = 1_SP, wb_subdomain_points(sd,1_SP)
+               do field_number = 1_SP, num_fields(sd)
+                  if ( wb_subdomain_is_coordinate_field(sd,field_number) &
+                       .eqv. .false. ) then
+                     call wb_subdomain_set_field_point( sd, field_number, &
+                        ix, iy, iz, 1.0_FP )
+                  end if
                end do
             end do
          end do
