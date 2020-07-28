@@ -96,16 +96,21 @@ module wb_base
       integer(SP) :: number_of_ghost_points
       integer(SP) :: number_of_temporary_fields
       integer(SP) :: iteration_number
-      integer(SP), dimension(:), allocatable :: number_of_points
-      integer(MP), dimension(:), allocatable :: block_coords
+      integer(SP), dimension(:),   allocatable :: number_of_points
+      integer(MP), dimension(:),   allocatable :: block_coords
       integer(MP), dimension(:,:), allocatable :: neighbors
       real(FP) :: time
       real(FP), dimension(:,:,:,:), allocatable :: fields
       type(MPI_Comm) :: comm_block
       type(WB_Block) :: local_block
       type(WB_Variable_List) :: fl
-      integer(SP), dimension(:), allocatable :: l_coordinates
+      integer(SP), dimension(:),   allocatable :: l_coordinates
+      integer(SP), dimension(:,:), allocatable :: l_jacobian_component
+      integer(SP), dimension(:),   allocatable :: l_mass_fractions
+      integer(SP), dimension(:),   allocatable :: l_momentum_densities
+      integer(SP) :: l_jacobian_determinant
       integer(SP) :: l_mass_density
+      integer(SP) :: l_specific_total_internal_energy
    end type WB_Subdomain
 
    interface min_fields
@@ -452,8 +457,8 @@ contains
       call wb_variable_list_add( sd%fl, "Coordinate",                            nd,  .true., l_coordinates                      )
       call wb_variable_list_add( sd%fl, "Dynamic viscosity",                         .false., l_dynamic_viscosity                )
       call wb_variable_list_add( sd%fl, "Heat capacity ratio",                       .false., l_heat_capacity_ratio              )
-      call wb_variable_list_add( sd%fl, "Jacobian component",                nd, nd, .false., l_jacobian_components              )
-      call wb_variable_list_add( sd%fl, "Jacobian determinant",                      .false., l_jacobian_determinant             )
+      call wb_variable_list_add( sd%fl, "Jacobian component",                nd, nd,  .true., l_jacobian_components              )
+      call wb_variable_list_add( sd%fl, "Jacobian determinant",                       .true., l_jacobian_determinant             )
       call wb_variable_list_add( sd%fl, "Kinematic viscosity",                       .false., l_kinematic_viscosity              )
       call wb_variable_list_add( sd%fl, "Mach number",                               .false., l_mach_number                      )
       call wb_variable_list_add( sd%fl, "Mass density",                  density_is_required, l_mass_density                     )
@@ -592,17 +597,31 @@ contains
 
       ! Set field indices (sequence indices) for minimal number of required
       ! fields.
-      allocate( sd%l_coordinates(nd) )
+      allocate(        sd%l_coordinates(nd), &
+                    sd%l_mass_fractions(nc), &
+                sd%l_momentum_densities(nd), &
+                sd%l_jacobian_component(nd,nd) )
       do i_dim = 1_SP, nd
-         sd%l_coordinates(i_dim) = wb_variable_list_sequence_index( sd%fl, l_coordinates(i_dim) )
+         sd%l_coordinates(i_dim)        = wb_variable_list_sequence_index( sd%fl, l_coordinates(i_dim)        )
+         sd%l_momentum_densities(i_dim) = wb_variable_list_sequence_index( sd%fl, l_momentum_densities(i_dim) )
+         do j_dim = 1_SP, nd
+            sd%l_jacobian_component(i_dim,j_dim) = wb_variable_list_sequence_index( sd%fl, l_jacobian_components(i_dim,j_dim) )
+         end do
       end do
-      sd%l_mass_density = wb_variable_list_sequence_index( sd%fl, l_mass_density )
+      do ic = 1_SP, nc
+         sd%l_mass_fractions(ic) = wb_variable_list_sequence_index( sd%fl, l_mass_fractions(ic) )
+      end do
+      sd%l_jacobian_determinant           = wb_variable_list_sequence_index( sd%fl, l_jacobian_determinant           )
+      sd%l_mass_density                   = wb_variable_list_sequence_index( sd%fl, l_mass_density                   )
+      sd%l_specific_total_internal_energy = wb_variable_list_sequence_index( sd%fl, l_specific_total_internal_energy )
 
       ! Allocate fields.
       allocate( sd%fields( num_fields(sd), &
                            (1_SP-num_ghost_points(sd)):(num_points(sd,1_SP)+num_ghost_points(sd)), &
                            (1_SP-num_ghost_points(sd)):(num_points(sd,2_SP)+num_ghost_points(sd)), &
                            (1_SP-num_ghost_points(sd)):(num_points(sd,3_SP)+num_ghost_points(sd)) ) )
+
+      sd%fields(:,:,:,:) = 0.0_FP
 
       deallocate( l_amount_fractions,    &
                   l_coordinates,         &
@@ -1643,12 +1662,15 @@ contains
       integer(MP) :: ierr
       type(WB_Subdomain), intent(inout) :: sd
 
-      deallocate( sd%case_name,        &
-                  sd%block_coords,     &
-                  sd%fields,           &
-                  sd%neighbors,        &
-                  sd%number_of_points, &
-                  sd%l_coordinates     )
+      deallocate( sd%case_name,            &
+                  sd%block_coords,         &
+                  sd%fields,               &
+                  sd%neighbors,            &
+                  sd%number_of_points,     &
+                  sd%l_coordinates,        &
+                  sd%l_jacobian_component, &
+                  sd%l_mass_fractions,     &
+                  sd%l_momentum_densities  )
       call mpi_comm_free( sd%comm_block, ierr )
       call wb_block_destroy( sd%local_block )
       call wb_variable_list_destroy( sd%fl )
