@@ -1228,12 +1228,9 @@ contains
             action="write"      &
          )
 
-         !do iz = 1_SP, number_of_points(3_SP)
-         !   do iy = 1_SP, number_of_points(2_SP)
-         !      do ix = 1_SP, number_of_points(1_SP)
-         do iz = 1_SP, wb_subdomain_local_block_points_adjusted(sd,3_SP)
-            do iy = 1_SP, wb_subdomain_local_block_points_adjusted(sd,2_SP)
-               do ix = 1_SP, wb_subdomain_local_block_points_adjusted(sd,1_SP)
+         do iz = 1_SP, nz_block
+            do iy = 1_SP, ny_block
+               do ix = 1_SP, nx_block
                   write( unit=field_unit ) field(ix,iy,iz)
                end do
             end do
