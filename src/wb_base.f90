@@ -1099,7 +1099,7 @@ contains
       end_indices_tag      = 3_MP
       field_slice_tag      = 4_MP
 
-      nd = 3_SP
+      nd = MAX_NUMBER_OF_DIMENSIONS
       call wb_subdomain_block_communicator( sd, comm_block )
       call wb_subdomain_local_block( sd, local_block )
 
@@ -1115,9 +1115,9 @@ contains
       ny_block = 0_SP
       nz_block = 0_SP
       if ( wb_subdomain_is_block_leader(sd) ) then
-         nx_block = num_points( local_block, 1_SP )
-         ny_block = num_points( local_block, 2_SP )
-         nz_block = num_points( local_block, 3_SP )
+         nx_block = wb_subdomain_local_block_points_adjusted( sd, 1_SP )
+         ny_block = wb_subdomain_local_block_points_adjusted( sd, 2_SP )
+         nz_block = wb_subdomain_local_block_points_adjusted( sd, 3_SP )
       end if
 
       allocate( field( nx_block, ny_block, nz_block ) )
@@ -1125,7 +1125,7 @@ contains
 
       ! Calculate starting and ending indices and number of points.
       do i_dim = 1_SP, nd
-         number_of_points(i_dim) = num_points(sd,i_dim)
+         number_of_points(i_dim) = wb_subdomain_points_adjusted(sd,i_dim)
          start_indices(i_dim)    = wb_subdomain_block_index( sd, i_dim, 1_SP )
          end_indices(i_dim)      = wb_subdomain_block_index( sd, i_dim, num_points(sd,i_dim) )
       end do
@@ -1222,9 +1222,12 @@ contains
             action="write"      &
          )
 
-         do iz = 1, num_points( local_block, 3_SP )
-            do iy = 1, num_points( local_block, 2_SP )
-               do ix = 1, num_points( local_block, 1_SP )
+         !do iz = 1_SP, number_of_points(3_SP)
+         !   do iy = 1_SP, number_of_points(2_SP)
+         !      do ix = 1_SP, number_of_points(1_SP)
+         do iz = 1_SP, wb_subdomain_local_block_points_adjusted(sd,3_SP)
+            do iy = 1_SP, wb_subdomain_local_block_points_adjusted(sd,2_SP)
+               do ix = 1_SP, wb_subdomain_local_block_points_adjusted(sd,1_SP)
                   write( unit=field_unit ) field(ix,iy,iz)
                end do
             end do
@@ -2415,7 +2418,10 @@ contains
                block_number, "' GridType='Uniform'>"
          end if
 
-         call wb_block_points_vector( local_block, number_of_points )
+         do i_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
+            number_of_points(i_dim) = wb_subdomain_local_block_points_adjusted(sd,i_dim)
+         end do
+
          if ( block_number .eq. wb_subdomain_block_number(sd) .and. &
               wb_subdomain_is_block_leader(sd) ) then
             call mpi_send( number_of_points, num_dimensions_mp(sd), MPI_SP, &
