@@ -1,4 +1,6 @@
+src/*.bin
 src/*.mod
 src/*.o
 src/*.wb
+src/*.xmf
 src/windbag
