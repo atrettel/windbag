@@ -638,9 +638,9 @@ contains
          minimum_derivative_locations, maximum_derivative_locations,  &
          uniformities )
 
-      do iz = 1_SP, num_points(sd,3_SP)
-         do iy = 1_SP, num_points(sd,2_SP)
-            do ix = 1_SP, num_points(sd,1_SP)
+      do iz = 1_SP, wb_subdomain_points_adjusted(sd,3_SP)
+         do iy = 1_SP, wb_subdomain_points_adjusted(sd,2_SP)
+            do ix = 1_SP, wb_subdomain_points_adjusted(sd,1_SP)
                do i_dim = 1_SP, num_dimensions(sd)
                   if (      i_dim .eq. 1_SP ) then
                      j = ix
@@ -1453,6 +1453,21 @@ contains
       comm_block = sd%comm_block
    end subroutine wb_subdomain_block_communicator
 
+   function wb_subdomain_block_adjustment_points( sd, i_dim ) &
+   result( points )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: points
+      type(WB_Block) :: local_block
+
+      points = 0_SP
+      call wb_subdomain_local_block( sd, local_block )
+      if ( wb_block_neighbor( local_block, i_dim, UPPER_DIRECTION ) .ne. &
+           NO_BLOCK_NEIGHBOR ) then
+         points = 1_SP
+      end if
+   end function wb_subdomain_block_adjustment_points
+
    function wb_subdomain_block_coord( sd, i_dim ) &
    result( block_coord )
       type(WB_Subdomain), intent(in) :: sd
@@ -1814,16 +1829,10 @@ contains
    result( points )
       type(WB_Subdomain), intent(in) :: sd
       integer(SP), intent(in) :: i_dim
-      type(WB_Block) :: local_block
       integer(SP) :: points
 
-      points = wb_subdomain_local_block_points(sd,i_dim)
-
-      call wb_subdomain_local_block( sd, local_block )
-      if ( wb_block_neighbor( local_block, i_dim, UPPER_DIRECTION ) .ne. &
-           NO_BLOCK_NEIGHBOR ) then
-         points = points + 1_SP
-      end if
+      points = wb_subdomain_local_block_points(sd,i_dim) &
+             + wb_subdomain_block_adjustment_points(sd,i_dim)
    end function wb_subdomain_local_block_points_adjusted
 
    function wb_subdomain_local_block_points_per_process( sd, i_dim ) &
@@ -1869,6 +1878,16 @@ contains
          points = sd%number_of_points(i_dim)
       end if
    end function wb_subdomain_points
+
+   function wb_subdomain_points_adjusted( sd, i_dim ) &
+   result( points )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: points
+
+      points = wb_subdomain_points(sd,i_dim) &
+             + wb_subdomain_block_adjustment_points(sd,i_dim)
+   end function wb_subdomain_points_adjusted
 
    function wb_subdomain_local_block_remainder( sd, i_dim ) &
    result( remainder )
