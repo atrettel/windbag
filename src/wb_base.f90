@@ -1253,6 +1253,19 @@ contains
       block_number = blk%block_number
    end function wb_block_number
 
+   function wb_block_upper_overlap_points( blk, i_dim ) &
+   result( points )
+      type(WB_Block), intent(in) :: blk
+      integer(SP), intent(in) :: i_dim
+      integer(SP) :: points
+
+      points = 0_SP
+      if ( wb_block_neighbor( blk, i_dim, UPPER_DIRECTION ) .ne. &
+           NO_BLOCK_NEIGHBOR ) then
+         points = 1_SP
+      end if
+   end function wb_block_upper_overlap_points
+
    subroutine wb_block_construct( blk, number_of_dimensions, &
       number_of_processes, number_of_points, lower_neighbors, &
       upper_neighbors, block_number )
@@ -1479,12 +1492,8 @@ contains
       integer(SP) :: points
       type(WB_Block) :: local_block
 
-      points = 0_SP
       call wb_subdomain_local_block( sd, local_block )
-      if ( wb_block_neighbor( local_block, i_dim, UPPER_DIRECTION ) .ne. &
-           NO_BLOCK_NEIGHBOR ) then
-         points = 1_SP
-      end if
+      points = wb_block_upper_overlap_points( local_block, i_dim )
    end function wb_subdomain_block_adjustment_points
 
    function wb_subdomain_block_coord( sd, i_dim ) &
