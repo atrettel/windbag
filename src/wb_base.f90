@@ -1260,7 +1260,8 @@ contains
       integer(SP) :: points
 
       points = 0_SP
-      if ( wb_block_neighbor( blk, i_dim, UPPER_DIRECTION ) .ne. &
+      if ( i_dim .le. num_dimensions(blk) .and.                  &
+           wb_block_neighbor( blk, i_dim, UPPER_DIRECTION ) .ne. &
            NO_BLOCK_NEIGHBOR ) then
          points = 1_SP
       end if
