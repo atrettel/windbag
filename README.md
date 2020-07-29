@@ -4,53 +4,16 @@ Windbag direct numerical simulation code
 A computational fluid dynamics code for the direct numerical simulation of
 transitional and turbulent fluid flows.
 
+NOTE: This project is a work in progress and does not work yet.  I have
+implemented much of the backend that supports various operations, but I have
+yet to implement any of the numerical methods or post-processing operations.
+Basic grid generation in parallel does work, though.
+
 
 Usage
 -----
 
     $ mpirun -n 2 ./windbag [INPUT_FILE]
-
-
-Planned features and goals
---------------------------
-
-- simple, clear, economical code written in modern Fortran
-
-- block structured grid
-
-- high-order finite difference method (FDM)
-
-- compressible Navier-Stokes equations for the governing equations
-
-- only MPI for parallelization (no additional external libraries)
-
-- simple Makefile for compilation
-
-- no preprocessor use
-
-- minimal number of hard-coded variables and global variables
-
-- single command line argument (the namelist-based input file)
-
-- input file serves as detailed documentation of the case
-
-- architecture based on series of operations acting on a single set of fields
-
-- dependency graph to calculate additional fields
-
-- output files natively readable by Paraview
-
-- open formats for post-processed output files (CSV)
-
-- arbitrary equations of state and material properties (nothing hard-coded)
-
-- structured, readable, and "auditable" log files
-
-- detailed documentation covering verification, validation, and uncertainty
-  quantification
-
-- designed for DNS of flows with simple geometries but still possible to
-  simulate flows with more complex geometries
 
 
 -------------------------------------------------------------------------------
