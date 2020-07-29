@@ -1,4 +1,5 @@
 src/*.bin
+src/*.gv
 src/*.mod
 src/*.o
 src/*.wb
