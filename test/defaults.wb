@@ -1,6 +1,8 @@
 &general
 /
 &block
-number_of_processes=4,2,2,
-number_of_points=256,256,256,
+number_of_processes=2,1,1,
+number_of_points=64,64,64
+/
+&cuboid_grid
 /
