@@ -71,6 +71,5 @@ contains
                           ( xc_dmin - 2.0_FP * xc_dmax )                      &
                         + k )                                                 &
          + xp0
-
    end function polynomial_stretched_grid
 end module wb_grids
