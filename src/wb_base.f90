@@ -473,7 +473,6 @@ contains
       call wb_variable_list_add( sd%fl, "Specific isochoric heat capacity",          .false., l_specific_isochoric_heat_capacity )
       call wb_variable_list_add( sd%fl, "Specific total enthalpy",                   .false., l_specific_total_enthalpy          )
       call wb_variable_list_add( sd%fl, "Specific total internal energy", energy_is_required, l_specific_total_internal_energy   )
-      call wb_variable_list_add( sd%fl, "Specific total internal energy",            .false., l_specific_total_internal_energy   )
       call wb_variable_list_add( sd%fl, "Specific volume",                           .false., l_specific_volume                  )
       call wb_variable_list_add( sd%fl, "Speed",                                     .false., l_speed                            )
       call wb_variable_list_add( sd%fl, "Speed of sound",                            .false., l_speed_of_sound                   )
