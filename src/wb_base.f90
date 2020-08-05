@@ -868,14 +868,15 @@ contains
 
    subroutine print_initial_information( sd )
       type(WB_Subdomain), intent(in) :: sd
+      character(len=STRING_LENGTH) :: filename
       integer :: graphviz_unit
 
       call write_environment_information( output_unit, sd )
       call write_scalar_variables(        output_unit, sd )
       if ( wb_subdomain_is_world_leader(sd) ) then
          call write_variable_list_information( output_unit, sd%fl )
-
-         open( newunit=graphviz_unit, file="variables.gv", form="formatted", &
+         call wb_subdomain_graphviz_filename( sd, filename )
+         open( newunit=graphviz_unit, file=filename, form="formatted", &
             action="write" )
          call write_graphviz_file( graphviz_unit, sd%fl )
          close( unit=graphviz_unit )
@@ -1798,6 +1799,16 @@ contains
 
       number_of_ghost_points = sd%number_of_ghost_points
    end function wb_subdomain_ghost_points
+
+   subroutine wb_subdomain_graphviz_filename( sd, filename )
+      type(WB_Subdomain), intent(in) :: sd
+      character(len=STRING_LENGTH), intent(out) :: filename
+      character(len=:), allocatable :: case_name
+
+      call wb_subdomain_case_name( sd, case_name )
+      write (filename, "(A, A)") case_name, ".gv"
+      deallocate( case_name )
+   end subroutine wb_subdomain_graphviz_filename
 
    function wb_subdomain_is_block_end( sd, i_dim ) &
    result( is_block_end )
