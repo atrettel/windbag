@@ -56,7 +56,7 @@ contains
         / ( 2.0_FP * quad_a )
 
 
-      xp = xc**5.0_FP * ( ( 1.0_FP / 5.0_FP ) * B**2.0 )                      &
+      xp = xc**5.0_FP * ( ( 1.0_FP / 5.0_FP ) * B**2.0_FP )                   &
          + xc**4.0_FP * ( -B**2.0_FP * xc_dmax )                              &
          + xc**3.0_FP * ( B**2.0_FP * ( ( 4.0_FP / 3.0_FP ) * xc_dmax**2.0_FP &
                         + ( 4.0_FP / 3.0_FP ) * xc_dmin * xc_dmax             &
