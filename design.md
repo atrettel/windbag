@@ -216,7 +216,7 @@ Additional notes and discussion
   precise implementation is still unclear to me.
 
 - The command design pattern leaves a log and makes it clear what the program
-  is doing at one moment or another.
+  is doing at one moment or another.  This aids in repeatability.
 
 - I have considered using the subdomain data structure as the output of the
   averaging operation, but this presents several issues.  The primary advantage
@@ -228,8 +228,13 @@ Additional notes and discussion
   should be statistically homogeneous in one direction, then its averaged field
   has only a single point in that direction.  This motivates having a separate
   domain decomposition for that (otherwise there could be multiple processes in
-  the homogeneous direction, all sharing the same point).  This is nontrivial
-  and I still am debating the solution.
+  the homogeneous direction, all sharing the same point).
+
+    - Instead, the more obvious route would be to have each block leader manage
+      the post-processing for each block.  Reductions from each worker would
+      end up at their local block leader.  For repeatability, each timestep
+      should output the spatially-averaged fields.  To time-average, the code
+      should then average over all of these fields.
 
 - Most of the DNS cases I want to run are 3D, but I also wanted to allow the
   code to be 2D if possible.  To that end, I have made the field array of the
