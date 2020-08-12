@@ -1278,7 +1278,7 @@ contains
       do i_dim = 1_SP, num_dimensions(sd)
          ! Allocate temporary arrays.
          do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
-            np(j_dim) = num_points(sd,j_dim)
+            np(j_dim) = num_points(sd,j_dim) + 2_SP * ng
          end do
          np(i_dim) = ng
 
@@ -1309,9 +1309,9 @@ contains
                ! The direction here is the direction of travel.
                do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
                   ! Extract interior data through array slicing.
-                  ip0(:) = 1_SP
+                  ip0(:) = 1_SP - ng
                   do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
-                     ipf(j_dim) = num_points(sd,j_dim)
+                     ipf(j_dim) = num_points(sd,j_dim) + ng
                   end do
                   if ( i_dir .eq. LOWER_DIRECTION ) then
                      ip0(i_dim) = 1_SP
@@ -1342,9 +1342,9 @@ contains
                      MPI_STATUS_IGNORE, ierr )
 
                   ! Store ghost points through array slicing.
-                  ip0(:) = 1_SP
+                  ip0(:) = 1_SP - ng
                   do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
-                     ipf(j_dim) = num_points(sd,j_dim)
+                     ipf(j_dim) = num_points(sd,j_dim) + ng
                   end do
                   if ( i_dir .eq. LOWER_DIRECTION ) then
                      ip0(i_dim) = num_points(sd,i_dim) + 1_SP
