@@ -696,6 +696,8 @@ contains
          end do
       end do
 
+      call update_interior_ghost_points( sd )
+
       do field_number = 1_SP, num_fields(sd)
          call save_field( sd, field_number )
       end do
@@ -1252,26 +1254,117 @@ contains
    end subroutine save_field
 
    subroutine update_interior_ghost_points( sd )
-      type(WB_Subdomain), intent(in) :: sd
+      type(WB_Subdomain), intent(inout) :: sd
+      integer(MP) :: ierr
+      integer(SP) :: i_dim, j_dim, i_dir, field_number, ng
+      integer(SP), dimension(MAX_NUMBER_OF_DIMENSIONS) :: np, ip0, ipf
+      real(FP), dimension(:,:,:), allocatable :: ghost_points_in, &
+         ghost_points_out
 
-      ! Diagram of operation
+      ng = num_ghost_points(sd)
+
+      ! There are two ways to implement this.  The first way uses MPI datatypes
+      ! to send and receive the data directly.  The second way creates a
+      ! temporary array to send and receive the data into temporary arrays and
+      ! then uses Fortran array slicing to put it in the right place in the
+      ! field array.  The first way uses less memory but is more difficult to
+      ! program.  The second also has the advantage of being easier to refactor
+      ! later, since it depends less on the precise representation of the data
+      ! in memory.
       !
-      ! One step per direction.  Repeat for all dimensions.  Use MPI_PROC_NULL
-      ! for nonexistent subdomain neighbors.
-      !
-      ! Step 1: send to left; receive from right.
-      !
-      !   R <-- S    R <-- S    R <-- S    R <-- S
-      ! .----+----------+----------+----------+----.
-      ! .    |    -1    |    +0    |    +1    |    .
-      ! .----+----------+----------+----------+----.
-      !
-      ! Step 2: send to right; receive from left.
-      !
-      !   S --> R    S --> R    S --> R    S --> R
-      ! .----+----------+----------+----------+----.
-      ! .    |    -1    |    +0    |    +1    |    .
-      ! .----+----------+----------+----------+----.
+      ! For now I will pursue the second way.  Later, when I implement the
+      ! first way, I should put subroutines in the wb_representation module
+      ! that create the custom datatypes.
+      do i_dim = 1_SP, num_dimensions(sd)
+         ! Allocate temporary arrays.
+         do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
+            np(j_dim) = num_points(sd,j_dim)
+         end do
+         np(i_dim) = ng
+
+         allocate( ghost_points_in(  np(1_SP), np(2_SP), np(3_SP) ), &
+                   ghost_points_out( np(1_SP), np(2_SP), np(3_SP) ) )
+
+         ghost_points_in(:,:,:)  = 0.0_FP
+         ghost_points_out(:,:,:) = 0.0_FP
+
+         ! Communicate data.
+         do field_number = 1_SP, num_fields(sd)
+            if ( wb_subdomain_is_coordinate_field(sd,field_number) &
+                 .eqv. .false. ) then
+               ! Step 1: send to left; receive from right.
+               !
+               !   R <-- S    R <-- S    R <-- S    R <-- S
+               ! .----+----------+----------+----------+----.
+               ! .    |    -1    |    +0    |    +1    |    .
+               ! .----+----------+----------+----------+----.
+               !
+               ! Step 2: send to right; receive from left.
+               !
+               !   S --> R    S --> R    S --> R    S --> R
+               ! .----+----------+----------+----------+----.
+               ! .    |    -1    |    +0    |    +1    |    .
+               ! .----+----------+----------+----------+----.
+               !
+               ! The direction here is the direction of travel.
+               do i_dir = 1_SP, NUMBER_OF_DIRECTIONS
+                  ! Extract interior data through array slicing.
+                  ip0(:) = 1_SP
+                  do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
+                     ipf(j_dim) = num_points(sd,j_dim)
+                  end do
+                  if ( i_dir .eq. LOWER_DIRECTION ) then
+                     ip0(i_dim) = 1_SP
+                     ipf(i_dim) = ng
+                  else if ( i_dir .eq. UPPER_DIRECTION ) then
+                     ip0(i_dim) = num_points(sd,i_dim) - ng + 1_SP
+                     ipf(i_dim) = num_points(sd,i_dim)
+                  end if
+
+                  ghost_points_out(:,:,:) = sd%fields( field_number, &
+                      ip0(1_SP):ipf(1_SP), &
+                      ip0(2_SP):ipf(2_SP), &
+                      ip0(3_SP):ipf(3_SP) )
+
+                  ! Communicate data.
+                  call mpi_sendrecv(                                 &
+                     ghost_points_out(1_SP,1_SP,1_SP),               &
+                     int(product(np),MP),                            &
+                     MPI_FP,                                         &
+                     wb_subdomain_neighbor(sd,i_dim,i_dir),          &
+                     0_MP,                                           &
+                     ghost_points_in(1_SP,1_SP,1_SP),                &
+                     int(product(np),MP),                            &
+                     MPI_FP,                                         &
+                     wb_subdomain_opposite_neighbor(sd,i_dim,i_dir), &
+                     0_MP,                                           &
+                     MPI_COMM_WORLD,                                 &
+                     MPI_STATUS_IGNORE, ierr )
+
+                  ! Store ghost points through array slicing.
+                  ip0(:) = 1_SP
+                  do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
+                     ipf(j_dim) = num_points(sd,j_dim)
+                  end do
+                  if ( i_dir .eq. LOWER_DIRECTION ) then
+                     ip0(i_dim) = num_points(sd,i_dim) + 1_SP
+                     ipf(i_dim) = num_points(sd,i_dim) + ng
+                  else if ( i_dir .eq. UPPER_DIRECTION ) then
+                     ip0(i_dim) = 1_SP - ng
+                     ipf(i_dim) = 0_SP
+                  end if
+
+                  sd%fields( field_number, &
+                      ip0(1_SP):ipf(1_SP), &
+                      ip0(2_SP):ipf(2_SP), &
+                      ip0(3_SP):ipf(3_SP) ) = ghost_points_in(:,:,:)
+               end do
+            end if
+         end do
+
+         ! Deallocate temporary arrays.
+         deallocate(  ghost_points_in, ghost_points_out )
+      end do
    end subroutine update_interior_ghost_points
 
    function wb_block_number( blk ) &
@@ -1933,6 +2026,22 @@ contains
 
       neighbor = sd%neighbors(i_dim,i_dir)
    end function wb_subdomain_neighbor
+
+   function wb_subdomain_opposite_neighbor( sd, i_dim, i_dir ) &
+   result( opposite_neighbor )
+      type(WB_Subdomain), intent(in) :: sd
+      integer(SP), intent(in) :: i_dim, i_dir
+      integer(SP) :: i_dir_opposite
+      integer(MP) :: opposite_neighbor
+
+      if ( i_dir .eq. LOWER_DIRECTION ) then
+         i_dir_opposite = UPPER_DIRECTION
+      else if ( i_dir .eq. UPPER_DIRECTION ) then
+         i_dir_opposite = LOWER_DIRECTION
+      end if
+
+      opposite_neighbor = wb_subdomain_neighbor(sd,i_dim,i_dir_opposite)
+   end function wb_subdomain_opposite_neighbor
 
    function wb_subdomain_points( sd, i_dim ) &
    result( points )
