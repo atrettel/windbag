@@ -1251,6 +1251,29 @@ contains
       call mpi_barrier( MPI_COMM_WORLD, ierr )
    end subroutine save_field
 
+   subroutine update_interior_ghost_points( sd )
+      type(WB_Subdomain), intent(in) :: sd
+
+      ! Diagram of operation
+      !
+      ! One step per direction.  Repeat for all dimensions.  Use MPI_PROC_NULL
+      ! for nonexistent subdomain neighbors.
+      !
+      ! Step 1: send to left; receive from right.
+      !
+      !   R <-- S    R <-- S    R <-- S    R <-- S
+      ! .----+----------+----------+----------+----.
+      ! .    |    -1    |    +0    |    +1    |    .
+      ! .----+----------+----------+----------+----.
+      !
+      ! Step 2: send to right; receive from left.
+      !
+      !   S --> R    S --> R    S --> R    S --> R
+      ! .----+----------+----------+----------+----.
+      ! .    |    -1    |    +0    |    +1    |    .
+      ! .----+----------+----------+----------+----.
+   end subroutine update_interior_ghost_points
+
    function wb_block_number( blk ) &
    result( block_number )
       type(WB_Block), intent(in) :: blk
