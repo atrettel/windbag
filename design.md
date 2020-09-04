@@ -24,13 +24,15 @@ Goals
 
 - Arbitrary-order statistics from post-processing
 
-    - The code should output all statistics for all fields up to a particular
-      order (likely 4th or 5th order statistics), including both unweighted and
-      density-weighted statistics.  Alternatively, the code could simply output
-      unweighted statistics but always output a high enough order to recover
-      the density-weighted statistics at a lower level.
+    - The code MUST output all statistics for all fields up to a particular
+      order (likely 5th-order statistics).  The code SHOULD output both
+      unweighted and density-weighted statistics, though the code MAY only
+      output unweighted statistics provided the order is high enough to recover
+      the density-weighted statistics at a lower order.
 
 - Block structured grid
+
+    - The code MUST use a block structured grid.
 
     - Originally I considered the much simpler design of using a single
       structured grid.  A single structure grid works for most scenarios,
@@ -49,50 +51,55 @@ Goals
 
 - Modularity
 
-    - Set variables and procedures to private whenever possible.
+    - The code SHOULD set variables and procedures to private whenever
+      possible.
 
-    - Separate use and implementation (data abstraction).
+    - The code SHOULD separate use and implementation in data structures (data
+      abstraction).
 
-    - Allow for arbitrary equations or state and constitutive relations.
+    - The code MUST allow for arbitrary equations of state and constitutive
+      relations.
 
-    - Use data structures to organize data.  Avoid global variables.  Most of
-      the previous Fortran DNS codes I have seen use global variables
-      extensively.  Side effects could become a major issue (in my opinion).
+    - The code MUST use data structures (and not just arrays) to organize data,
+      and the code MUST avoid global variables.  Most of the previous Fortran
+      DNS codes I have seen use global variables extensively.  Side effects
+      could become a major issue.
 
 - Numerical methods
 
-    - Compressible Navier-Stokes equations for the governing equations
+    - The code MUST use the compressible Navier-Stokes equations for the
+      governing equations.  The code MUST use conservative variables for the
+      state variables.
 
-        - One of the few hard-coded aspects has to be the choice of
-          conservative variables for the state variables.
+    - The code SHOULD use a high-order finite difference method (primarily).
+      It SHOULD be possible to set the order arbitrarily, and it SHOULD be
+      possible to change numerical methods if desired (modularity).  A command
+      design pattern satisfies this goal.
 
-    - High-order finite difference method
-
-        - It should be possible to set the order arbitrarily.
-
-- Openness and accessibility
+- Openness, accessibility, and reproducibility
       
-    - Main goal: It must be possible for a peer reviewer to examine the source
-      code before publication and for a reader to examine it after publication
-      (if they would like to).
+    - Main goal: reproducibility by a third party.  Peer reviewers MUST be able
+      to examine and use the source code before publication and readers MUST be
+      able to examine and use the source code after publication (if they would
+      like to).
 
-    - Avoid external dependencies (especially proprietary dependencies) that
-      prevent other people from being able to compile and review the code and
-      its results.  The code should use no external dependencies other than
-      MPI.
+    - The code SHOULD avoid external dependencies (especially proprietary
+      dependencies) that prevent other people from being able to compile and
+      review the code and reproduce its results.  The code SHOULD use no
+      external dependencies other than MPI.
 
-    - Use open formats like binary and XDMF XML files for the outputted field
-      data.  Ensure that the output is readable by open source visualization
-      programs like Paraview.  Use open formats like CSV for post-processed
-      output.  These steps ensure that any results remain accessible in the
-      long-term.
+    - The code MUST use open formats like binary and XDMF XML files for the
+      outputted field data.  The code MUST ensure that the output is readable
+      by open source visualization programs like Paraview.  The code MUST use
+      open formats like CSV for post-processed output.  These steps ensure that
+      any results remain accessible in the long-term.
 
-    - Use a single input file for each case.  Keep the input file as
-      human-readable as possible.  Use Fortran namelists.
+    - The code MUST a single, human-readable, input file for each case.  The
+      input file SHOULD use Fortran namelists (for convenience).
 
 - Software architecture
 
-    - Use Fortran rather than C or C++.
+    - The code MUST Fortran rather than C or C++.
 
         - Fortran is antiquated, but it offers several advantages for numerical
           work, including namelists, simpler memory management, ability to
@@ -101,16 +108,16 @@ Goals
           easily.  This project involves arrays primarily, so Fortran seems
           more appropriate here.
 
-    - Use a simple Makefile for compilation.
+    - The code MUST use a simple Makefile for compilation.
 
-    - The same executable should be used for all cases.  There should be no
+    - The same executable SHOULD be used for all cases.  There SHOULD be no
       need to recompile the code at all for different cases or studies.
 
-        - Similarly, do not use any preprocessor.
+        - Similarly, The code MUST NOT use any preprocessor.
 
-    - Only use MPI for parallelization.
+    - The code MUST only use MPI for parallelization.
 
-    - Use descriptive variable names (even if they are long).
+    - The code SHOULD use descriptive variable names (even if they are long).
 
 
 Non-goals
@@ -125,6 +132,11 @@ of tradeoffs in the proposed design.
     - Binary and CSV are both archival and sufficient.  Other file formats
       occasionally require additional libraries, and this also violates the
       goal of having no external dependencies other than MPI.
+
+    - That said, I am not against eventually using other open formats like HDF5
+      with the code, but I find using binary sufficient for the time being,
+      Binary has all of the properties the code needs without having to use any
+      additional libraries.
 
 - Real-world geometries (complex geometries)
 
