@@ -108,12 +108,23 @@ Goals
           easily.  This project involves arrays primarily, so Fortran seems
           more appropriate here.
 
-    - The code MUST use a simple Makefile for compilation.
+    - The code MUST use a simple Makefile for compilation.  Compilation MUST
+      NOT require the user to specify any environment variables.
+
+    - The code MUST NOT use any preprocessor.
 
     - The same executable SHOULD be used for all cases.  There SHOULD be no
-      need to recompile the code at all for different cases or studies.
+      need to recompile the code at all for different "cases" (types of
+      simulations).  The same executable SHOULD be used for pre-processing,
+      time advancement, and post-processing (excluding visualization).
 
-        - Similarly, The code MUST NOT use any preprocessor.
+    - The code MUST accept a single command line argument, the input file.  The
+      filename for the input file MUST NOT be hard coded.  The code MUST use
+      case names (labels) to organize the data rather than separate
+      directories.  These practices allow for better data organization,
+      especially when different cases merely change a single parameter like the
+      Mach or Reynolds number or some aspect of the grid.  These practices also
+      allow for the same executable to be used for all cases.
 
     - The code MUST only use MPI for parallelization.
 
