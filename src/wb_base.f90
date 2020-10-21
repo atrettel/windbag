@@ -1277,6 +1277,22 @@ contains
       ! that create the custom datatypes.
       do i_dim = 1_SP, num_dimensions(sd)
          ! Allocate temporary arrays.
+         !
+         ! i_dim = 1           | i_dim = 2           | i_dim = 3
+         ! (commun. in X dir.) | (commun. in Y dir.) | (commun. in Z dir.)
+         !                     |                     |
+         !       ...........   |       .---------.   |       ...........
+         !      .         /|   |   nz /         /.   |      .         ..
+         !     .         / |   |     /         / .   |     .         . .
+         !    ...........  |   |    .---------.  .   |    .---------.  .
+         !    .         |  |   |    .   nx    .  .   |    |         |  .
+         !    .         |  .   |    .         .  .   |    |         |  .
+         !    .      ny | /    |    .         . .    | ny |         | .
+         !    .         |/ nz  |    .         ..     |    |         |.
+         !    ...........      |    ...........      |    .---------.
+         !                     |                     |        nx
+         !                     |                     |
+         ! np = ( ng, ny, nz ) | np = ( nx, ng, ny ) | np = ( nx, ny, ng )
          do j_dim = 1_SP, MAX_NUMBER_OF_DIMENSIONS
             np(j_dim) = num_points(sd,j_dim) + 2_SP * ng
          end do
