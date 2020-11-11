@@ -4,10 +4,12 @@ Windbag direct numerical simulation code
 A computational fluid dynamics code for the direct numerical simulation of
 transitional and turbulent fluid flows.
 
-NOTE: This project is a work in progress and does not work yet.  I have
-implemented much of the backend that supports various operations, but I have
-yet to implement any of the numerical methods or post-processing operations.
-Basic grid generation in parallel does work, though.
+NOTE: I have paused development of this project while I work on other
+priorities in the meanwhile.  This project is a work in progress and does not
+work yet.  I have implemented much of the backend that supports various
+operations, but I have yet to implement any of the numerical methods or
+post-processing operations.  Basic grid generation in parallel does work,
+though.
 
 
 Usage
